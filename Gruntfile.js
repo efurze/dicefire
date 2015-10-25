@@ -1,0 +1,65 @@
+// Here's a decent resource on Gruntfile.js:
+// http://techblog.troyweb.com/index.php/2014/05/using-grunt-to-auto-restart-node-js-with-file-watchers/
+
+module.exports = function(grunt) {
+
+  grunt.initConfig({
+    pkg: grunt.file.readJSON('package.json'),
+    concat: {
+      options: {
+        separator: ';'
+      },
+      dist: {
+        src: ['public/**/*.js'],
+        dest: 'dist/<%= pkg.name %>.js'
+      }
+    },
+    uglify: {
+      options: {
+        banner: '/*! <%= pkg.name %> <%= grunt.template.today("dd-mm-yyyy") %> */\n'
+      },
+      dist: {
+        files: {
+          'dist/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
+        }
+      }
+    },
+    qunit: {
+      files: ['test/**/*.html']
+    },
+    jshint: {
+      files: ['Gruntfile.js', 'public/**/*.js', 'test/**/*.js', 'app.js', 'controllers/**/*.js'],
+      options: {
+        // options here to override JSHint defaults
+        globals: {
+          jQuery: true,
+          console: true,
+          module: true,
+          document: true
+        }
+      }
+    },
+    watch: {
+      files: ['<%= jshint.files %>', 'views/**/*.hbs'],
+      tasks: ['jshint', 'qunit']
+    },
+    nodemon: {
+        dev: {
+            script: 'app.js'
+        }
+    }
+  });
+
+  grunt.loadNpmTasks('grunt-nodemon');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-contrib-qunit');
+  grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-concat');
+
+  grunt.registerTask('test', ['jshint', 'qunit']);
+  grunt.registerTask('default', ['jshint', 'concat', 'uglify']);
+  grunt.registerTask('small', ['concat', 'uglify']);
+  grunt.registerTask('server', ['nodemon']);
+
+};
