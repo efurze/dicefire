@@ -6,6 +6,8 @@ var exphbs = require('express-handlebars');
 app.engine('.hbs', exphbs({defaultLayout: 'single', extname: '.hbs'}));
 app.set('view engine', '.hbs');
 
+app.use(express.static('public'));
+
 app.get('/', function(req, res) { 
     res.render("index");
 });

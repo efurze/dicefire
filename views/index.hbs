@@ -1,1 +1,78 @@
-HELLO!
+<button onclick="go()">START</button>
+<br>
+<textarea id="info" rows=7 cols=120>
+</textarea>
+<p>
+<canvas id="c"  onMouseMove="mouseMove(event)" width=1000px height=1000px>
+
+</canvas>
+
+
+
+
+<script>
+
+
+
+function go() {
+
+    Globals.context.clearRect(0,0,2000,2000);
+    Globals.context.lineJoin = "straight";
+    
+    var colorsel = ["red", "blue", "lightgreen", "forestgreen", "purple", "pink", "orange", "yellow"];
+
+    // Clear the Hex and Country statics.
+    Hex.init(); 
+    Country.init();
+    var country = new Country(Hex.get(Math.floor(Math.random() * Hex.prototype.TOTAL_HEXES)), "black");
+
+    for (var i = 0; i < 29; i++) {
+        var countryStart = Math.floor(Math.random() * Country.count());
+        var adjacentHex;
+        console.log(Country.count());
+        for (var j = 0; j < Country.count(); j++) {
+            adjacentHex = Country.get((j + countryStart) % Country.count()).findAdjacentHex(true);
+            if (adjacentHex) {
+                break;
+            }
+        }
+        if (!adjacentHex) {
+            Globals.debug("RAN OUT OF SPACE!", i);
+            break;
+        }
+        var newCountry = new Country(adjacentHex, colorsel[i % 8]);
+        if (newCountry.isLake()) {
+            i--;
+        }
+    }
+
+    Country.array().forEach(function(country) {
+        country.markHexes();
+        country.paint();
+    });
+
+}
+
+function mouseMove(event) {
+/*
+    var path = new Path2D();
+    path.moveTo(0,0);
+    path.lineTo(event.offsetX, event.offsetY);   
+    path.closePath();
+    Globals.context.stroke(path);
+    */
+
+//      console.log(event);
+//    document.getElementById("info").textContent += "hello";
+    var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
+//    hex._color = "red";
+//    hex.paint();
+//    document.getElementById("info").textContent = hex.num();
+    document.getElementById("info").textContent = hex;
+}
+
+
+//Country.prototype.
+
+
+</script>
