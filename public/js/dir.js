@@ -14,6 +14,9 @@ $(function() {
             "NW", "N", "NE", "SE", "S", "SW"
         ],
 
+        // Can the move be legally made? Do this separately from nextHex because the rules are somewhat complex
+        // and different. Basically, it boils down to checking if it goes off an edge of the board (which means,
+        // for example, NE and SE are the same).
         isLegal: function(hex, dir) {
             switch (dir) {
                 case Dir.obj.N:
@@ -41,7 +44,10 @@ $(function() {
             }
         },
 
+        // What is the hex you reach when you move a given direction from the current hex?
         nextHex: function(hex, dir) {
+
+            // Is it an illegal direction? If so, just return null.
             if (!Dir.isLegal(hex, dir)) {
                 return null;
             }
@@ -52,7 +58,7 @@ $(function() {
             var oldHexNum = hex.num();
             var newHexNum;
 
-            // This is complicated becasue it has to look for edge conditions both N-S and E-W. The E-W direction
+            // This is complicated because it has to look for edge conditions both N-S and E-W. The E-W direction
             // depends a bit on which row you're in. Only every other row can even have a problem.
             switch (dir) {
                 case Dir.obj.NW: 

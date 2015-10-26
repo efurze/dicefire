@@ -3,7 +3,9 @@ $(function() {
 	    debug: function(title) {
 	        console.log(title, arguments);
 	    },
-	    showNumbers: false
+	    showNumbers: false,
+	    markHexCenters: false,
+	    markCountryCenters: true
 	};
 
 

@@ -23,6 +23,25 @@ $(function() {
         return Hex._array.length;
     };
 
+    // Finds all hexes which are alone and absorbs them into a nearby country. Do this because
+    // they look kind of bad.
+    Hex.absorbSingles = function() {
+        console.log("TRYING TO ABSORB SINGLES");
+        Hex._array.forEach(function(hex) {
+            if (!hex.country()) {
+                for (var i = 0; i < Dir.array.length; i++) {
+                    var nextHex = Dir.nextHex(hex, Dir.array[i]);
+                    if (!nextHex || !nextHex.country() || nextHex.country().isLake()) {
+                        return;
+                    }
+                }
+                // If it got here, the hex is not on the edge and it has countries all around it.
+                hex.moveToAdjacentCountry();
+            } 
+        });
+    };
+
+
     Hex.fromMousePos = function(x, y) {
         y -= Hex.prototype.TOP_LEFT_Y;
         var total_height = Hex.prototype.NUM_HIGH * Hex.prototype.HEIGHT;
@@ -122,6 +141,13 @@ $(function() {
     Hex.prototype.y = function() { return this._y; };
     Hex.prototype.num = function() { return this._num; };
 
+    Hex.prototype.setCountry = function(country) { this._country = country; };
+    Hex.prototype.country = function() { return this._country; };
+
+    // The directions which are boundaries between this cell and another country or the edge of the board.
+    Hex.prototype.setCountryEdgeDirections = function(array) { this._countryEdgeDirections = array; };
+    Hex.prototype.countryEdgeDirections = function() { return this._countryEdgeDirections; };
+
 
     Hex.prototype.isInterior = function() {
         return this._countryEdgeDirections.length === 0;
@@ -132,26 +158,36 @@ $(function() {
     };
 
 
-    Hex.prototype.setCountry = function(country) {
-        this._country = country;
+
+    // Move this hex into an adjacent country. Don't move into a lake if a lake is adjacent.
+    // Only move if it's possible to do so.
+    Hex.prototype.moveToAdjacentCountry = function() {
+        for (var i = 0; i < Dir.array.length; i++) {
+            var newHex = Dir.nextHex(this, i);
+            if (newHex && newHex.country() && !newHex.country().isLake()) {
+                var newCountry = newHex.country();
+                this.setCountry(newCountry);
+                newCountry._hexes.push(this);                
+                return;
+            }
+        }
+        Globals.debug("Can't find an adjacent country");
+
     };
 
 
-    // The directions which are boundaries between this cell and another country or the edge of the board.
-    Hex.prototype.setCountryEdgeDirections = function(array) {
-        this._countryEdgeDirections = array;
-    };
+    Hex.prototype.center = function() {
+        var pos = this.upperLeft();
+        pos[0] += Math.floor(this.WIDTH / 2);
+        pos[1] += Math.floor(this.HEIGHT / 2);
+        return pos;
+    }
 
-    Hex.prototype.country = function() {
-        return this._country;
-    };
 
-    Hex.prototype.paint = function() {
-        var self = this;
 
-        var upperLeftX;
-        var upperLeftY;
-        var y;
+    Hex.prototype.upperLeft = function() {
+        var upperLeftX, upperLeftY;
+
         if (this._y % 2) {
             y = Math.floor(this._y / 2);
             upperLeftX = this.TOP_LEFT_X + (this.WIDTH * ((this._x * 3) + 1.5));
@@ -163,6 +199,20 @@ $(function() {
             upperLeftY = this.TOP_LEFT_Y + y * this.HEIGHT;
         }
 
+        return [upperLeftX, upperLeftY];
+    }
+
+
+
+
+    Hex.prototype.paint = function() {
+        var self = this;
+
+        var upperLeft = this.upperLeft();
+        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
+       
+
+        // The fudge was selected to make it look nice :-)
         var FUDGE = 0.5;
         var path = new Path2D();
         path.moveTo(upperLeftX - FUDGE, upperLeftY - FUDGE);
@@ -231,10 +281,30 @@ $(function() {
 
         });
 
+
         if (Globals.showNumbers) {
             Globals.context.lineWidth = 1;
             Globals.context.font = "11px sans-serif";
             Globals.context.strokeText(this._num, upperLeftX, upperLeftY + this.HEIGHT / 2);
+        }
+
+        if (Globals.markHexCenters) {
+            var ctr = this.center();
+            var path = new Path2D();
+            path.moveTo(ctr[0] - 2, ctr[1] - 2);
+            path.lineTo(ctr[0] + 2, ctr[1] + 2);
+            path.closePath();
+            Globals.context.strokeColor = "black";
+            Globals.context.lineWidth = 1;
+            Globals.context.stroke(path);
+
+            path = new Path2D();
+            path.moveTo(ctr[0] - 2, ctr[1] + 2);
+            path.lineTo(ctr[0] + 2, ctr[1] - 2);
+            path.closePath();
+            Globals.context.strokeColor = "black";
+            Globals.context.lineWidth = 1;
+            Globals.context.stroke(path);
         }
 
     };

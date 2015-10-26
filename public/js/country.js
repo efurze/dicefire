@@ -3,12 +3,11 @@ $(function() {
         this._hexes = [starthex];
         starthex.setCountry(this);
         this._color = color;
-        this._numHexes = Math.floor(Math.random() * (Country.prototype.MAX_HEXES - Country.prototype.MIN_HEXES + 1)) + Country.prototype.MIN_HEXES;
+        this._numHexes = Math.floor(Math.random() * (Country.prototype.MAX_HEXES - Country.prototype.MIN_HEXES + 1)) + 
+            Country.prototype.MIN_HEXES;
 
         this.growCountry();
         if (this._numHexes != this._hexes.length) {
-
-            Globals.debug("Too small country made, making lake:", this);         
             // Mark it as a lake still so we can make enough countries.
             this._isLake = true;
             if (this._hexes.length <= 5) {
@@ -47,15 +46,23 @@ $(function() {
     Country.prototype.LAKE_COLOR = "white";
 
     Country.prototype.color = function() { return this._color; };
+    Country.prototype.hexes = function() { return this._hexes; };
+    Country.prototype.isLake = function() { return this._isLake; };
 
+    Country.prototype.center = function() {
+        var center = [0, 0];
+        this._hexes.forEach(function(hex) {
+            var hexCenter = hex.center();
+            center[0] += hexCenter[0];
+            center[1] += hexCenter[1];            
+        })
 
-    Country.prototype.getHexes = function() {
-        return this._hexes;
-    };
+        center[0] /= this._hexes.length;
+        center[1] /= this._hexes.length;
 
-    Country.prototype.isLake = function() {
-        return this._isLake;
-    };
+        return center;
+    }
+
 
     // Find a hex that is adjacent to this country but is not occupied by this country.
     // This can be used to grow this country, to find a new place to start a country,
@@ -92,7 +99,7 @@ $(function() {
         var hex = this.findAdjacentHex(true);
 
         if (!hex) {
-            Globals.debug("Couldn't find a new spot for a hex!");        
+//            Globals.debug("Couldn't find a new spot for a hex!");        
             return;
         }
 
@@ -109,27 +116,10 @@ $(function() {
     // Absorbs a lake into an adjacent country.
     Country.prototype.absorbLake = function() {
         var newCountry = null;
-        for (var i = 0; i < this._hexes.length; i++) {
-            for (var j = 0; j < Dir.array.length; j++) {
-                var newHex = Dir.nextHex(this._hexes[i], j);
-                if (newHex && newHex.country() && !newHex.country().isLake()) {
-                    newCountry = newHex.country();
-                    break;
-                }
-            }
-            if (newCountry) {
-                break;
-            }
-        }
-
-        if (newCountry) {
-            this._hexes.forEach(function(hex) {
-                hex.setCountry(newCountry);
-                newCountry._hexes.push(hex);
-            });
-            this._hexes = [];
-        }
-
+        this._hexes.forEach(function(hex) {
+            hex.moveToAdjacentCountry();
+        })
+        this._hexes = [];
     };
 
     // Marks hexes as internal or external. Also identifies which edges need border stroking for the hex.
@@ -157,5 +147,24 @@ $(function() {
         this._hexes.forEach(function(elem) {
             elem.paint();
         });
+
+        if (Globals.markCountryCenters) {
+            var ctr = this.center();
+            var path = new Path2D();
+            path.moveTo(ctr[0] - 4, ctr[1] - 4);
+            path.lineTo(ctr[0] + 4, ctr[1] + 4);
+            path.closePath();
+            Globals.context.strokeColor = "black";
+            Globals.context.lineWidth = 2;
+            Globals.context.stroke(path);
+
+            path = new Path2D();
+            path.moveTo(ctr[0] - 4, ctr[1] + 4);
+            path.lineTo(ctr[0] + 4, ctr[1] - 4);
+            path.closePath();
+            Globals.context.strokeColor = "black";
+            Globals.context.lineWidth = 2;
+            Globals.context.stroke(path);
+        }
     };
 });

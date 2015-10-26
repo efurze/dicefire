@@ -29,9 +29,13 @@ function go() {
     for (var i = 0; i < 29; i++) {
         var countryStart = Math.floor(Math.random() * Country.count());
         var adjacentHex;
-        console.log(Country.count());
+
         for (var j = 0; j < Country.count(); j++) {
-            adjacentHex = Country.get((j + countryStart) % Country.count()).findAdjacentHex(true);
+        	var country = Country.get((j + countryStart) % Country.count());
+        	if (country.isLake()) {
+        		continue;
+        	}
+            adjacentHex = country.findAdjacentHex(true);
             if (adjacentHex) {
                 break;
             }
@@ -46,9 +50,11 @@ function go() {
         }
     }
 
+    Hex.absorbSingles();
+
     Country.array().forEach(function(country) {
         country.markHexes();
-        country.paint();
+        country.paint();        
     });
 
 }
