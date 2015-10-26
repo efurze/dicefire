@@ -55,11 +55,12 @@ $(function() {
     };
 
 
-    // I think a smarter/simpler way to do this is to find the centers of the 4 hexes which are in
-    // the "even" columns which are closest to this point. That's easy cuz it's just a grid. Then pick
-    // the 3 "odd" ones in between. Then compute distances to each and go with the shortest.
-    
+    // Find the centers of the 4 hexes which are in the "even" columns which are closest to this point.
+    // That's easy cuz it's just a grid. Then pick the 3 "odd" ones in between. Then compute distances 
+    // to each and go with the shortest.
+
     Hex.fromMousePos = function(x, y) {
+        var oldX = x; oldY = y;
         y -= Hex.TOP_LEFT_Y;
         var total_height = Hex.NUM_HIGH * Hex.HEIGHT;
         // Note that there are 2 rows per row, to allow distinguishing the upper and lower halves
@@ -75,98 +76,36 @@ $(function() {
 
         var num = null;
 
-        // The columns alternate between angled and flat sections. If the cursor is in 
-        // a flat column, stuff is pretty easy, since the hexes are just stacked rectangles.
-        // It's still a little tricky because, depending on whether it's col [0,1] or [3,4], the
-        // rectangles stack differently. For the other columns columns, it's harder because you 
-        // have a rectangular section with a diagonal line down the middle. For those, first, figure
-        // out which hex is on the left and which is on the right. Then, figure out which side
-        // of the line the cursor is on.
-        // 
-        //      ----col----
-        //   -1  0 1  2 3 4 5 6
-        //      _____    
-        //     /     \
-        //    /  hex  \_____
-        //    \   0   /     \
-        //     \_____/  hex  \
-        //     /     \   40  /
-        //    /  hex  \_____/
-        //    \   80  /
-        //     \_____/
 
+        var newCol = Math.floor(((x - Hex.EDGE_LENGTH / 2) / total_width) * Hex.NUM_WIDE);
+        var newRow = Math.floor(((y - Hex.HEIGHT / 2) / total_height) * Hex.NUM_HIGH);
+        
+        var topLeftHex = newRow * (Hex.NUM_WIDE * 2) + newCol;
+        var topRightHex = topLeftHex + 1;
+        var bottomLeftHex = topLeftHex + (Hex.NUM_WIDE * 2);
+        var bottomRightHex = bottomLeftHex + 1;    
+        var middleMiddleHex = topLeftHex + Hex.NUM_WIDE;
+        var topMiddleHex = middleMiddleHex - (Hex.NUM_WIDE * 2);
+        var bottomMiddleHex = middleMiddleHex + (Hex.NUM_WIDE * 2); 
 
-        // Note col can be -1, so we add 3 to catch that case.
-        if ((col + 3) % 3 == 2) {  // Means it's an angled portion.
-            return null;
-            var left = null, right = null;
-//            var xoffset = x - 
-            if ((col - 1) % 4) {
-                if (row % 2) {
-                    col = Math.floor(col / 4);
-                    row = Math.floor(row / 2);
-                    left = col + (row * (Hex.NUM_WIDE * 2)) + Hex.NUM_WIDE;
-                    right = left - Hex.NUM_WIDE + 1;
-                    //bottom-right to top-left
-                } else {
-                    col = Math.floor(col / 4);
-                    row = Math.floor(row / 2) - 1;
-                    left = col + (row * (Hex.NUM_WIDE * 2)) + Hex.NUM_WIDE;
-                    right = left + Hex.NUM_WIDE + 1;
+        var nearbyHexes = [topLeftHex, topRightHex, bottomLeftHex, bottomRightHex, middleMiddleHex, topMiddleHex, bottomMiddleHex];
+        var closestDistanceSquared = Infinity;
+        var closestHex = null;
 
-                    //bottom-left to top right
+        nearbyHexes.forEach(function(hexNum) {
+            if (hexNum >= 0 && hexNum < Hex.TOTAL_HEXES) {
+                var hex = Hex.get(hexNum);
+                var center = hex.center();
+                var distanceSquared = Math.pow(center[0] - oldX, 2) + Math.pow(center[1] - oldY, 2);
+                if (distanceSquared < closestDistanceSquared) {
+                    closestDistanceSquared = distanceSquared;
+                    closestHex = hex;
                 }
-
-            } else {
-                if (row % 2) {
-                    col = Math.floor(col / 4);
-                    row = Math.floor(row / 2);
-                    left = col + (row * (Hex.NUM_WIDE * 2));
-                    right = left + Hex.NUM_WIDE;
-
-                    //bottom-left to top-right                
-                } else {
-                    col = Math.floor(col / 4);
-                    row = Math.floor(row / 2) - 1;
-                    left = col + (row * (Hex.NUM_WIDE * 2)) + 2 * Hex.NUM_WIDE;
-                    right = left - Hex.NUM_WIDE;
-
-
-                    //bottom-right to top-left
-                }
-
             }
+        });
 
+        return closestHex;
 
-            return left !== null ? [left, right] : null;
-
-            // [1,1] is between 0 and 40 with a bottom-left to top-right line
-            // [3,1] is between 40 and 1 with a bottom-right to top-left line
-            // [5,1] is between 1 and 41 with bottom-left to top-right
-            // [1,2] is between 80 and 41 with top-left to bottom right
-            // [3,2] is between 40 and 81 wtih bottom-left to top-right
-
-
-
-        } else {    // Much easier: A flat portion.
-            var pos = col % 6;
-            if (pos == 0 || pos == 1) { // Upper hex.
-                col = Math.floor(col / 6);
-                row = Math.floor(row / 2);
-                num = col + (row * Hex.NUM_WIDE * 2);
-            } else { // Lower hex.
-                col = Math.floor(col / 6);
-                row = Math.floor((row + 1) / 2) - 1;
-                num = col + (row * (Hex.NUM_WIDE * 2)) + Hex.NUM_WIDE;
-            }
-
-        }
-
-        if (num !== null && num >= 0) {
-            return Hex.get(num);
-        }
-
-        return null;
     };
 
 

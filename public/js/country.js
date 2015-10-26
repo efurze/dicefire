@@ -172,6 +172,20 @@ $(function() {
     };
 
 
+    Country.prototype.mouseEnter = function() {
+        this._oldColor = this._color;
+        this._color = "black";
+        this.paint();
+    };
+
+
+    Country.prototype.mouseLeave = function() {
+        this._color = this._oldColor;
+        this._oldColor = null;
+        this.paint();
+    };
+
+
     // Paints the country.
     Country.prototype.paint = function() {
         this._hexes.forEach(function(elem) {
