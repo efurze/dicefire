@@ -5,7 +5,8 @@ $(function() {
 	    },
 	    showNumbers: false,
 	    markHexCenters: false,
-	    markCountryCenters: true
+	    markCountryCenters: true,
+	    drawCountryConnections: true
 	};
 
 

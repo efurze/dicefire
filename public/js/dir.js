@@ -21,23 +21,23 @@ $(function() {
             switch (dir) {
                 case Dir.obj.N:
                 case "N":
-                    return hex.num() - (2 * Hex.prototype.NUM_WIDE) >= 0;
+                    return hex.num() - (2 * Hex.NUM_WIDE) >= 0;
 
                 case Dir.obj.NE:
                 case "NE":
                 case Dir.obj.SE:
                 case "SE":
-                    return ((hex.num() + 1) % (Hex.prototype.NUM_WIDE * 2));
+                    return ((hex.num() + 1) % (Hex.NUM_WIDE * 2));
 
                 case Dir.obj.S:
                 case "S":
-                    return hex.num() + (2 * Hex.prototype.NUM_WIDE) < Hex.prototype.TOTAL_HEXES;
+                    return hex.num() + (2 * Hex.NUM_WIDE) < Hex.TOTAL_HEXES;
 
                 case Dir.obj.NW:
                 case "NW":
                 case Dir.obj.SW:
                 case "SW":
-                    return (hex.num() % (Hex.prototype.NUM_WIDE * 2));
+                    return (hex.num() % (Hex.NUM_WIDE * 2));
 
                 default:
                     return false;
@@ -63,32 +63,32 @@ $(function() {
             switch (dir) {
                 case Dir.obj.NW: 
                 case "NW":
-                    newHexNum = Math.floor(oldHexNum / Hex.prototype.NUM_WIDE) % 2 ? oldHexNum - Hex.prototype.NUM_WIDE : oldHexNum - Hex.prototype.NUM_WIDE - 1;
+                    newHexNum = Math.floor(oldHexNum / Hex.NUM_WIDE) % 2 ? oldHexNum - Hex.NUM_WIDE : oldHexNum - Hex.NUM_WIDE - 1;
                     break;
 
                 case Dir.obj.N:
                 case "N":
-                    newHexNum = oldHexNum - (2 * Hex.prototype.NUM_WIDE);
+                    newHexNum = oldHexNum - (2 * Hex.NUM_WIDE);
                     break;
 
                 case Dir.obj.NE:
                 case "NE":
-                    newHexNum = Math.floor(oldHexNum / Hex.prototype.NUM_WIDE) % 2 ? oldHexNum - Hex.prototype.NUM_WIDE + 1 : oldHexNum - Hex.prototype.NUM_WIDE;
+                    newHexNum = Math.floor(oldHexNum / Hex.NUM_WIDE) % 2 ? oldHexNum - Hex.NUM_WIDE + 1 : oldHexNum - Hex.NUM_WIDE;
                     break;
 
                 case Dir.obj.SE:
                 case "SE":
-                    newHexNum = Math.floor(oldHexNum / Hex.prototype.NUM_WIDE) % 2 ? oldHexNum + Hex.prototype  .NUM_WIDE + 1 : oldHexNum + Hex.prototype.NUM_WIDE;
+                    newHexNum = Math.floor(oldHexNum / Hex.NUM_WIDE) % 2 ? oldHexNum + Hex.NUM_WIDE + 1 : oldHexNum + Hex.NUM_WIDE;
                     break;
 
                 case Dir.obj.S:
                 case "S":
-                    newHexNum = oldHexNum + (2 * Hex.prototype.NUM_WIDE);
+                    newHexNum = oldHexNum + (2 * Hex.NUM_WIDE);
                     break;
 
                 case Dir.obj.SW:
                 case "SW":
-                    newHexNum = Math.floor(oldHexNum / Hex.prototype.NUM_WIDE) % 2 ? oldHexNum + Hex.prototype.NUM_WIDE : oldHexNum + Hex.prototype.NUM_WIDE - 1;
+                    newHexNum = Math.floor(oldHexNum / Hex.NUM_WIDE) % 2 ? oldHexNum + Hex.NUM_WIDE : oldHexNum + Hex.NUM_WIDE - 1;
                     break;    
 
             }

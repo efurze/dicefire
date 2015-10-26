@@ -39,6 +39,22 @@ $(function() {
         return Country._array;
     };
 
+    // Removes lakes from the country list to simplify things.
+    Country.pruneLakes = function() {
+        Country._array = Country._array.filter(function(country) {
+            if (!country.isLake()) {
+                return true;
+            } else {
+                country.hexes().forEach(function(hex) {
+                    hex.setCountry(null);
+                    hex.setCountryEdgeDirections(null);
+                });
+                return false;
+            }
+        });
+
+    };
+
 
     Country.prototype.MAX_HEXES = 100;
     Country.prototype.MIN_HEXES = 30;
@@ -48,6 +64,7 @@ $(function() {
     Country.prototype.color = function() { return this._color; };
     Country.prototype.hexes = function() { return this._hexes; };
     Country.prototype.isLake = function() { return this._isLake; };
+    Country.prototype.adjacentCountries = function() { return this._adjacentCountries; };
 
     Country.prototype.center = function() {
         var center = [0, 0];
@@ -122,27 +139,40 @@ $(function() {
         this._hexes = [];
     };
 
+
+
+
+    // Once the map is setup, this function puts together the adjacency information the country
+    // needs, both to paint itself and to know what is next door.
     // Marks hexes as internal or external. Also identifies which edges need border stroking for the hex.
-    Country.prototype.markHexes = function() {
+
+    Country.prototype.setupEdges = function() {
         var self = this;
+
+        this._adjacentCountries = [];
+        var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
+
         this._hexes.forEach(function(hex) {
             var countryEdges = [];
             for (var i = 0; i < Dir.array.length; i++) {
                 var newHex = Dir.nextHex(hex, i);
-                // Lakes have somewhat different rules.
-                if (self.isLake()) {
-                    if (newHex && newHex.country() && !newHex.country().isLake()) {
-                        countryEdges.push(i);
-                    }
-                } else if (!newHex || newHex.country() != self) {
-                    countryEdges.push(i);                
+
+                if (!newHex || newHex.country() != self) {
+                    countryEdges.push(i);             
                 }
+                if (newHex && newHex.country() && newHex.country() != self && 
+                    !adjacentCountryHexes[newHex.country().hexes()[0].num()]) {
+                    adjacentCountryHexes[newHex.country().hexes()[0].num()] = true;
+                    self._adjacentCountries.push(newHex.country());
+                }
+
             }
             hex.setCountryEdgeDirections(countryEdges);
         });
     };
 
 
+    // Paints the country.
     Country.prototype.paint = function() {
         this._hexes.forEach(function(elem) {
             elem.paint();
@@ -165,6 +195,20 @@ $(function() {
             Globals.context.strokeColor = "black";
             Globals.context.lineWidth = 2;
             Globals.context.stroke(path);
+        }
+
+        if (Globals.drawCountryConnections) {
+            var ctr = this.center();
+            this._adjacentCountries.forEach(function(country) {
+                var otherCenter = country.center();
+                var path = new Path2D();
+                path.moveTo(ctr[0], ctr[1]);
+                path.lineTo(otherCenter[0], otherCenter[1]);
+                path.closePath();
+                Globals.context.strokeColor = "black";
+                Globals.context.lineWidth = 1;
+                Globals.context.stroke(path);
+            });
         }
     };
 });
