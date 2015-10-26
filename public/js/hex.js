@@ -55,6 +55,10 @@ $(function() {
     };
 
 
+    // I think a smarter/simpler way to do this is to find the centers of the 4 hexes which are in
+    // the "even" columns which are closest to this point. That's easy cuz it's just a grid. Then pick
+    // the 3 "odd" ones in between. Then compute distances to each and go with the shortest.
+    
     Hex.fromMousePos = function(x, y) {
         y -= Hex.TOP_LEFT_Y;
         var total_height = Hex.NUM_HIGH * Hex.HEIGHT;
