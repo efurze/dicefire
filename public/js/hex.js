@@ -72,6 +72,12 @@ $(function() {
         // the edge length of a hex, not by the width of a full individual hex. If confused,
         // look at the drawing below.
         var total_width = Hex.NUM_WIDE * (Hex.EDGE_LENGTH * 3);
+
+        // If it's beyond the left edge, just bail.
+        if (x >= total_width) {
+            return null;
+        }
+
         var col = Math.floor((x / total_width) * (6 * Hex.NUM_WIDE));
 
         var num = null;

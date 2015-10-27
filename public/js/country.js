@@ -1,43 +1,31 @@
 $(function() {
-    window.Country = function(starthex, color) {
+    window.Country = function(starthex, owner) {
         this._hexes = [starthex];
         starthex.setCountry(this);
-        this._color = color;
+        this._owner = owner;
+        this._overrideColor = null;
         this._numHexes = Math.floor(Math.random() * (Country.prototype.MAX_HEXES - Country.prototype.MIN_HEXES + 1)) + 
             Country.prototype.MIN_HEXES;
 
         this.growCountry();
         if (this._numHexes != this._hexes.length) {
-            // Mark it as a lake still so we can make enough countries.
+            // Mark it as a lake still so we can make enough countries. If it's a small lake,
+            // let it get absorbed into another country. If it's a big lake, it will remain
+            // and be pruned (in actual gameplay, all isLake() countries are gone)
             this._isLake = true;
             if (this._hexes.length <= 5) {
                 this.absorbLake();
                 return;
-            } else {
-                // Lake absorbed which prevents it being added to the master country list.
-                this._color = this.LAKE_COLOR;  
-            }
+            } 
         }
 
         Country._array.push(this);
     };
 
-    Country.init = function() {
-        Country._array = [];
-    };
-
-    Country.get = function(num) {
-        return Country._array[num];
-    };
-
-    Country.count = function() {
-        return Country._array.length;
-    };
-
-
-    Country.array = function() {
-        return Country._array;
-    };
+    Country.init = function() { Country._array = []; };
+    Country.get = function(num) { return Country._array[num]; };
+    Country.count = function() { return Country._array.length; };
+    Country.array = function() { return Country._array; };
 
     // Removes lakes from the country list to simplify things.
     Country.pruneLakes = function() {
@@ -59,12 +47,19 @@ $(function() {
     Country.prototype.MAX_HEXES = 100;
     Country.prototype.MIN_HEXES = 30;
 
-    Country.prototype.LAKE_COLOR = "white";
-
-    Country.prototype.color = function() { return this._color; };
+    Country.prototype.owner = function() { return this._owner; };
     Country.prototype.hexes = function() { return this._hexes; };
     Country.prototype.isLake = function() { return this._isLake; };
     Country.prototype.adjacentCountries = function() { return this._adjacentCountries; };
+
+    Country.prototype.color = function() { 
+        if (this._overrideColor) {
+            return this._overrideColor; 
+        } else {
+            return this._owner.color();
+        }
+    }
+
 
     Country.prototype.center = function() {
         var center = [0, 0];
@@ -173,15 +168,13 @@ $(function() {
 
 
     Country.prototype.mouseEnter = function() {
-        this._oldColor = this._color;
-        this._color = "black";
+        this._overrideColor = "black";
         this.paint();
     };
 
 
     Country.prototype.mouseLeave = function() {
-        this._color = this._oldColor;
-        this._oldColor = null;
+        this._overrideColor = null;
         this.paint();
     };
 
