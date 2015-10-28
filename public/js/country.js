@@ -60,6 +60,14 @@ $(function() {
         }
     }
 
+    Country.prototype.borderColor = function() {
+        if (this == Game.selectedCountry()) {
+            return "red";
+        } else {
+            return "black";
+        }
+    };
+
 
     Country.prototype.center = function() {
         var center = [0, 0];
@@ -178,6 +186,9 @@ $(function() {
         this.paint();
     };
 
+    Country.prototype.click = function() {
+        this.paint();
+    };
 
     // Paints the country.
     Country.prototype.paint = function() {
@@ -191,7 +202,7 @@ $(function() {
             path.moveTo(ctr[0] - 4, ctr[1] - 4);
             path.lineTo(ctr[0] + 4, ctr[1] + 4);
             path.closePath();
-            Globals.context.strokeColor = "black";
+            Globals.context.strokeStyle = "black";
             Globals.context.lineWidth = 2;
             Globals.context.stroke(path);
 
@@ -199,7 +210,7 @@ $(function() {
             path.moveTo(ctr[0] - 4, ctr[1] + 4);
             path.lineTo(ctr[0] + 4, ctr[1] - 4);
             path.closePath();
-            Globals.context.strokeColor = "black";
+            Globals.context.strokeStyle = "black";
             Globals.context.lineWidth = 2;
             Globals.context.stroke(path);
         }
@@ -212,10 +223,12 @@ $(function() {
                 path.moveTo(ctr[0], ctr[1]);
                 path.lineTo(otherCenter[0], otherCenter[1]);
                 path.closePath();
-                Globals.context.strokeColor = "black";
+                Globals.context.strokeStyle = "black";
                 Globals.context.lineWidth = 1;
                 Globals.context.stroke(path);
             });
         }
     };
+
+
 });

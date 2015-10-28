@@ -8,7 +8,6 @@ $(function() {
     };
 
 
-    Hex.BORDER_COLOR = "black";
     Hex.BORDER_THICKNESS = 3;
     Hex.EDGE_LENGTH = 8;
     Hex.HEIGHT = Hex.EDGE_LENGTH * Math.sqrt(3);
@@ -186,10 +185,10 @@ $(function() {
 
 
     Hex.prototype.paint = function() {
+        var self = this;
+
         var upperLeft = this.upperLeft();
         var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
-       
-
 
         var path = new Path2D();
         path.moveTo(upperLeftX - Hex.FUDGE, upperLeftY - Hex.FUDGE);
@@ -209,54 +208,57 @@ $(function() {
         Globals.context.fill(path);
 
 
-        this._countryEdgeDirections.forEach(function(dir) {
-            var edgePath = new Path2D();
-            switch(dir) {
-                case Dir.obj.NW: 
-                case "NW":
-                    edgePath.moveTo(upperLeftX, upperLeftY);
-                    edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-                    break;
+        if (this._country) {
+            this._countryEdgeDirections.forEach(function(dir) {
+                var edgePath = new Path2D();
+                switch(dir) {
+                    case Dir.obj.NW: 
+                    case "NW":
+                        edgePath.moveTo(upperLeftX, upperLeftY);
+                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        break;
 
-                case Dir.obj.N:
-                case "N":
-                    edgePath.moveTo(upperLeftX, upperLeftY);
-                    edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
-                    break;
+                    case Dir.obj.N:
+                    case "N":
+                        edgePath.moveTo(upperLeftX, upperLeftY);
+                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
+                        break;
 
-                case Dir.obj.NE:
-                case "NE":
-                    edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
-                    edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-                    break;
+                    case Dir.obj.NE:
+                    case "NE":
+                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
+                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        break;
 
-                case Dir.obj.SE:
-                case "SE":
-                    edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-                    edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
-                    break;
+                    case Dir.obj.SE:
+                    case "SE":
+                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
+                        break;
 
-                case Dir.obj.S:
-                case "S":
-                    edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
-                    edgePath.lineTo(upperLeftX, upperLeftY + Hex.HEIGHT);
-                    break;
+                    case Dir.obj.S:
+                    case "S":
+                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
+                        edgePath.lineTo(upperLeftX, upperLeftY + Hex.HEIGHT);
+                        break;
 
-                case Dir.obj.SW:
-                case "SW":
-                    edgePath.moveTo(upperLeftX, upperLeftY + Hex.HEIGHT);
-                    edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-                    break;                    
+                    case Dir.obj.SW:
+                    case "SW":
+                        edgePath.moveTo(upperLeftX, upperLeftY + Hex.HEIGHT);
+                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        break;                    
 
 
-            }
-            edgePath.closePath();
-            Globals.context.strokeColor = Hex.BORDER_COLOR;
-            Globals.context.lineWidth = Hex.BORDER_THICKNESS;
+                }
+                edgePath.closePath();
+                Globals.context.strokeStyle = self._country.borderColor();
+                Globals.context.lineWidth = Hex.BORDER_THICKNESS;
 
-            Globals.context.stroke(edgePath);
+                Globals.context.stroke(edgePath);
+            });
 
-        });
+        }
+
 
 
         if (Globals.showNumbers) {
@@ -271,7 +273,7 @@ $(function() {
             path.moveTo(ctr[0] - 2, ctr[1] - 2);
             path.lineTo(ctr[0] + 2, ctr[1] + 2);
             path.closePath();
-            Globals.context.strokeColor = "black";
+            Globals.context.strokeStyle = "black";
             Globals.context.lineWidth = 1;
             Globals.context.stroke(path);
 
@@ -279,7 +281,7 @@ $(function() {
             path.moveTo(ctr[0] - 2, ctr[1] + 2);
             path.lineTo(ctr[0] + 2, ctr[1] - 2);
             path.closePath();
-            Globals.context.strokeColor = "black";
+            Globals.context.strokeStyle = "black";
             Globals.context.lineWidth = 1;
             Globals.context.stroke(path);
         }

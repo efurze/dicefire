@@ -2,6 +2,10 @@ $(function() {
 
     window.Game = {
         _mouseOverCountry: null,
+        _selectedCountry: null,
+
+        mouseOvercountry: function() { return Game._mouseOverCountry; },
+        selectedCountry: function() { return Game._selectedCountry; },
 
         init: function() {
             Globals.context.clearRect(0,0,2000,2000);
@@ -48,6 +52,7 @@ $(function() {
 
             $(Globals.canvas).mousemove(Game.mouseMove);
             $(Globals.canvas).mouseleave(Game.mouseLeave);
+            $(Globals.canvas).click(Game.click);
 
         },
 
@@ -88,6 +93,27 @@ $(function() {
                 Game._mouseOverCountry.mouseLeave();
                 Game._mouseOverCountry = null;
             }
+        },
+
+        click: function(event) {
+            var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
+            if (hex) {
+                var country = hex.country();
+                if (country) {                    
+                    if (Game._selectedCountry == country) {
+                        Game._selectedCountry = null;
+                        country.click();
+
+                    } else {
+                        var oldCountry = Game._selectedCountry;
+                        Game._selectedCountry = country;
+                        if (oldCountry) {
+                            oldCountry.click();
+                        }
+                        country.click();
+                    }
+                }
+            }            
         }
 
     }
