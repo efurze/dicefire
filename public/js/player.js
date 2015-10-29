@@ -37,18 +37,20 @@ $(function() {
     	$('#dice' + num).css(
 	    	{
 				'display': 'inline-block',
-				'margin-left': '15px',
+				'margin-left': '12px',
 				'margin-top': '2px',
-				'vertical-align': 'top'
+				'vertical-align': 'top',
+				'text-align': 'center'
 	    	}
     	);
 
 		$('#stored' + num).css(
 	    	{
 				'display': 'inline-block',
-				'margin-left': '15px',
+				'margin-left': '12px',
 				'margin-top': '2px',
 				'vertical-align': 'top',
+				'text-align': 'center',
 				'color': Player.colors[num]
 	    	}
     	);    	
@@ -184,8 +186,19 @@ $(function() {
 
     // Take ownership of a country.
     Player.prototype.takeCountry = function(country) {
+    	var oldOwner = country.owner();
+    	if (oldOwner) {
+	    	oldOwner.loseCountry(country);
+	    }
     	country.setOwner(this);
     	this._countries.push(country);
+    };
+
+    // Take away the country from this player.
+    Player.prototype.loseCountry = function(country) {
+    	this._countries = this._countries.filter(function(elem) {
+    		return elem != country;
+    	})
     };
 
     // Pick all the countries which have some space in them.
@@ -243,7 +256,6 @@ $(function() {
 
     	this._numContiguousCountries = maxIslandSize;
     	$('#dice' + this._num).html(maxIslandSize);
-    	console.log("SLDF", this._storedDice);
     	$('#stored' + this._num).html(this._storedDice);
     };
 

@@ -7,7 +7,7 @@ $(function() {
 
         mouseOverCountry: function() { return Game._mouseOverCountry; },
         selectedCountry: function() { return Game._selectedCountry; },
-        currentPlayer: function() { return Game._currentPlayer; },
+        currentPlayer: function() { return Player.get(Game._currentPlayerNum); },
 
         init: function() {
             Globals.context.clearRect(0,0,2000,2000);
