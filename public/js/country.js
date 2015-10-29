@@ -2,6 +2,7 @@ $(function() {
     window.Country = function(starthex) {
         this._hexes = [starthex];
         starthex.setCountry(this);
+        this._adjacentCountries = [];        
         this._owner = null;
         this._numHexes = Math.floor(Math.random() * (Country.prototype.MAX_HEXES - Country.prototype.MIN_HEXES + 1)) + 
             Country.prototype.MIN_HEXES;
@@ -65,6 +66,9 @@ $(function() {
         this._numDice++;
     }
 
+    Country.prototype.setNumDice = function(num) {
+        this._numDice = num;
+    }
 
 
     Country.prototype.color = function() { 
@@ -81,7 +85,7 @@ $(function() {
                 return this._owner.color();
             }
         }
-    }
+    };
 
     Country.prototype.center = function() {
         var center = [0, 0];
@@ -95,8 +99,18 @@ $(function() {
         center[1] /= this._hexes.length;
 
         return center;
-    }
+    };
 
+
+    Country.prototype.isConnected = function(otherCountry) {
+        for (var i = 0; i < this._adjacentCountries.length; i++) {
+            if (this._adjacentCountries[i] == otherCountry) {
+                return true;
+            }
+        }
+
+        return false;
+    };
 
 
     // Find a hex that is adjacent to this country but is not occupied by this country.
@@ -167,7 +181,6 @@ $(function() {
     Country.prototype.setupEdges = function() {
         var self = this;
 
-        this._adjacentCountries = [];
         var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
 
         this._hexes.forEach(function(hex) {
@@ -191,6 +204,7 @@ $(function() {
 
 
     Country.prototype.mouseEnter = function() {
+        Globals.canvas.style.cursor = 'pointer';
         this.paint();
     };
 
@@ -200,7 +214,9 @@ $(function() {
     };
 
     Country.prototype.click = function() {
-        this.paint();
+        if (this._owner == Game.currentPlayer()) {
+            this.paint();
+        }
     };
 
     // Paints the country.

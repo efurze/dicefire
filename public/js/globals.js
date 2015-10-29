@@ -7,7 +7,9 @@ $(function() {
 	    markHexCenters: false,
 	    markCountryCenters: false,
 	    drawCountryConnections: false,
-	    maxDice: 8
+	    maxDice: 8,
+	    numPlayers: 8,
+	    startingDice: 10
 	};
 
 
