@@ -128,6 +128,9 @@ $(function() {
 	    	countriesWithSpace = this.countriesWithSpace();
 	    	if (countriesWithSpace.length == 0) {
 	    		this._storedDice += num - i;
+	    		if (this._storedDice > Globals.maxStoredDice) {
+	    			this._storedDice = Globals.maxStoredDice;
+	    		}
 	    		break;
 	    	}
 	    	var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
