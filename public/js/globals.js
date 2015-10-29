@@ -9,7 +9,8 @@ $(function() {
 	    drawCountryConnections: false,
 	    maxDice: 8,
 	    numPlayers: 8,
-	    maxStoredDice: 64
+	    maxStoredDice: 64,
+	    startingDice: 10
 	};
 
 
