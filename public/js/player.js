@@ -4,11 +4,12 @@ $(function() {
     	this._num = num;
     	this._countries = [];
     	this._storedDice = 0;
-    	this._numContinguousCountries = 0;
+    	this._numContiguousCountries = 0;
 
     	$('#players').append(
     		"<div id='player" + num + "'><div id='colorblock" + num + "'></div>" + 
-    		"<div id='dice" + num + "'>1</div></div>"
+    		"<div id='dice" + num + "'>1</div>" +
+    		"<div id='stored" + num + "'>0</div></div>"
     	);
     	
     	$('#player' + num).css(
@@ -36,11 +37,21 @@ $(function() {
     	$('#dice' + num).css(
 	    	{
 				'display': 'inline-block',
-				'margin-left': '25px',
+				'margin-left': '15px',
 				'margin-top': '2px',
 				'vertical-align': 'top'
 	    	}
     	);
+
+		$('#stored' + num).css(
+	    	{
+				'display': 'inline-block',
+				'margin-left': '15px',
+				'margin-top': '2px',
+				'vertical-align': 'top',
+				'color': Player.colors[num]
+	    	}
+    	);    	
 
     };
 
@@ -99,14 +110,11 @@ $(function() {
 
 
     Player.prototype.color = function() { return Player.colors[this._num]; };
+    Player.prototype.hasLost = function() { return this._countries.length == 0; };
 
-    // Give dice to this player. If num is set, then that is the number. Otherwise, give them 
-    // based on number of adjacent countries each player has. In all cases, the dice go to random
+    // Give dice to this player. In all cases, the dice go to random
     // countries
     Player.prototype.addDice = function(num) {
-    	if (!num) {
-    		// num = GET THE NUMBER OF ADJACENT COUNTRIES THIS GUY HAS
-    	}
 
     	// Make stored dice available for distribution.
     	num += this._storedDice;
@@ -120,10 +128,32 @@ $(function() {
 	    		this._storedDice += num - i;
 	    		break;
 	    	}
-    		countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)].addDie();
+	    	var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
+    		country.addDie();
+    		country.paint();
     	}
     };
 
+
+    Player.prototype.startTurn = function() {
+			$('#player' + this._num).css(
+    		{
+    			'border': '3px double'
+    		}
+    	);
+    };
+
+    Player.prototype.endTurn = function() {
+    	if (!this.hasLost()) {
+			$('#player' + this._num).css(
+	    		{
+	    			'border': '1px solid'
+	    		}
+	    	);
+			this.addDice(this._numContiguousCountries);
+			this.updateDisplay();
+		}
+    };
 
     // Do an attack.
     Player.prototype.attack = function(fromCountry, toCountry) {
@@ -142,8 +172,10 @@ $(function() {
     	// goes down to 1 die.
     	fromCountry.setNumDice(1);
     	if (fromRoll > toRoll) {
+    		var oldOwner = toCountry.owner();
     		toCountry.setNumDice(fromNumDice - 1);
     		this.takeCountry(toCountry);
+    		oldOwner.updateDisplay();
     	}
 
     	this.updateDisplay();
@@ -172,6 +204,18 @@ $(function() {
     // Update the information for this player.
     Player.prototype.updateDisplay = function() {
     	var self = this;
+
+    	// Did this player lose?
+    	if (this.hasLost()) {
+    		$('#player' + this._num).css(
+	    		{
+	    			'display': 'none'
+	    		}
+	    	);
+	    	return;
+    	}
+
+
     	var alreadySeen = {};
     	var maxIslandSize = 0;
 
@@ -197,7 +241,10 @@ $(function() {
 			}
 		});
 
+    	this._numContiguousCountries = maxIslandSize;
     	$('#dice' + this._num).html(maxIslandSize);
+    	console.log("SLDF", this._storedDice);
+    	$('#stored' + this._num).html(this._storedDice);
     };
 
 });
