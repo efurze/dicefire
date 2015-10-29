@@ -1,11 +1,11 @@
 $(function() {
-    window.Country = function(starthex, owner) {
+    window.Country = function(starthex) {
         this._hexes = [starthex];
         starthex.setCountry(this);
-        this._owner = owner;
-        this._overrideColor = null;
+        this._owner = null;
         this._numHexes = Math.floor(Math.random() * (Country.prototype.MAX_HEXES - Country.prototype.MIN_HEXES + 1)) + 
             Country.prototype.MIN_HEXES;
+        this._numDice = 1;
 
         this.growCountry();
         if (this._numHexes != this._hexes.length) {
@@ -40,34 +40,48 @@ $(function() {
                 return false;
             }
         });
+    };
 
+    // Shuffle the array of countries. This is for assigning countries to players at the outset.
+    Country.shuffleArray = function() {
+        Country._array = Globals.shuffleArray(Country._array);
     };
 
 
     Country.prototype.MAX_HEXES = 100;
     Country.prototype.MIN_HEXES = 30;
 
+    Country.prototype.setOwner = function(owner) { this._owner = owner; };
+
     Country.prototype.owner = function() { return this._owner; };
     Country.prototype.hexes = function() { return this._hexes; };
     Country.prototype.isLake = function() { return this._isLake; };
     Country.prototype.adjacentCountries = function() { return this._adjacentCountries; };
+    Country.prototype.numDice = function() { return this._numDice; };
 
-    Country.prototype.color = function() { 
-        if (this._overrideColor) {
-            return this._overrideColor; 
-        } else {
-            return this._owner.color();
-        }
+
+    // Adds a die to the country.
+    Country.prototype.addDie = function() {
+        this._numDice++;
     }
 
-    Country.prototype.borderColor = function() {
-        if (this == Game.selectedCountry()) {
-            return "red";
-        } else {
-            return "black";
-        }
-    };
 
+
+    Country.prototype.color = function() { 
+        if (this == Game.mouseOverCountry()) {
+            if (this == Game.selectedCountry()) {
+                return "gray";
+            } else {
+                return "lightgray";
+            }
+        } else {
+            if (this == Game.selectedCountry()) {
+                return "black";
+            } else {
+                return this._owner.color();
+            }
+        }
+    }
 
     Country.prototype.center = function() {
         var center = [0, 0];
@@ -82,6 +96,7 @@ $(function() {
 
         return center;
     }
+
 
 
     // Find a hex that is adjacent to this country but is not occupied by this country.
@@ -176,13 +191,11 @@ $(function() {
 
 
     Country.prototype.mouseEnter = function() {
-        this._overrideColor = "black";
         this.paint();
     };
 
 
     Country.prototype.mouseLeave = function() {
-        this._overrideColor = null;
         this.paint();
     };
 
@@ -196,8 +209,23 @@ $(function() {
             elem.paint();
         });
 
+        var ctr = this.center();
+
+        // Draw the number box.
+        var boxSize = 10;
+        Globals.context.fillStyle = "white";
+        Globals.context.fillRect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
+        Globals.context.rect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
+        Globals.context.lineWidth = 1;
+        Globals.context.strokeStyle = "black";
+        Globals.context.stroke();
+
+        Globals.context.fillStyle = "black";
+        Globals.context.textAlign = "center";
+        Globals.context.font = "bold 18px sans-serif";
+        Globals.context.fillText(this._numDice, ctr[0], ctr[1]);
+
         if (Globals.markCountryCenters) {
-            var ctr = this.center();
             var path = new Path2D();
             path.moveTo(ctr[0] - 4, ctr[1] - 4);
             path.lineTo(ctr[0] + 4, ctr[1] + 4);
@@ -216,7 +244,6 @@ $(function() {
         }
 
         if (Globals.drawCountryConnections) {
-            var ctr = this.center();
             this._adjacentCountries.forEach(function(country) {
                 var otherCenter = country.center();
                 var path = new Path2D();

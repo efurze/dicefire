@@ -4,7 +4,7 @@ $(function() {
         _mouseOverCountry: null,
         _selectedCountry: null,
 
-        mouseOvercountry: function() { return Game._mouseOverCountry; },
+        mouseOverCountry: function() { return Game._mouseOverCountry; },
         selectedCountry: function() { return Game._selectedCountry; },
 
         init: function() {
@@ -16,7 +16,7 @@ $(function() {
             Player.init(8);
             Hex.init(); 
             Country.init();
-            var country = new Country(Hex.get(Math.floor(Math.random() * Hex.count())), Player.randomPlayer());
+            var country = new Country(Hex.get(Math.floor(Math.random() * Hex.count())));
 
             for (var i = 0; i < 29; i++) {
                 var countryStart = Math.floor(Math.random() * Country.count());
@@ -36,7 +36,7 @@ $(function() {
                     Globals.debug("RAN OUT OF SPACE!", i);
                     break;
                 }
-                var newCountry = new Country(adjacentHex, Player.randomPlayer());
+                var newCountry = new Country(adjacentHex);
                 if (newCountry.isLake()) {
                     i--;
                 }
@@ -45,8 +45,24 @@ $(function() {
             Hex.absorbSingles();
             Country.pruneLakes();
 
+
+            Country.shuffleArray();
+
+            var currPlayer = 0;
             Country.array().forEach(function(country) {
+                Player.get(currPlayer).takeCountry(country);
                 country.setupEdges();
+                currPlayer++;
+                if (currPlayer >= Player.count()) {
+                    currPlayer = 0;
+                }
+            });
+
+            Player.array().forEach(function(player) {
+                player.addDice(58);
+            });
+
+            Country.array().forEach(function(country) {
                 country.paint();
             });
 
@@ -69,29 +85,32 @@ $(function() {
                 }
 
                 if (country != Game._mouseOverCountry) {
-                    if (Game._mouseOverCountry) {
-                        Game._mouseOverCountry.mouseLeave();
+                    var prevCountry = Game._mouseOverCountry;
+                    Game._mouseOverCountry = country;                    
+                    if (prevCountry) {
+                        prevCountry.mouseLeave();
                     }
-                    Game._mouseOverCountry = country;
                     if (country) {
                         Game._mouseOverCountry.mouseEnter();                        
                     }
                 }
             } else {
                 if (Game._mouseOverCountry) {
-                    Game._mouseOverCountry.mouseLeave();
-                    Game._mouseOverCountry = null;
+                    var prevCountry = Game._mouseOverCountry;
+                    Game._mouseOverCountry = null;                   
+                    prevCountry.mouseLeave();
                 }
                 Globals.canvas.style.cursor = 'default';
             }
-            //    document.getElementById("info").textContent = hex.num();
-//                document.getElementById("info").textContent = hex;
+             // document.getElementById("info").textContent = hex.num();
+             // document.getElementById("info").textContent = hex;
         },
 
         mouseLeave: function(event) {
             if (Game._mouseOverCountry) {
-                Game._mouseOverCountry.mouseLeave();
+                var country = Game._mouseOverCountry;
                 Game._mouseOverCountry = null;
+                country.mouseLeave();
             }
         },
 
