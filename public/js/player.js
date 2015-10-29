@@ -89,11 +89,11 @@ $(function() {
     }
 
     Player.rollDice = function(num) {
-    	var total = 0;
+    	var array = [];
     	for (var i = 0; i < num; i++) {
-    		total += Player.rollDie();
+    		array.push(Player.rollDie());
     	}
-    	return total;
+    	return array;
     }
 
 
@@ -165,10 +165,41 @@ $(function() {
     	}
 
     	var fromNumDice = fromCountry.numDice();
-    	var fromRoll = Player.rollDice(fromNumDice);
-    	var toRoll = Player.rollDice(toCountry.numDice());
+    	var toNumDice = toCountry.numDice();
+    	var fromRollArray = Player.rollDice(fromNumDice);
+    	var toRollArray = Player.rollDice(toNumDice);
 
-    	$('#roll').html(fromRoll + ' - ' + toRoll);
+    	var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
+    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+
+    	$('#roll').css({
+			"display": "inline-block"
+    	});
+
+    	for (var i = 0; i < Globals.maxDice; i++) {
+			$('#leftdie' + i).css({
+				'display': (i < fromNumDice ? 'inline-block' : 'none'),
+				'background-color': fromCountry.owner().color()
+			});
+
+			if (i < fromNumDice) {
+				$('#leftdie' + i).html(fromRollArray[i]);
+			}
+
+			$('#rightdie' + i).css({
+				'display': (i < toNumDice ? 'inline-block' : 'none'),
+				'background-color': toCountry.owner().color()				
+			});
+
+			if (i < fromNumDice) {
+				$('#rightdie' + i).html(toRollArray[i]);
+			}
+
+    	}
+
+
+    	$('#lefttotal').html(fromRoll);
+    	$('#righttotal').html(toRoll);
 
     	// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
     	// goes down to 1 die.

@@ -10,9 +10,11 @@ $(function() {
         currentPlayer: function() { return Player.get(Game._currentPlayerNum); },
 
         init: function() {
+
             Globals.context.clearRect(0,0,2000,2000);
             Globals.context.lineJoin = "straight";
-            
+
+            Game.setupRollDivs();
 
             // Clear the Hex and Country statics.
             Player.init(Globals.numPlayers);
@@ -176,6 +178,86 @@ $(function() {
                 Game.endTurn();
             }
             Game.startTurn(Game._currentPlayerNum);
+        },
+
+        setupRollDivs: function() {
+
+            $('#roll').css({
+                "display": "none",
+                "vertical-align": "top",
+                "margin-top": "3px"
+            });
+
+            $('#leftroll').css({
+                "display": "inline-block",
+                "margin-left": "20px"
+            });
+
+            $('#rightroll').css({
+                "display": "inline-block",
+                "margin-left": "20px"                
+            });
+
+            var diceDivIds = [];
+            for (var i = 0; i < Globals.maxDice; i++) {
+                $('#leftroll').append(
+                    "<div id='leftdie" + i + "'>5</div>"
+                );
+
+                diceDivIds.push('#leftdie' + i);
+
+                $('#rightroll').append(
+                    "<div id='rightdie" + i + "'>5</div>"
+                );
+
+                diceDivIds.push('#rightdie' + i);
+            }
+
+            diceDivIds.forEach(function(divId) {
+                $(divId).css({
+                    "display": "inline-block",
+                    "width": "20px",
+                    "height": "20px",
+                    "border": "1px solid black",
+                    "background-color": "red",
+                    "font-family": "sans-serif",
+                    "color": "white",
+                    "font-size": "14px",
+                    "text-align": "center",
+                    "padding-top": "2px",
+                    "padding-bottom": "0px",
+                    "vertical-align": "top",
+                    "font-weight": "bold",
+                    "margin-left": "5px"
+                });
+            });
+
+
+
+            $('#leftroll').append(
+                "<div id='lefttotal'>35</div>"                    
+            );
+
+
+            $('#rightroll').append(
+                "<div id='righttotal'>35</div>"                    
+            );
+
+            var totalDivIds = [];
+            totalDivIds.push('#lefttotal');
+            totalDivIds.push('#righttotal');
+            totalDivIds.forEach(function(divId) {
+                $(divId).css({
+                    "display": "inline-block",
+                    "vertical-align": "top",
+                    "font-family": "sans-serif",
+                    "font-size": "18px",
+                    "text-align": "center",
+                    "color": "black",
+                    "margin-left": "20px"
+                });
+            });
+
         }
 
     }
