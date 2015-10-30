@@ -3,11 +3,11 @@ $(function() {
     window.Game = {
         _mouseOverCountry: null,
         _selectedCountry: null,
-        _currentPlayerNum: 0,
+        _currentPlayerId: 0,
 
         mouseOverCountry: function() { return Game._mouseOverCountry; },
         selectedCountry: function() { return Game._selectedCountry; },
-        currentPlayer: function() { return Player.get(Game._currentPlayerNum); },
+        currentPlayer: function() { return Player.get(Game._currentPlayerId); },
 
         init: function() {
 
@@ -22,7 +22,7 @@ $(function() {
             Country.init();
             var country = new Country(Hex.get(Math.floor(Math.random() * Hex.count())));
 
-            for (var i = 0; i < 29; i++) {
+            for (var i = 0; i < Globals.numCountries - 1; i++) {
                 var countryStart = Math.floor(Math.random() * Country.count());
                 var adjacentHex;
 
@@ -45,6 +45,8 @@ $(function() {
                     i--;
                 }
             }
+
+            Globals.debug("Created countries", Country.array());
 
             Hex.absorbSingles();
             Country.pruneLakes();
@@ -92,7 +94,7 @@ $(function() {
                 }
 
                 if (country != Game._mouseOverCountry) {
-                    var currentPlayer = Player.get(Game._currentPlayerNum);
+                    var currentPlayer = Player.get(Game._currentPlayerId);
                     var prevCountry = Game._mouseOverCountry;
                     Game._mouseOverCountry = country;                    
                     if (prevCountry) {
@@ -131,7 +133,7 @@ $(function() {
             var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
             if (hex) {
                 var country = hex.country();
-                var currentPlayer = Player.get(Game._currentPlayerNum);                    
+                var currentPlayer = Player.get(Game._currentPlayerId);                    
                 if (country) {
                     if (country.owner() == currentPlayer && country.numDice() > 1) {  
                         // Select and deselect of countries owned by this user.                  
@@ -161,23 +163,23 @@ $(function() {
             }            
         },
 
-        startTurn: function(playerNum) {
-            Game._currentPlayerNum = playerNum;
-            Player.get(playerNum).startTurn();
+        startTurn: function(playerId) {
+            Game._currentPlayerId = playerId;
+            Player.get(playerId).startTurn();
 
         },
 
         endTurn: function(event) {
-            Player.get(Game._currentPlayerNum).endTurn();
-            Game._currentPlayerNum++;
-            if (Game._currentPlayerNum >= Globals.numPlayers) {
-                Game._currentPlayerNum = 0;
+            Player.get(Game._currentPlayerId).endTurn();
+            Game._currentPlayerId++;
+            if (Game._currentPlayerId >= Globals.numPlayers) {
+                Game._currentPlayerId = 0;
             }
             // If that player has lost, skip him.
-            if (Player.get(Game._currentPlayerNum).hasLost()) {
+            if (Player.get(Game._currentPlayerId).hasLost()) {
                 Game.endTurn();
             }
-            Game.startTurn(Game._currentPlayerNum);
+            Game.startTurn(Game._currentPlayerId);
         },
 
         setupRollDivs: function() {
@@ -258,6 +260,36 @@ $(function() {
                 });
             });
 
+        },
+
+        serializeState: function() {
+            var state = {
+                players: [],
+                countries: [],
+                currentPlayerId: Game._currentPlayerId
+            };
+
+            Player.array().forEach(function(player) {
+                state.players.push({
+                    id: player.id(),
+                    hasLost: player.hasLost(),
+                    storedDice: player.storedDice(),
+                    numContiguousCountries: player.numContiguousCountries()
+                });
+            });
+
+            Country.array().forEach(function(country) {
+                state.countries.push({
+                    id: country.id(),
+                    owner: country.owner().id(),
+                    numDice: country.numDice(),
+                    adjacentCountries: country.adjacentCountries().map(function(adjacentCountry) {
+                        return adjacentCountry.id();
+                    })
+                });
+            });
+
+            return state;
         }
 
     }

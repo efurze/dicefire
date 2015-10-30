@@ -1,18 +1,19 @@
 $(function() {
 
-    window.Player = function(num) {
-    	this._num = num;
+    window.Player = function() {
+    	this._id = Player._array.length;
     	this._countries = [];
     	this._storedDice = 0;
     	this._numContiguousCountries = 0;
 
+    	var id = this._id;
     	$('#players').append(
-    		"<div id='player" + num + "'><div id='colorblock" + num + "'></div>" + 
-    		"<div id='dice" + num + "'>1</div>" +
-    		"<div id='stored" + num + "'>0</div></div>"
+    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>" + 
+    		"<div id='dice" + id + "'>1</div>" +
+    		"<div id='stored" + id + "'>0</div></div>"
     	);
     	
-    	$('#player' + num).css(
+    	$('#player' + id).css(
     		{
     			'font-family': 'sans-serif',
     			'display': 'inline-block',
@@ -25,16 +26,16 @@ $(function() {
     		}
     	);
     	
-    	$('#colorblock' + num).css( 
+    	$('#colorblock' + id).css( 
 	    	{
 	    		'display': 'inline-block',
 	    		'width': '20px',
 	    		'height': '20px',
-	    		'background-color': Player.colors[num]
+	    		'background-color': Player.colors[id]
 	    	}
     	);
 
-    	$('#dice' + num).css(
+    	$('#dice' + id).css(
 	    	{
 				'display': 'inline-block',
 				'margin-left': '12px',
@@ -44,17 +45,18 @@ $(function() {
 	    	}
     	);
 
-		$('#stored' + num).css(
+		$('#stored' + id).css(
 	    	{
 				'display': 'inline-block',
 				'margin-left': '12px',
 				'margin-top': '2px',
 				'vertical-align': 'top',
 				'text-align': 'center',
-				'color': Player.colors[num]
+				'color': Player.colors[id]
 	    	}
     	);    	
 
+		Player._array.push(this);
     };
 
     Player.init = function(count) {
@@ -66,19 +68,14 @@ $(function() {
 
     	Player._array = [];
     	for (var i = 0; i < count; i++) {
-    		Player._array.push(new Player(i));
+    		new Player();
     	}
+    	Globals.debug("Created players", Player._array);
     };
 
     Player.array = function() { return Player._array; };
-
-    Player.count = function() {
-    	return Player._array.length;
-    }
-
-    Player.get = function(num) {
-    	return Player._array[num];
-    }
+    Player.count = function() { return Player._array.length; };
+    Player.get = function(id) { return Player._array[id]; };
 
     Player.randomPlayer = function() {
     	return Player._array[Math.floor(Math.random() * Player._array.length)];
@@ -111,8 +108,11 @@ $(function() {
     ];
 
 
-    Player.prototype.color = function() { return Player.colors[this._num]; };
+    Player.prototype.id = function() { return this._id; };
+    Player.prototype.color = function() { return Player.colors[this._id]; };
     Player.prototype.hasLost = function() { return this._countries.length == 0; };
+    Player.prototype.storedDice = function() { return this._storedDice; };
+    Player.prototype.numContiguousCountries = function() { return this._numContiguousCountries; };
 
     // Give dice to this player. In all cases, the dice go to random
     // countries
@@ -141,7 +141,7 @@ $(function() {
 
 
     Player.prototype.startTurn = function() {
-			$('#player' + this._num).css(
+			$('#player' + this._id).css(
     		{
     			'border': '3px double'
     		}
@@ -150,7 +150,7 @@ $(function() {
 
     Player.prototype.endTurn = function() {
     	if (!this.hasLost()) {
-			$('#player' + this._num).css(
+			$('#player' + this._id).css(
 	    		{
 	    			'border': '1px solid'
 	    		}
@@ -254,7 +254,7 @@ $(function() {
 
     	// Did this player lose?
     	if (this.hasLost()) {
-    		$('#player' + this._num).css(
+    		$('#player' + this._id).css(
 	    		{
 	    			'display': 'none'
 	    		}
@@ -267,10 +267,10 @@ $(function() {
     	var maxIslandSize = 0;
 
 		var traverse = function(country) {
-			if (alreadySeen[country.hexes()[0].num()]) {
+			if (alreadySeen[country.id()]) {
 				return 0;
 			}
-			alreadySeen[country.hexes()[0].num()] = true;
+			alreadySeen[country.id()] = true;
 			return 1 + 
 				country.adjacentCountries().reduce(function(total, adjacentCountry) {
 					if (adjacentCountry.owner() == self) {
@@ -289,8 +289,8 @@ $(function() {
 		});
 
     	this._numContiguousCountries = maxIslandSize;
-    	$('#dice' + this._num).html(maxIslandSize);
-    	$('#stored' + this._num).html(this._storedDice);
+    	$('#dice' + this._id).html(maxIslandSize);
+    	$('#stored' + this._id).html(this._storedDice);
     };
 
 });

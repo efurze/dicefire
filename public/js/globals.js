@@ -10,7 +10,8 @@ $(function() {
 	    maxDice: 8,
 	    numPlayers: 8,
 	    maxStoredDice: 64,
-	    startingDice: 10
+	    startingDice: 10,
+	    numCountries: 35
 	};
 
 

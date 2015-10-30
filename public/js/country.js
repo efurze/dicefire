@@ -1,11 +1,13 @@
 $(function() {
     window.Country = function(starthex) {
+        this._id = Country._array.length;
+        Country._array.push(this);        
         this._hexes = [starthex];
         starthex.setCountry(this);
         this._adjacentCountries = [];        
         this._owner = null;
-        this._numHexes = Math.floor(Math.random() * (Country.prototype.MAX_HEXES - Country.prototype.MIN_HEXES + 1)) + 
-            Country.prototype.MIN_HEXES;
+        this._numHexes = Math.floor(Math.random() * (Country.MAX_HEXES - Country.MIN_HEXES + 1)) + 
+            Country.MIN_HEXES;
         this._numDice = 1;
 
         this.growCountry();
@@ -19,12 +21,17 @@ $(function() {
                 return;
             } 
         }
-
-        Country._array.push(this);
     };
 
-    Country.init = function() { Country._array = []; };
-    Country.get = function(num) { return Country._array[num]; };
+    Country.MAX_HEXES = 100;
+    Country.MIN_HEXES = 30;
+
+
+    Country.init = function() { 
+        Country._array = []; 
+        Globals.debug("Initialized country array");
+    };
+    Country.get = function(id) { return Country._array[id]; };
     Country.count = function() { return Country._array.length; };
     Country.array = function() { return Country._array; };
 
@@ -49,11 +56,10 @@ $(function() {
     };
 
 
-    Country.prototype.MAX_HEXES = 100;
-    Country.prototype.MIN_HEXES = 30;
 
     Country.prototype.setOwner = function(owner) { this._owner = owner; };
 
+    Country.prototype.id = function() { return this._id; };
     Country.prototype.owner = function() { return this._owner; };
     Country.prototype.hexes = function() { return this._hexes; };
     Country.prototype.isLake = function() { return this._isLake; };
@@ -114,9 +120,8 @@ $(function() {
 
 
     // Find a hex that is adjacent to this country but is not occupied by this country.
-    // This can be used to grow this country, to find a new place to start a country,
-    // or to figure out whom to attack.
-    Country.prototype.findAdjacentHex = function(mustBeEmpty) {
+    // This can be used to grow this country or to find a new place to start a country.
+    Country.prototype.findAdjacentHex = function() {
         var self = this;
 
         // Pick a starting hex randomly. Then iterate through until one is hopefully found.
@@ -129,7 +134,7 @@ $(function() {
             for ( var j = 0; j < Dir.array.length; j++) {
                 var dir = Dir.array[Math.floor(Math.random() * Dir.array.length)];
                 var newHex = Dir.nextHex(this._hexes[hex], dir);
-                if (newHex && (mustBeEmpty ? newHex.country() === null : newHex.country() != self)) {
+                if (newHex && newHex.country() === null) {
                     return newHex;
                 }
 
@@ -145,7 +150,7 @@ $(function() {
             return;
         }
 
-        var hex = this.findAdjacentHex(true);
+        var hex = this.findAdjacentHex();
 
         if (!hex) {
 //            Globals.debug("Couldn't find a new spot for a hex!");        
@@ -192,8 +197,8 @@ $(function() {
                     countryEdges.push(i);             
                 }
                 if (newHex && newHex.country() && newHex.country() != self && 
-                    !adjacentCountryHexes[newHex.country().hexes()[0].num()]) {
-                    adjacentCountryHexes[newHex.country().hexes()[0].num()] = true;
+                    !adjacentCountryHexes[newHex.country().id()]) {
+                    adjacentCountryHexes[newHex.country().id()] = true;
                     self._adjacentCountries.push(newHex.country());
                 }
 

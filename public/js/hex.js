@@ -1,10 +1,11 @@
 $(function() {    
-    window.Hex = function(num) {
-        this._num = num;
-        this._x = num % Hex.NUM_WIDE;
-        this._y = Math.floor(num / Hex.NUM_WIDE);
+    window.Hex = function() {
+        this._id = Hex._array.length;
+        this._x = this._id % Hex.NUM_WIDE;
+        this._y = Math.floor(this._id / Hex.NUM_WIDE);
         this._country = null;
         this._countryEdgeDirections = [];
+        Hex._array.push(this);
     };
 
 
@@ -24,18 +25,14 @@ $(function() {
     Hex.init = function() {
         Hex._array = [];
         for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
-            Hex._array[i] = new Hex(i);
+            new Hex();
         }
-
+        Globals.debug("Created hexes", Hex._array);
     };
 
-    Hex.get = function(num) {
-        return Hex._array[num];
-    };
+    Hex.get = function(id) { return Hex._array[id]; };
+    Hex.count = function() { return Hex._array.length; };
 
-    Hex.count = function() {
-        return Hex._array.length;
-    };
 
     // Finds all hexes which are alone and absorbs them into a nearby country. Do this because
     // they look kind of bad.
@@ -80,9 +77,6 @@ $(function() {
 
         var col = Math.floor((x / total_width) * (6 * Hex.NUM_WIDE));
 
-        var num = null;
-
-
         var newCol = Math.floor(((x - Hex.EDGE_LENGTH / 2) / total_width) * Hex.NUM_WIDE);
         var newRow = Math.floor(((y - Hex.HEIGHT / 2) / total_height) * Hex.NUM_HIGH);
         
@@ -98,9 +92,9 @@ $(function() {
         var closestDistanceSquared = Infinity;
         var closestHex = null;
 
-        nearbyHexes.forEach(function(hexNum) {
-            if (hexNum >= 0 && hexNum < Hex.TOTAL_HEXES) {
-                var hex = Hex.get(hexNum);
+        nearbyHexes.forEach(function(hexId) {
+            if (hexId >= 0 && hexId < Hex.TOTAL_HEXES) {
+                var hex = Hex.get(hexId);
                 var center = hex.center();
                 var distanceSquared = Math.pow(center[0] - oldX, 2) + Math.pow(center[1] - oldY, 2);
                 if (distanceSquared < closestDistanceSquared) {
@@ -116,9 +110,9 @@ $(function() {
 
 
 
+    Hex.prototype.id = function() { return this._id; };
     Hex.prototype.x = function() { return this._x; };
     Hex.prototype.y = function() { return this._y; };
-    Hex.prototype.num = function() { return this._num; };
 
     Hex.prototype.setCountry = function(country) { this._country = country; };
     Hex.prototype.country = function() { return this._country; };
@@ -265,7 +259,7 @@ $(function() {
         if (Globals.showNumbers) {
             Globals.context.lineWidth = 1;
             Globals.context.font = "11px sans-serif";
-            Globals.context.strokeText(this._num, upperLeftX, upperLeftY + Hex.HEIGHT / 2);
+            Globals.context.strokeText(this._id, upperLeftX, upperLeftY + Hex.HEIGHT / 2);
         }
 
         if (Globals.markHexCenters) {
