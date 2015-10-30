@@ -1,6 +1,7 @@
 $(function() {
 
     window.Game = {
+        _playerCode: null,
         _mouseOverCountry: null,
         _selectedCountry: null,
         _currentPlayerId: 0,
@@ -9,15 +10,16 @@ $(function() {
         selectedCountry: function() { return Game._selectedCountry; },
         currentPlayer: function() { return Player.get(Game._currentPlayerId); },
 
-        init: function() {
+        init: function(playerCode) {
 
             Globals.context.clearRect(0,0,2000,2000);
             Globals.context.lineJoin = "straight";
 
+            Game._playerCode = playerCode;
             Game.setupRollDivs();
 
             // Clear the Hex and Country statics.
-            Player.init(Globals.numPlayers);
+            Player.init(playerCode.length);
             Hex.init(); 
             Country.init();
             var country = new Country(Hex.get(Math.floor(Math.random() * Hex.count())));
@@ -167,6 +169,9 @@ $(function() {
             Game._currentPlayerId = playerId;
             Player.get(playerId).startTurn();
 
+            if (Game._playerCode[playerId] != "human") {
+                Game._playerCode[playerId].startTurn(Game.interface);
+            }
         },
 
         endTurn: function(event) {
@@ -290,6 +295,13 @@ $(function() {
             });
 
             return state;
+        },
+
+        // The interface passed to AIs so they can control the game.
+        interface: {
+            getState: function() { return Game.serializeState(); },
+            attack: function() {}  // Needs to return what happened.
+
         }
 
     }

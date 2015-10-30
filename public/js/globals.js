@@ -8,7 +8,6 @@ $(function() {
 	    markCountryCenters: false,
 	    drawCountryConnections: false,
 	    maxDice: 8,
-	    numPlayers: 8,
 	    maxStoredDice: 64,
 	    startingDice: 10,
 	    numCountries: 35
