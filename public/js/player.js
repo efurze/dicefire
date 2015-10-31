@@ -161,10 +161,12 @@ $(function() {
     };
 
     // Do an attack.
+    // Returns what happened so AIs can get that info.
     Player.prototype.attack = function(fromCountry, toCountry) {
-    	if (fromCountry.owner() != this || toCountry.owner() == this) {
+    	if (fromCountry.owner() != this || toCountry.owner() == this || 
+    		!fromCountry.adjacentCountries().find(function(elem) { return elem == toCountry; })) {
     		Globals.debug("Illegal attack");
-    		return;    		
+    		return null;    		
     	}
 
     	var fromNumDice = fromCountry.numDice();
@@ -215,6 +217,13 @@ $(function() {
     	}
 
     	this.updateDisplay();
+
+    	return {
+    		fromRollArray: fromRollArray,
+    		fromRoll: fromRoll,
+    		toRollArray: toRollArray,
+    		toRoll: toRoll
+    	};
     }
 
 

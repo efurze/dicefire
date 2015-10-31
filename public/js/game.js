@@ -16,6 +16,13 @@ $(function() {
             Globals.context.lineJoin = "straight";
 
             Game._playerCode = playerCode;
+            var isHumanList = Game._playerCode.map(function(elem) { return elem == "human"; });
+            Game._playerCode.forEach(function(elem, index) {
+                if (elem != "human") {
+                    elem.init(index, isHumanList);
+                }
+            });
+
             Game.setupRollDivs();
 
             // Clear the Hex and Country statics.
@@ -177,7 +184,7 @@ $(function() {
         endTurn: function(event) {
             Player.get(Game._currentPlayerId).endTurn();
             Game._currentPlayerId++;
-            if (Game._currentPlayerId >= Globals.numPlayers) {
+            if (Game._currentPlayerId >= Game._playerCode.length) {
                 Game._currentPlayerId = 0;
             }
             // If that player has lost, skip him.
@@ -300,8 +307,10 @@ $(function() {
         // The interface passed to AIs so they can control the game.
         interface: {
             getState: function() { return Game.serializeState(); },
-            attack: function() {}  // Needs to return what happened.
-
+            attack: function(fromCountryId, toCountryId) { 
+                return Player.get(Game._currentPlayerId).attack(Country.get(fromCountryId), Country.get(toCountryId));
+            },
+            endTurn: function() { Game.endTurn(); }
         }
 
     }
