@@ -48,11 +48,12 @@ $(function() {
                 return false;
             }
         });
-    };
+        // Redo country ids to eliminate holes
+        Country._array = Country._array.map(function(elem, index) {
+            elem._id = index;
+            return elem;
+        });
 
-    // Shuffle the array of countries. This is for assigning countries to players at the outset.
-    Country.shuffleArray = function() {
-        Country._array = Globals.shuffleArray(Country._array);
     };
 
 

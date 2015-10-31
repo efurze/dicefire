@@ -17,7 +17,10 @@ $(function() {
 	Globals.canvas = document.getElementById("c");
 	Globals.context = Globals.canvas.getContext('2d');
 
-	Globals.shuffleArray = function(array) {
+	Globals.shuffleArray = function(inArray) {
+		// Copy the array to avoid changing it.
+		var array = inArray.map(function(elem) { return elem; });
+
 	    var counter = array.length, temp, index;
 
 	    // While there are elements in the array

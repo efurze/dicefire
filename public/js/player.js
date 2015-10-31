@@ -165,7 +165,7 @@ $(function() {
     Player.prototype.attack = function(fromCountry, toCountry) {
     	if (fromCountry.owner() != this || toCountry.owner() == this || 
     		!fromCountry.adjacentCountries().find(function(elem) { return elem == toCountry; })) {
-    		Globals.debug("Illegal attack");
+    		Globals.debug("Illegal attack", this, fromCountry, toCountry);
     		return null;    		
     	}
 
@@ -217,6 +217,10 @@ $(function() {
     	}
 
     	this.updateDisplay();
+
+        if (this._countries.length == Country.array().length) {
+            Game.gameOver();
+        }
 
     	return {
     		fromRollArray: fromRollArray,

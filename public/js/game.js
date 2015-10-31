@@ -5,6 +5,7 @@ $(function() {
         _mouseOverCountry: null,
         _selectedCountry: null,
         _currentPlayerId: 0,
+        _gameOver: false,
 
         mouseOverCountry: function() { return Game._mouseOverCountry; },
         selectedCountry: function() { return Game._selectedCountry; },
@@ -61,10 +62,10 @@ $(function() {
             Country.pruneLakes();
 
 
-            Country.shuffleArray();
-
+            // Use a shuffled countries list to randomize who gets what.
+            var shuffledCountries = Globals.shuffleArray(Country.array());
             var currPlayer = 0;
-            Country.array().forEach(function(country) {
+            shuffledCountries.forEach(function(country) {
                 Player.get(currPlayer).takeCountry(country);
                 country.setupEdges();
                 currPlayer++;
@@ -191,7 +192,17 @@ $(function() {
             if (Player.get(Game._currentPlayerId).hasLost()) {
                 Game.endTurn();
             }
+
+            if (Game._gameOver) {
+                return;
+            }
+            
             Game.startTurn(Game._currentPlayerId);
+        },
+
+        // Called when an attack ends the game.
+        gameOver: function() {
+            Game._gameOver = true;
         },
 
         setupRollDivs: function() {
@@ -276,29 +287,29 @@ $(function() {
 
         serializeState: function() {
             var state = {
-                players: [],
-                countries: [],
+                players: {},
+                countries: {},
                 currentPlayerId: Game._currentPlayerId
             };
 
             Player.array().forEach(function(player) {
-                state.players.push({
+                state.players[player.id()] = {
                     id: player.id(),
                     hasLost: player.hasLost(),
                     storedDice: player.storedDice(),
                     numContiguousCountries: player.numContiguousCountries()
-                });
+                };
             });
 
             Country.array().forEach(function(country) {
-                state.countries.push({
+                state.countries[country.id()] = {
                     id: country.id(),
                     owner: country.owner().id(),
                     numDice: country.numDice(),
                     adjacentCountries: country.adjacentCountries().map(function(adjacentCountry) {
                         return adjacentCountry.id();
                     })
-                });
+                };
             });
 
             return state;

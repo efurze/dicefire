@@ -25,8 +25,8 @@ $(function() {
 			Called by the AI when its turn is over
 	*/
 
-
-	window.DoNothingAI = {
+	window.AI = window.AI || {};
+	window.AI.DoNothing = {
 		// Called when the AI is first started. Tells the AI its player number
 		// and the list of other players, so it can know who is human and where
 		// in the turn order this AI shows up.
