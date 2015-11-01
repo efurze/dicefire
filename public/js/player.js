@@ -212,6 +212,7 @@ $(function() {
 
     	}
 
+        $.playSound('/sounds/2_dice_throw_on_table');
         window.setTimeout(attack_step2, 200);
 
 
@@ -223,6 +224,7 @@ $(function() {
             $('#leftroll').css({
                 "display": "inline-block"
             });
+
             window.setTimeout(attack_step3, 300);
         }
 
@@ -238,25 +240,34 @@ $(function() {
         	// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
         	// goes down to 1 die.
         	fromCountry.setNumDice(1);
+            fromCountry.paint();
         	if (fromRoll > toRoll) {
+                $.playSound('/sounds/clink_sound');
         		var oldOwner = toCountry.owner();
         		toCountry.setNumDice(fromNumDice - 1);
         		self.takeCountry(toCountry);
         		oldOwner.updateDisplay();
-        	}
+        	} else {
+                $.playSound('/sounds/wood_hit_brick_1');               
+            }
+            window.setTimeout(attack_step5, 400);
 
-        	self.updateDisplay();
+        }
+
+        function attack_step5() {
+            self.updateDisplay();
 
             if (self._countries.length == Country.array().length) {
                 Game.gameOver();
             }
 
-        	callback({
-        		fromRollArray: fromRollArray,
-        		fromRoll: fromRoll,
-        		toRollArray: toRollArray,
-        		toRoll: toRoll
-        	});
+            callback({
+                fromRollArray: fromRollArray,
+                fromRoll: fromRoll,
+                toRollArray: toRollArray,
+                toRoll: toRoll
+            });
+
         }
     }
 
@@ -269,6 +280,7 @@ $(function() {
 	    }
     	country.setOwner(this);
     	this._countries.push(country);
+        country.paint();
     };
 
     // Take away the country from this player.

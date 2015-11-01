@@ -58,7 +58,8 @@ $(function() {
 
 
 
-    Country.prototype.setOwner = function(owner) { this._owner = owner; };
+    Country.prototype.setOwner = function(owner) { this._owner = owner; this.paint(); };
+    Country.prototype.setNumDice = function(num) { this._numDice = num; this.paint(); };
 
     Country.prototype.id = function() { return this._id; };
     Country.prototype.owner = function() { return this._owner; };
@@ -73,9 +74,6 @@ $(function() {
         this._numDice++;
     }
 
-    Country.prototype.setNumDice = function(num) {
-        this._numDice = num;
-    }
 
 
     Country.prototype.color = function() { 
