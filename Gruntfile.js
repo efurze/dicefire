@@ -28,7 +28,7 @@ module.exports = function(grunt) {
       files: ['test/**/*.html']
     },
     jshint: {
-      files: ['Gruntfile.js', 'public/**/*.js', 'test/**/*.js', 'app.js', 'controllers/**/*.js'],
+      files: ['Gruntfile.js', 'public/**/*.js', 'test/**/*.js', 'index.js', 'controllers/**/*.js'],
       options: {
         // options here to override JSHint defaults
         globals: {
@@ -45,7 +45,7 @@ module.exports = function(grunt) {
     },
     nodemon: {
         dev: {
-            script: 'app.js'
+            script: 'index.js'
         }
     }
   });
