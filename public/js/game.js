@@ -161,12 +161,15 @@ $(function() {
                     } else {
                         // Attacks.
                         if (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country)) {
-
-                            currentPlayer.attack(Game._selectedCountry, country);
-                            var prevCountry = Game._selectedCountry;
-                            Game._selectedCountry = null;
-                            prevCountry.paint();
-                            country.paint();
+                            // Disable the button during attacks.
+                            $('#end_turn').prop('disabled', true);
+                            currentPlayer.attack(Game._selectedCountry, country, function(result) {
+                                var prevCountry = Game._selectedCountry;
+                                Game._selectedCountry = null;
+                                prevCountry.paint();
+                                country.paint();
+                                $('#end_turn').prop('disabled', false);;
+                            });
                         }
                     }
                 }
@@ -178,7 +181,10 @@ $(function() {
             Player.get(playerId).startTurn();
 
             if (Game._playerCode[playerId] != "human") {
+                $('#end_turn').prop('disabled', true);
                 Game._playerCode[playerId].startTurn(Game.interface);
+            } else {
+                $('#end_turn').prop('disabled', false);
             }
         },
 
@@ -196,7 +202,7 @@ $(function() {
             if (Game._gameOver) {
                 return;
             }
-            
+
             Game.startTurn(Game._currentPlayerId);
         },
 
@@ -318,8 +324,11 @@ $(function() {
         // The interface passed to AIs so they can control the game.
         interface: {
             getState: function() { return Game.serializeState(); },
-            attack: function(fromCountryId, toCountryId) { 
-                return Player.get(Game._currentPlayerId).attack(Country.get(fromCountryId), Country.get(toCountryId));
+            attack: function(fromCountryId, toCountryId, callback) { 
+                Player.get(Game._currentPlayerId).attack(Country.get(fromCountryId), Country.get(toCountryId), 
+                    function(result) {
+                        callback(result);    
+                    });
             },
             endTurn: function() { Game.endTurn(); }
         }

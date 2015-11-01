@@ -162,7 +162,8 @@ $(function() {
 
     // Do an attack.
     // Returns what happened so AIs can get that info.
-    Player.prototype.attack = function(fromCountry, toCountry) {
+    Player.prototype.attack = function(fromCountry, toCountry, callback) {
+        var self = this;
     	if (fromCountry.owner() != this || toCountry.owner() == this || 
     		!fromCountry.adjacentCountries().find(function(elem) { return elem == toCountry; })) {
     		Globals.debug("Illegal attack", this, fromCountry, toCountry);
@@ -178,8 +179,17 @@ $(function() {
     	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 
     	$('#roll').css({
-			"display": "inline-block"
+			"display": "none"
     	});
+
+        $('#leftroll').css({
+            "display": "none"
+        });
+
+        $('#rightroll').css({
+            "display": "none"
+        });
+
 
     	for (var i = 0; i < Globals.maxDice; i++) {
 			$('#leftdie' + i).css({
@@ -202,32 +212,52 @@ $(function() {
 
     	}
 
+        window.setTimeout(attack_step2, 200);
 
-    	$('#lefttotal').html(fromRoll);
-    	$('#righttotal').html(toRoll);
 
-    	// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
-    	// goes down to 1 die.
-    	fromCountry.setNumDice(1);
-    	if (fromRoll > toRoll) {
-    		var oldOwner = toCountry.owner();
-    		toCountry.setNumDice(fromNumDice - 1);
-    		this.takeCountry(toCountry);
-    		oldOwner.updateDisplay();
-    	}
-
-    	this.updateDisplay();
-
-        if (this._countries.length == Country.array().length) {
-            Game.gameOver();
+        function attack_step2() {
+            $('#lefttotal').html(fromRoll);
+            $('#roll').css({
+                "display": "inline-block"
+            });
+            $('#leftroll').css({
+                "display": "inline-block"
+            });
+            window.setTimeout(attack_step3, 300);
         }
 
-    	return {
-    		fromRollArray: fromRollArray,
-    		fromRoll: fromRoll,
-    		toRollArray: toRollArray,
-    		toRoll: toRoll
-    	};
+        function attack_step3() {
+            $('#righttotal').html(toRoll);
+            $('#rightroll').css({
+                "display": "inline-block"
+            });              
+            window.setTimeout(attack_step4, 300);
+        }
+
+        function attack_step4() {
+        	// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
+        	// goes down to 1 die.
+        	fromCountry.setNumDice(1);
+        	if (fromRoll > toRoll) {
+        		var oldOwner = toCountry.owner();
+        		toCountry.setNumDice(fromNumDice - 1);
+        		self.takeCountry(toCountry);
+        		oldOwner.updateDisplay();
+        	}
+
+        	self.updateDisplay();
+
+            if (self._countries.length == Country.array().length) {
+                Game.gameOver();
+            }
+
+        	callback({
+        		fromRollArray: fromRollArray,
+        		fromRoll: fromRoll,
+        		toRollArray: toRollArray,
+        		toRoll: toRoll
+        	});
+        }
     }
 
 

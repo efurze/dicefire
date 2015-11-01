@@ -56,8 +56,9 @@ $(function() {
 					if (possibleAttacks.length > 0) {
 						var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
 						console.log("(aggressive) Attack", countryId, attackCountryId);
-						interface.attack(countryId, attackCountryId);
-						AI.Aggressive.startTurn(interface);	// Continue attacking.
+						interface.attack(countryId, attackCountryId, function(result) {
+							AI.Aggressive.startTurn(interface);	// Continue attacking.							
+						});
 						return;
 					}
 				}
