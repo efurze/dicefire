@@ -43,7 +43,6 @@ $(function() {
 				var countryId = countryIds[i];
 				var country = state.countries[countryId];
 				if (country.owner == playerId) {
-					// Somehow it's improperly getting here. Something dumb.
 					var possibleAttacks = [];
 					country.adjacentCountries.forEach(function(adjacentCountryId) {
 						var adjacentCountry = state.countries[adjacentCountryId];
