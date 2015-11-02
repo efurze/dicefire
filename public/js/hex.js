@@ -10,7 +10,6 @@ $(function() {
 
 
     Hex.BORDER_THICKNESS = 3;
-    Hex.BORDER_COLOR = "black";
     Hex.EDGE_LENGTH = 8;
     Hex.HEIGHT = Hex.EDGE_LENGTH * Math.sqrt(3);
     Hex.TOP_LEFT_X = 10;
@@ -246,7 +245,7 @@ $(function() {
 
                 }
                 edgePath.closePath();
-                Globals.context.strokeStyle = Hex.BORDER_COLOR;
+                Globals.context.strokeStyle = self._country.borderColor();
                 Globals.context.lineWidth = Hex.BORDER_THICKNESS;
 
                 Globals.context.stroke(edgePath);

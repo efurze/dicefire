@@ -212,6 +212,7 @@ $(function() {
 
     	}
 
+        fromCountry.setIsAttacking(true);
         $.playSound('/sounds/2_dice_throw_on_table');
         window.setTimeout(attack_step2, 200);
 
@@ -225,6 +226,7 @@ $(function() {
                 "display": "inline-block"
             });
 
+            toCountry.setIsAttacking(true);
             window.setTimeout(attack_step3, 300);
         }
 
@@ -240,7 +242,6 @@ $(function() {
         	// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
         	// goes down to 1 die.
         	fromCountry.setNumDice(1);
-            fromCountry.paint();
         	if (fromRoll > toRoll) {
                 $.playSound('/sounds/clink_sound');
         		var oldOwner = toCountry.owner();
@@ -256,6 +257,9 @@ $(function() {
 
         function attack_step5() {
             self.updateDisplay();
+            
+            fromCountry.setIsAttacking(false);
+            toCountry.setIsAttacking(false);
 
             if (self._countries.length == Country.array().length) {
                 Game.gameOver();
@@ -280,7 +284,6 @@ $(function() {
 	    }
     	country.setOwner(this);
     	this._countries.push(country);
-        country.paint();
     };
 
     // Take away the country from this player.

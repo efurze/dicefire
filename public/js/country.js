@@ -9,6 +9,7 @@ $(function() {
         this._numHexes = Math.floor(Math.random() * (Country.MAX_HEXES - Country.MIN_HEXES + 1)) + 
             Country.MIN_HEXES;
         this._numDice = 1;
+        this._isAttacking = false;
 
         this.growCountry();
         if (this._numHexes != this._hexes.length) {
@@ -60,6 +61,7 @@ $(function() {
 
     Country.prototype.setOwner = function(owner) { this._owner = owner; this.paint(); };
     Country.prototype.setNumDice = function(num) { this._numDice = num; this.paint(); };
+    Country.prototype.setIsAttacking = function(isAttacking) { this._isAttacking = isAttacking; this.paint(); };
 
     Country.prototype.id = function() { return this._id; };
     Country.prototype.owner = function() { return this._owner; };
@@ -90,6 +92,11 @@ $(function() {
                 return this._owner.color();
             }
         }
+    };
+
+
+    Country.prototype.borderColor = function() {
+        return this._isAttacking ? "red" : "black";
     };
 
     Country.prototype.center = function() {
