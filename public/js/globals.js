@@ -10,7 +10,7 @@ $(function() {
 	    maxDice: 8,
 	    maxStoredDice: 64,
 	    startingDice: 10,
-	    numCountries: 35
+	    numCountries: 30
 	};
 
 
