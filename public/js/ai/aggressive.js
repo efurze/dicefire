@@ -34,7 +34,8 @@ $(function() {
 		},
 
 		// Called each time the AI has a turn.
-		startTurn: function(interface) {
+		startTurn: function(interface, depth) {
+			depth = depth || 0;
 			var state = interface.getState();
 
 			var playerId = state.currentPlayerId;
@@ -54,9 +55,10 @@ $(function() {
 
 					if (possibleAttacks.length > 0) {
 						var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
-						console.log("(aggressive) Attack", countryId, attackCountryId);
+//						console.log("(aggressive) Attack", playerId, countryId, state.countries[countryId].numDice,
+//							attackCountryId, state.countries[attackCountryId].numDice, depth);
 						interface.attack(countryId, attackCountryId, function(result) {
-							AI.Aggressive.startTurn(interface);	// Continue attacking.							
+							AI.Aggressive.startTurn(interface, depth + 1);	// Continue attacking.							
 						});
 						return;
 					}

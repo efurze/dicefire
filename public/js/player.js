@@ -178,6 +178,9 @@ $(function() {
     	var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
     	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 
+        attack_step4();
+        return;
+
     	$('#roll').css({
 			"display": "none"
     	});
@@ -213,8 +216,10 @@ $(function() {
     	}
 
         fromCountry.setIsAttacking(true);
-        $.playSound('/sounds/2_dice_throw_on_table');
-        window.setTimeout(attack_step2, 200);
+        if (Globals.timeout > 0) {
+            $.playSound('/sounds/2_dice_throw_on_table');
+        }
+        window.setTimeout(attack_step2, Globals.timeout);
 
 
         function attack_step2() {
@@ -227,7 +232,7 @@ $(function() {
             });
 
             toCountry.setIsAttacking(true);
-            window.setTimeout(attack_step3, 300);
+            window.setTimeout(attack_step3, Globals.timeout);
         }
 
         function attack_step3() {
@@ -235,7 +240,7 @@ $(function() {
             $('#rightroll').css({
                 "display": "inline-block"
             });              
-            window.setTimeout(attack_step4, 300);
+            window.setTimeout(attack_step4, Globals.timeout);
         }
 
         function attack_step4() {
@@ -243,15 +248,20 @@ $(function() {
         	// goes down to 1 die.
         	fromCountry.setNumDice(1);
         	if (fromRoll > toRoll) {
-                $.playSound('/sounds/clink_sound');
+                if (Globals.timeout > 0) {
+                    $.playSound('/sounds/clink_sound');
+                }
         		var oldOwner = toCountry.owner();
         		toCountry.setNumDice(fromNumDice - 1);
         		self.takeCountry(toCountry);
         		oldOwner.updateDisplay();
         	} else {
-                $.playSound('/sounds/wood_hit_brick_1');               
+                if (Globals.timeout > 0) {                
+                    $.playSound('/sounds/wood_hit_brick_1');               
+                }
             }
-            window.setTimeout(attack_step5, 400);
+            attack_step5();
+//            window.setTimeout(attack_step5, Globals.timeout);
 
         }
 

@@ -12,6 +12,7 @@ $(function() {
         currentPlayer: function() { return Player.get(Game._currentPlayerId); },
 
         init: function(playerCode) {
+            console.time("DICEFIRE");
 
             Globals.context.clearRect(0,0,2000,2000);
             Globals.context.lineJoin = "straight";
@@ -197,6 +198,7 @@ $(function() {
             // If that player has lost, skip him.
             if (Player.get(Game._currentPlayerId).hasLost()) {
                 Game.endTurn();
+                return;
             }
 
             if (Game._gameOver) {
@@ -208,7 +210,10 @@ $(function() {
 
         // Called when an attack ends the game.
         gameOver: function() {
+            console.log("GAME OVER");
             Game._gameOver = true;
+            console.timeEnd("DICEFIRE");
+
         },
 
         setupRollDivs: function() {
