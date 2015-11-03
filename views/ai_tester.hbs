@@ -1,0 +1,29 @@
+<canvas id="c" width="980px" height="580px">
+
+</canvas>
+
+<div id="players" style="margin-top:10px; margin-bottom:10px"></div>
+
+<div style="margin-left:10px">
+	<button id="start_test" style="width:100px;height:30px;">Start</button>
+	<div id="roll"><div id="leftroll"></div><div id="rightroll"></div></div>
+
+
+</div>
+
+
+<p>
+<!--
+<textarea id="info" rows=7 cols=120>
+</textarea>
+-->
+
+<script>
+	$(function() {
+		Game.init([
+			"human",
+			AI.Aggressive,
+		]);
+	});
+</script>
+
