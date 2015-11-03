@@ -178,8 +178,6 @@ $(function() {
     	var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
     	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 
-        attack_step4();
-        return;
 
     	$('#roll').css({
 			"display": "none"
@@ -260,8 +258,7 @@ $(function() {
                     $.playSound('/sounds/wood_hit_brick_1');               
                 }
             }
-            attack_step5();
-//            window.setTimeout(attack_step5, Globals.timeout);
+            window.setTimeout(attack_step5, Globals.timeout);
 
         }
 

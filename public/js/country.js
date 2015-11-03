@@ -232,7 +232,6 @@ $(function() {
 
     // Paints the country.
     Country.prototype.paint = function() {
-        return;
         this._hexes.forEach(function(elem) {
             elem.paint();
         });

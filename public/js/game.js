@@ -12,8 +12,6 @@ $(function() {
         currentPlayer: function() { return Player.get(Game._currentPlayerId); },
 
         init: function(playerCode) {
-            console.time("DICEFIRE");
-
             Globals.context.clearRect(0,0,2000,2000);
             Globals.context.lineJoin = "straight";
 
@@ -212,8 +210,6 @@ $(function() {
         gameOver: function() {
             console.log("GAME OVER");
             Game._gameOver = true;
-            console.timeEnd("DICEFIRE");
-
         },
 
         setupRollDivs: function() {
