@@ -13,7 +13,7 @@ $(function() {
 	    numCountries: 35,
 	    timeout: 0,
 		play_sounds: 0,
-		suppress_ui: 1
+		suppress_ui: 0
 	};
 
 
