@@ -232,7 +232,10 @@ $(function() {
 
     // Paints the country.
     Country.prototype.paint = function() {
-        return;
+		if (Globals.supress_ui) {
+        	return;
+		}
+		
         this._hexes.forEach(function(elem) {
             elem.paint();
         });

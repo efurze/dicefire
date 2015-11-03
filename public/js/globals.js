@@ -11,7 +11,9 @@ $(function() {
 	    maxStoredDice: 64,
 	    startingDice: 10,
 	    numCountries: 35,
-	    timeout: 0
+	    timeout: 0,
+		play_sounds: 0,
+		suppress_ui: 0
 	};
 
 

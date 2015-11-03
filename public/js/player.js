@@ -178,8 +178,10 @@ $(function() {
     	var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
     	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 
-        attack_step4();
-        return;
+		if (Globals.suppress_ui) {
+        	attack_step4();
+        	return;
+		}
 
     	$('#roll').css({
 			"display": "none"
@@ -216,7 +218,7 @@ $(function() {
     	}
 
         fromCountry.setIsAttacking(true);
-        if (Globals.timeout > 0) {
+        if (Globals.play_sounds) {
             $.playSound('/sounds/2_dice_throw_on_table');
         }
         window.setTimeout(attack_step2, Globals.timeout);
@@ -248,7 +250,7 @@ $(function() {
         	// goes down to 1 die.
         	fromCountry.setNumDice(1);
         	if (fromRoll > toRoll) {
-                if (Globals.timeout > 0) {
+                if (Globals.play_sounds) {
                     $.playSound('/sounds/clink_sound');
                 }
         		var oldOwner = toCountry.owner();
@@ -256,7 +258,7 @@ $(function() {
         		self.takeCountry(toCountry);
         		oldOwner.updateDisplay();
         	} else {
-                if (Globals.timeout > 0) {                
+                if (Globals.play_sounds) {                
                     $.playSound('/sounds/wood_hit_brick_1');               
                 }
             }
