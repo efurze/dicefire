@@ -232,7 +232,7 @@ $(function() {
 
     // Paints the country.
     Country.prototype.paint = function() {
-		if (Globals.supress_ui) {
+		if (Globals.suppress_ui) {
         	return;
 		}
 		
