@@ -146,9 +146,7 @@ $(function(){
 			}
 			
 			function renderVerdict() {
-				// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
-	        	// goes down to 1 die.
-	        	fromCountry.setNumDice(1);
+				
 	        	if (fromRoll > toRoll) {
 					// attacker wins
 	                if (Globals.play_sounds) {
@@ -175,7 +173,8 @@ $(function(){
 				
 				Renderer.renderCountry(fromCountry);
 				Renderer.renderCountry(toCountry);
-				
+				Renderer.renderPlayer(toCountry.owner());
+				Renderer.renderPlayer(fromCountry.owner());
 			}
 		
 		},

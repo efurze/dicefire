@@ -114,6 +114,7 @@ Engine = (function() {
         },
 
 		attack: function(fromCountry, toCountry, callback) {
+			Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id);
 			var self = this;
 			var fromPlayer = fromCountry.owner();
 			var toPlayer = toCountry.owner();
@@ -135,11 +136,25 @@ Engine = (function() {
 				
 				fromCountry.setIsAttacking(false);
 	            toCountry.setIsAttacking(false);
+	
+				// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
+	        	// goes down to 1 die.
+	        	fromCountry.setNumDice(1);
+	
+				if (fromRoll > toRoll) {
+					Globals.debug("Attacker wins");
+					var oldOwner = toCountry.owner();
+        			toCountry.setNumDice(fromNumDice - 1);
+        			fromPlayer.takeCountry(toCountry);
+        			oldOwner.updateStatus();
 
-	            if (fromCountry.owner()._countries.length == Country.array().length) {
-	                Engine.gameOver();
-	            }
-				
+					if (fromCountry.owner()._countries.length == Country.array().length) {
+		                Engine.gameOver();
+		            }
+				} else {
+					Globals.debug("Attacker loses");
+				}
+	            
 				callback({
 	                fromRollArray: fromRollArray,
 	                fromRoll: fromRoll,
