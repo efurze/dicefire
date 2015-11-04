@@ -1,13 +1,10 @@
-Engine = (function() {
-	
-    _playerCode: null;
-    _currentPlayerId: 0;
-    _gameOver: false;
-	_attackInProgress: false;
-
-	return {
+Engine = {
 		
-        
+        _playerCode: null,
+	    _currentPlayerId: 0,
+	    _gameOver: false,
+		_attackInProgress: false,
+		_previousAttack: {},
         
         currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 
@@ -134,6 +131,13 @@ Engine = (function() {
 	
 			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
 	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+	
+			self._previousAttack = {
+				fromCountryId: fromCountry._id,
+				toCountryId: toCountry._id,
+				fromRollArray: fromRollArray,
+				toRollArray: toRollArray
+			}
 			
 			Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, function done() {
 				
@@ -183,7 +187,13 @@ Engine = (function() {
             var state = {
                 players: {},
                 countries: {},
-                currentPlayerId: Engine._currentPlayerId
+                currentPlayerId: Engine._currentPlayerId,
+				previousAttack: {
+					fromCountryId: -1,
+					toCountryId: -1,
+					fromRollArray: [],
+					toRollArray: []
+				}
             };
 
             Player.array().forEach(function(player) {
@@ -206,6 +216,8 @@ Engine = (function() {
                 };
             });
 
+			state.previousAttack = Engine._previousAttack;
+
             return state;
         },
 
@@ -222,8 +234,7 @@ Engine = (function() {
             endTurn: function() { Engine.endTurn(); }
         }
 
-    }
-})();
+    };
 
 
 
