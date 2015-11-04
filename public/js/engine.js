@@ -85,6 +85,9 @@ Engine = (function() {
 
         },
 
+		isHuman: function(playerId) {
+			return Engine._playerCode[playerId] == "human";
+		},
 
         startTurn: function(playerId) {
             Engine._currentPlayerId = playerId;
@@ -115,6 +118,46 @@ Engine = (function() {
 
             Game.startTurn(Engine._currentPlayerId);
         },
+
+		attack: function(fromCountry, toCountry, callback) {
+			var self = this;
+			var fromPlayer = fromCountry.owner();
+			var toPlayer = toCountry.owner();
+			
+			if (!fromCountry.adjacentCountries().find(function(elem) { return elem == toCountry; })) {
+	    		Globals.debug("Illegal attack", fromCountry, toCountry);
+	    		return null;    		
+	    	}
+
+			var fromNumDice = fromCountry.numDice();
+	    	var toNumDice = toCountry.numDice();
+	    	var fromRollArray = Player.rollDice(fromNumDice);
+	    	var toRollArray = Player.rollDice(toNumDice);
+	
+			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
+	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+			
+			Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, function done() {
+				
+				fromCountry.setIsAttacking(false);
+	            toCountry.setIsAttacking(false);
+	
+				Renderer.paintCountry(fromCountry);
+				Renderer.paintCountry(toCountry);
+
+	            if (fromCountry.owner()._countries.length == Country.array().length) {
+	                Engine.gameOver();
+	            }
+				
+				callback({
+	                fromRollArray: fromRollArray,
+	                fromRoll: fromRoll,
+	                toRollArray: toRollArray,
+	                toRoll: toRoll
+	            });
+			});
+			
+		},
 
         // Called when an attack ends the game.
         gameOver: function() {
@@ -159,10 +202,11 @@ Engine = (function() {
         interface: {
             getState: function() { return Engine.serializeState(); },
             attack: function(fromCountryId, toCountryId, callback) { 
-                Player.get(Engine._currentPlayerId).attack(Country.get(fromCountryId), Country.get(toCountryId), 
-                    function(result) {
-                        callback(result);    
-                    });
+	
+				Engine.attack(Country.get(fromCountryId), Country.get(toCountryId), function(result) {
+                    callback(result);    
+                });
+	
             },
             endTurn: function() { Engine.endTurn(); }
         }

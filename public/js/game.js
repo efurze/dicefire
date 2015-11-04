@@ -99,6 +99,14 @@ $(function() {
                         }
                     } else {
                         // Attacks.
+						Engine.attack(Game._selectedCountry, country, function(result) {
+                            var prevCountry = Game._selectedCountry;
+                            Game._selectedCountry = null;
+                            Renderer.paintCountry(prevCountry);
+                            Renderer.paintCountry(country);
+                            $('#end_turn').prop('disabled', false);
+                        });
+				/*
                         if (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country)) {
                             // Disable the button during attacks.
                             $('#end_turn').prop('disabled', true);
@@ -110,6 +118,7 @@ $(function() {
                                 $('#end_turn').prop('disabled', false);
                             });
                         }
+				*/
                     }
                 }
             }            

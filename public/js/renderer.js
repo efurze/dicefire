@@ -51,6 +51,122 @@ $(function(){
 			}
 		},
 		
+		
+		/*
+			@callback: function done(){}
+		*/
+		renderAttack: function(fromCountry, toCountry, fromRollArray, toRollArray, callback) {
+		
+			if (Globals.suppress_ui) {
+				callback();
+				return;
+			}
+			
+			var fromPlayer = fromCountry.owner();
+			
+			// disable the 'end turn' button if the current attacking player is the human
+			if (Engine.isHuman(fromPlayer._id) && fromPlayer == Engine.currentPlayer()) {
+				$('#end_turn').prop('disabled', true);
+			}
+			
+			var fromNumDice = fromRollArray.length;
+			var toNumDice = toRollArray.length;
+			
+			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
+	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+			
+			// clear previous attack info
+			$('#roll').css({
+				"display": "none"
+	    	});
+
+	        $('#leftroll').css({
+	            "display": "none"
+	        });
+
+	        $('#rightroll').css({
+	            "display": "none"
+	        });
+	
+			// create a div for each die both countries have
+			for (var i = 0; i < Globals.maxDice; i++) {
+				$('#leftdie' + i).css({
+					'display': (i < fromNumDice ? 'inline-block' : 'none'),
+					'background-color': fromPlayer.color()
+				});
+
+				if (i < fromNumDice) {
+					$('#leftdie' + i).html(fromRollArray[i]);
+				}
+
+				$('#rightdie' + i).css({
+					'display': (i < toNumDice ? 'inline-block' : 'none'),
+					'background-color': toCountry.owner().color()				
+				});
+
+				if (i < fromNumDice) {
+					$('#rightdie' + i).html(toRollArray[i]);
+				}
+
+	    	}
+	
+			// roll attacker
+			fromCountry.setIsAttacking(true);
+	        if (Globals.play_sounds) {
+	            $.playSound('/sounds/2_dice_throw_on_table');
+	        }
+	        window.setTimeout(renderAttackRoll, Globals.timeout);
+	
+			function renderAttackRoll() {
+				$('#lefttotal').html(fromRoll);
+	            $('#roll').css({
+	                "display": "inline-block"
+	            });
+	            $('#leftroll').css({
+	                "display": "inline-block"
+	            });
+
+	            toCountry.setIsAttacking(true);
+	            window.setTimeout(renderDefendRoll, Globals.timeout);
+			}
+			
+			function renderDefendRoll() {
+				$('#righttotal').html(toRoll);
+	            $('#rightroll').css({
+	                "display": "inline-block"
+	            });              
+	            window.setTimeout(renderVerdict, Globals.timeout);
+			}
+			
+			function renderVerdict() {
+				// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
+	        	// goes down to 1 die.
+	        	fromCountry.setNumDice(1);
+	        	if (fromRoll > toRoll) {
+					// attacker wins
+	                if (Globals.play_sounds) {
+	                    $.playSound('/sounds/clink_sound');
+	                }
+	        		var oldOwner = toCountry.owner();
+	        		toCountry.setNumDice(fromNumDice - 1);
+	        		fromPlayer.takeCountry(toCountry);
+	        		oldOwner.updateDisplay();
+	        	} else {
+					// defender wins
+	                if (Globals.play_sounds) {                
+	                    $.playSound('/sounds/wood_hit_brick_1');               
+	                }
+	            }
+	
+				// re-enable the 'end turn' button
+				if (Engine.isHuman(fromPlayer._id) && fromPlayer == Engine.currentPlayer()) {
+					$('#end_turn').prop('disabled', false);
+				}
+	            callback();
+			}
+		
+		},
+		
 		setupPlayerDivs: function(playerCount) {
 			if (Globals.suppress_ui) {
 				return;
