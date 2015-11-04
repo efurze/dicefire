@@ -135,7 +135,6 @@ $(function() {
 	    	}
 	    	var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
     		country.addDie();
-    		country.paint();
     	}
     };
 

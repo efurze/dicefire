@@ -1,16 +1,14 @@
-function() {
+Engine = (function() {
 	
     _playerCode: null;
-    _mouseOverCountry: null;
-    _selectedCountry: null;
     _currentPlayerId: 0;
     _gameOver: false;
 
 	return {
 		
-        mouseOverCountry: function() { return _mouseOverCountry; },
-        selectedCountry: function() { return _selectedCountry; },
-        currentPlayer: function() { return Player.get(_currentPlayerId); },
+        
+        
+        currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 
         init: function(playerCode) {
             console.time("DICEFIRE");
@@ -18,15 +16,15 @@ function() {
             Globals.context.clearRect(0,0,2000,2000);
             Globals.context.lineJoin = "straight";
 
-            _playerCode = playerCode;
-            var isHumanList = _playerCode.map(function(elem) { return elem == "human"; });
-            _playerCode.forEach(function(elem, index) {
+            Engine._playerCode = playerCode;
+            var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
+            Engine._playerCode.forEach(function(elem, index) {
                 if (elem != "human") {
                     elem.init(index, isHumanList);
                 }
             });
 
-            setupRollDivs();
+            //Engine.setupRollDivs();
 
             // Clear the Hex and Country statics.
             Player.init(playerCode.length);
@@ -82,79 +80,28 @@ function() {
             });
 
             Country.array().forEach(function(country) {
-                country.paint();
+                //country.paint();
             });
 
-
-            $(Globals.canvas).mousemove(mouseMove);
-            $(Globals.canvas).mouseleave(mouseLeave);
-            $(Globals.canvas).click(click);
-            $('#end_turn').click(endTurn);
-
-            startTurn(0);
+            Engine.startTurn(0);
 
         },
 
-
-        mouseMove: function(event) {
-
-            var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
-            if (hex) {
-                var country = hex.country();
-                if (!country) {
-                    Globals.canvas.style.cursor = 'default';
-                }
-
-                if (country != _mouseOverCountry) {
-                    var currentPlayer = Player.get(_currentPlayerId);
-                    var prevCountry = _mouseOverCountry;
-                    _mouseOverCountry = country;                    
-                    if (prevCountry) {
-                        prevCountry.mouseLeave();
-                    }
-                    if (country && (
-                            (country.owner() == currentPlayer && country.numDice() > 1) || 
-                            (_selectedCountry != null && currentPlayer.canAttack(_selectedCountry, country))
-                        )) {
-                        _mouseOverCountry.mouseEnter();                        
-                    } else {
-                        Globals.canvas.style.cursor = 'default';                        
-                    }
-                }
-            } else {
-                if (_mouseOverCountry) {
-                    var prevCountry = _mouseOverCountry;
-                    _mouseOverCountry = null;                   
-                    prevCountry.mouseLeave();
-                }
-                Globals.canvas.style.cursor = 'default';
-            }
-             // document.getElementById("info").textContent = hex.num();
-             // document.getElementById("info").textContent = hex;
-        },
-
-        mouseLeave: function(event) {
-            if (_mouseOverCountry) {
-                var country = _mouseOverCountry;
-                _mouseOverCountry = null;
-                country.mouseLeave();
-            }
-        },
 
         click: function(event) {
             var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
             if (hex) {
                 var country = hex.country();
-                var currentPlayer = Player.get(_currentPlayerId);                    
+                var currentPlayer = Player.get(Engine._currentPlayerId);                    
                 if (country) {
                     if (country.owner() == currentPlayer && country.numDice() > 1) {  
                         // Select and deselect of countries owned by this user.                  
-                        if (_selectedCountry == country) {
-                            _selectedCountry = null;
+                        if (Engine._selectedCountry == country) {
+                            Engine._selectedCountry = null;
                             country.click();
                         } else {
-                            var oldCountry = _selectedCountry;
-                            _selectedCountry = country;
+                            var oldCountry = Engine._selectedCountry;
+                            Engine._selectedCountry = country;
                             if (oldCountry) {
                                 oldCountry.click();
                             }
@@ -162,14 +109,14 @@ function() {
                         }
                     } else {
                         // Attacks.
-                        if (_selectedCountry != null && currentPlayer.canAttack(_selectedCountry, country)) {
+                        if (Engine._selectedCountry != null && currentPlayer.canAttack(Engine._selectedCountry, country)) {
                             // Disable the button during attacks.
                             $('#end_turn').prop('disabled', true);
-                            currentPlayer.attack(_selectedCountry, country, function(result) {
-                                var prevCountry = _selectedCountry;
-                                _selectedCountry = null;
-                                prevCountry.paint();
-                                country.paint();
+                            currentPlayer.attack(Engine._selectedCountry, country, function(result) {
+                                var prevCountry = Engine._selectedCountry;
+                                Engine._selectedCountry = null;
+                                //prevCountry.paint();
+                                //country.paint();
                                 $('#end_turn').prop('disabled', false);;
                             });
                         }
@@ -179,129 +126,50 @@ function() {
         },
 
         startTurn: function(playerId) {
-            _currentPlayerId = playerId;
+            Engine._currentPlayerId = playerId;
             Player.get(playerId).startTurn();
 
-            if (_playerCode[playerId] != "human") {
+            if (Engine._playerCode[playerId] != "human") {
                 $('#end_turn').prop('disabled', true);
-                _playerCode[playerId].startTurn(interface);
+                Engine._playerCode[playerId].startTurn(Engine.interface);
             } else {
                 $('#end_turn').prop('disabled', false);
             }
         },
 
         endTurn: function(event) {
-            Player.get(_currentPlayerId).endTurn();
-            _currentPlayerId++;
-            if (_currentPlayerId >= _playerCode.length) {
-                _currentPlayerId = 0;
+            Player.get(Engine._currentPlayerId).endTurn();
+            Engine._currentPlayerId++;
+            if (Engine._currentPlayerId >= Engine._playerCode.length) {
+                Engine._currentPlayerId = 0;
             }
             // If that player has lost, skip him.
-            if (Player.get(_currentPlayerId).hasLost()) {
-                endTurn();
+            if (Player.get(Engine._currentPlayerId).hasLost()) {
+                Engine.endTurn();
                 return;
             }
 
-            if (_gameOver) {
+            if (Engine._gameOver) {
                 return;
             }
 
-            startTurn(_currentPlayerId);
+            Engine.startTurn(Engine._currentPlayerId);
         },
 
         // Called when an attack ends the game.
         gameOver: function() {
             console.log("GAME OVER");
-            _gameOver = true;
+            Engine._gameOver = true;
             console.timeEnd("DICEFIRE");
 
         },
 
-        setupRollDivs: function() {
-
-            $('#roll').css({
-                "display": "none",
-                "vertical-align": "top",
-                "margin-top": "3px"
-            });
-
-            $('#leftroll').css({
-                "display": "inline-block",
-                "margin-left": "20px"
-            });
-
-            $('#rightroll').css({
-                "display": "inline-block",
-                "margin-left": "20px"                
-            });
-
-            var diceDivIds = [];
-            for (var i = 0; i < Globals.maxDice; i++) {
-                $('#leftroll').append(
-                    "<div id='leftdie" + i + "'>5</div>"
-                );
-
-                diceDivIds.push('#leftdie' + i);
-
-                $('#rightroll').append(
-                    "<div id='rightdie" + i + "'>5</div>"
-                );
-
-                diceDivIds.push('#rightdie' + i);
-            }
-
-            diceDivIds.forEach(function(divId) {
-                $(divId).css({
-                    "display": "inline-block",
-                    "width": "20px",
-                    "height": "20px",
-                    "border": "1px solid black",
-                    "background-color": "red",
-                    "font-family": "sans-serif",
-                    "color": "white",
-                    "font-size": "14px",
-                    "text-align": "center",
-                    "padding-top": "2px",
-                    "padding-bottom": "0px",
-                    "vertical-align": "top",
-                    "font-weight": "bold",
-                    "margin-left": "5px"
-                });
-            });
-
-
-
-            $('#leftroll').append(
-                "<div id='lefttotal'>35</div>"                    
-            );
-
-
-            $('#rightroll').append(
-                "<div id='righttotal'>35</div>"                    
-            );
-
-            var totalDivIds = [];
-            totalDivIds.push('#lefttotal');
-            totalDivIds.push('#righttotal');
-            totalDivIds.forEach(function(divId) {
-                $(divId).css({
-                    "display": "inline-block",
-                    "vertical-align": "top",
-                    "font-family": "sans-serif",
-                    "font-size": "18px",
-                    "text-align": "center",
-                    "color": "black",
-                    "margin-left": "20px"
-                });
-            });
-
-        },
 
         serializeState: function() {
             var state = {
                 players: {},
                 countries: {},
-                currentPlayerId: _currentPlayerId
+                currentPlayerId: Engine._currentPlayerId
             };
 
             Player.array().forEach(function(player) {
@@ -329,18 +197,18 @@ function() {
 
         // The interface passed to AIs so they can control the game.
         interface: {
-            getState: function() { return Game.serializeState(); },
+            getState: function() { return Engine.serializeState(); },
             attack: function(fromCountryId, toCountryId, callback) { 
-                Player.get(Game._currentPlayerId).attack(Country.get(fromCountryId), Country.get(toCountryId), 
+                Player.get(Engine._currentPlayerId).attack(Country.get(fromCountryId), Country.get(toCountryId), 
                     function(result) {
                         callback(result);    
                     });
             },
-            endTurn: function() { Game.endTurn(); }
+            endTurn: function() { Engine.endTurn(); }
         }
 
     }
-};
+})();
 
 
 

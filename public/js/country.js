@@ -59,7 +59,7 @@ $(function() {
 
 
 
-    Country.prototype.setOwner = function(owner) { this._owner = owner; this.paint(); };
+    Country.prototype.setOwner = function(owner) { this._owner = owner; /*this.paint();*/ };
     Country.prototype.setNumDice = function(num) { this._numDice = num; this.paint(); };
     Country.prototype.setIsAttacking = function(isAttacking) { this._isAttacking = isAttacking; this.paint(); };
 
@@ -229,64 +229,5 @@ $(function() {
             this.paint();
         }
     };
-
-    // Paints the country.
-    Country.prototype.paint = function() {
-		if (Globals.suppress_ui) {
-        	return;
-		}
-		
-        this._hexes.forEach(function(elem) {
-            elem.paint();
-        });
-
-        var ctr = this.center();
-
-        // Draw the number box.
-        var boxSize = 10;
-        Globals.context.fillStyle = "white";
-        Globals.context.fillRect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
-        Globals.context.rect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
-        Globals.context.lineWidth = 1;
-        Globals.context.strokeStyle = "black";
-        Globals.context.stroke();
-
-        Globals.context.fillStyle = "black";
-        Globals.context.textAlign = "center";
-        Globals.context.font = "bold 18px sans-serif";
-        Globals.context.fillText(this._numDice, ctr[0], ctr[1]);
-
-        if (Globals.markCountryCenters) {
-            var path = new Path2D();
-            path.moveTo(ctr[0] - 4, ctr[1] - 4);
-            path.lineTo(ctr[0] + 4, ctr[1] + 4);
-            path.closePath();
-            Globals.context.strokeStyle = "black";
-            Globals.context.lineWidth = 2;
-            Globals.context.stroke(path);
-
-            path = new Path2D();
-            path.moveTo(ctr[0] - 4, ctr[1] + 4);
-            path.lineTo(ctr[0] + 4, ctr[1] - 4);
-            path.closePath();
-            Globals.context.strokeStyle = "black";
-            Globals.context.lineWidth = 2;
-            Globals.context.stroke(path);
-        }
-
-        if (Globals.drawCountryConnections) {
-            this._adjacentCountries.forEach(function(country) {
-                var otherCenter = country.center();
-                var path = new Path2D();
-                path.moveTo(ctr[0], ctr[1]);
-                path.lineTo(otherCenter[0], otherCenter[1]);
-                path.closePath();
-                Globals.context.strokeStyle = "black";
-                Globals.context.lineWidth = 1;
-                Globals.context.stroke(path);
-            });
-        }
-    };
-
 
 });
