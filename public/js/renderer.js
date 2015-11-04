@@ -29,6 +29,14 @@ $(function(){
 			});
 		},
 		
+		renderControls: function() {
+			if (Engine.isHuman(Engine._currentPlayerId)) {
+				$('#end_turn').prop('disabled', false);
+			} else {
+				$('#end_turn').prop('disabled', true);
+			}
+		},
+		
 		renderPlayers: function() {
 			var self = this;
 			Player._array.forEach(function(player){
@@ -68,6 +76,8 @@ $(function(){
 				callback();
 				return;
 			}
+			
+			Renderer.renderControls();
 			
 			var fromPlayer = fromCountry.owner();
 			
@@ -175,6 +185,7 @@ $(function(){
 				Renderer.renderCountry(toCountry);
 				Renderer.renderPlayer(toCountry.owner());
 				Renderer.renderPlayer(fromCountry.owner());
+				Renderer.renderControls();
 			}
 		
 		},

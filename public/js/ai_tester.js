@@ -12,6 +12,7 @@ $(function() {
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
+			Globals.suppress_ui = 0;
 			Renderer.init(playerCode.length, Game._canvas);
 			Engine.init(playerCode);
 			Renderer.render(Engine.serializeState());
@@ -19,11 +20,12 @@ $(function() {
 			$(Game._canvas).mousemove(Game.mouseMove);
             $(Game._canvas).mouseleave(Game.mouseLeave);
             $(Game._canvas).click(Game.click);
-			$('#end_turn').click(Engine.endTurn);
-			
-			Engine.startTurn(0);
+            $('#start_test').click(Game.startTest);
 		},
 		
+		startTest: function () {
+			Engine.startTurn(0);
+		},
 		
 		mouseMove: function(event) {
 
@@ -102,7 +104,7 @@ $(function() {
                 }
             }            
         },
-
+		
 		
 	};
 });

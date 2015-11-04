@@ -3,6 +3,7 @@ Engine = (function() {
     _playerCode: null;
     _currentPlayerId: 0;
     _gameOver: false;
+	_attackInProgress: false;
 
 	return {
 		
@@ -75,8 +76,6 @@ Engine = (function() {
 				Renderer.renderPlayer(player);
             });
 
-            Game.startTurn(0);
-
         },
 
 		isHuman: function(playerId) {
@@ -92,6 +91,7 @@ Engine = (function() {
             } 
 
 			Renderer.renderPlayers();
+			Renderer.renderControls();
         },
 
         endTurn: function(event) {
@@ -110,12 +110,15 @@ Engine = (function() {
                 return;
             }
 
-            Game.startTurn(Engine._currentPlayerId);
+            Engine.startTurn(Engine._currentPlayerId);
         },
 
 		attack: function(fromCountry, toCountry, callback) {
-			Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id);
+			//Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id);
 			var self = this;
+			
+			self._attackInProgress = true;
+			
 			var fromPlayer = fromCountry.owner();
 			var toPlayer = toCountry.owner();
 			
@@ -134,6 +137,8 @@ Engine = (function() {
 			
 			Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, function done() {
 				
+				self._attackInProgress = false;
+				
 				fromCountry.setIsAttacking(false);
 	            toCountry.setIsAttacking(false);
 	
@@ -142,7 +147,7 @@ Engine = (function() {
 	        	fromCountry.setNumDice(1);
 	
 				if (fromRoll > toRoll) {
-					Globals.debug("Attacker wins");
+					//Globals.debug("Attacker wins");
 					var oldOwner = toCountry.owner();
         			toCountry.setNumDice(fromNumDice - 1);
         			fromPlayer.takeCountry(toCountry);
@@ -152,7 +157,7 @@ Engine = (function() {
 		                Engine.gameOver();
 		            }
 				} else {
-					Globals.debug("Attacker loses");
+					//Globals.debug("Attacker loses");
 				}
 	            
 				callback({
