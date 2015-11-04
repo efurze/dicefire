@@ -26,16 +26,15 @@ $(function() {
 		
 		
 		mouseMove: function(event) {
-
+			var currentPlayer = Game.currentPlayer();
             var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
-            if (hex) {
+            if (hex && Engine.isHuman(currentPlayer._id)) {
                 var country = hex.country();
                 if (!country) {
                     Game._canvas.style.cursor = 'default';
                 }
 
                 if (country != Game._mouseOverCountry) {
-                    var currentPlayer = Game.currentPlayer();
                     var prevCountry = Game._mouseOverCountry;
                     Game._mouseOverCountry = country;                    
                     if (prevCountry) {
@@ -71,10 +70,19 @@ $(function() {
 
 
 		click: function(event) {
+			var currentPlayer = Game.currentPlayer(); 
+			if (!Engine.isHuman(currentPlayer._id)) {
+				if (Game._selectedCountry) {
+					var prevCountry = Game._selectedCountry;
+					Game._selectedCountry = null;
+					Renderer.renderCountry(prevCountry);
+				}
+				return;
+			}
             var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
             if (hex) {
                 var country = hex.country();
-                var currentPlayer = Game.currentPlayer(); 
+                
                 if (country) {
                     if (country.owner() == currentPlayer && country.numDice() > 1) {  
                         // Select and deselect of countries owned by this user.                  

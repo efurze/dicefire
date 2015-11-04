@@ -78,22 +78,6 @@ Country.prototype.addDie = function() {
 
 
 
-Country.prototype.color = function() { 
-    if (this == Game.mouseOverCountry()) {
-        if (this == Game.selectedCountry()) {
-            return "gray";
-        } else {
-            return "lightgray";
-        }
-    } else {
-        if (this == Game.selectedCountry()) {
-            return "black";
-        } else {
-            return this._owner.color();
-        }
-    }
-};
-
 
 Country.prototype.borderColor = function() {
     return this._isAttacking ? "red" : "black";

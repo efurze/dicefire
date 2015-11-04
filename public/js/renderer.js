@@ -407,7 +407,7 @@ $(function(){
 	        path.closePath();
 
 
-	        self._context.fillStyle = hexToPaint._country ? hexToPaint._country.color() : "white";
+	        self._context.fillStyle = hexToPaint._country ? Renderer.countryDrawColor(hexToPaint._country) : "white";
 	        if (hexToPaint._color) {
 	            self._context.fillStyle = hexToPaint._color;
 	        }
@@ -489,6 +489,22 @@ $(function(){
 	            self._context.stroke(path);
 	        }
 			
+		},
+		
+		countryDrawColor: function(country) {
+			if (country == Game.mouseOverCountry()) {
+		        if (country == Game.selectedCountry()) {
+		            return "gray";
+		        } else {
+		            return "lightgray";
+		        }
+		    } else {
+		        if (country == Game.selectedCountry()) {
+		            return "black";
+		        } else {
+		            return country._owner.color();
+		        }
+		    }
 		}
 	};
 });
