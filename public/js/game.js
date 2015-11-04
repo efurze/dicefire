@@ -48,13 +48,13 @@ $(function() {
                     var prevCountry = Game._mouseOverCountry;
                     Game._mouseOverCountry = country;                    
                     if (prevCountry) {
-                        Renderer.paintCountry(prevCountry);
+                        Renderer.renderCountry(prevCountry);
                     }
                     if (country) {
 						if ((country.owner() == currentPlayer && country.numDice() > 1) || 
                            (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country))) {
 							Game._canvas.style.cursor = 'pointer';
-                        	Renderer.paintCountry(Game._mouseOverCountry); 
+                        	Renderer.renderCountry(Game._mouseOverCountry); 
                     	} else {
                         	Game._canvas.style.cursor = 'default';                        
 						}
@@ -64,7 +64,7 @@ $(function() {
                 if (Game._mouseOverCountry) {
                     var prevCountry = Engine._mouseOverCountry;
                     Engine._mouseOverCountry = null;                   
-                    Renderer.paintCountry(prevCountry);
+                    Renderer.renderCountry(prevCountry);
                 }
                 Game._canvas.style.cursor = 'default';
             }
@@ -74,7 +74,7 @@ $(function() {
             if (Game._mouseOverCountry) {
                 var country = Game._mouseOverCountry;
                 Game._mouseOverCountry = null;
-                Renderer.paintCountry(country);
+                Renderer.renderCountry(country);
             }
         },
 
@@ -89,22 +89,22 @@ $(function() {
                         // Select and deselect of countries owned by this user.                  
                         if (Game._selectedCountry == country) {
                             Game._selectedCountry = null;
-                            Renderer.paintCountry(country);
+                            Renderer.renderCountry(country);
                         } else {
                             var oldCountry = Game._selectedCountry;
                             Game._selectedCountry = country;
                             if (oldCountry) {
-                                Renderer.paintCountry(oldCountry);
+                                Renderer.renderCountry(oldCountry);
                             }
-                            Renderer.paintCountry(country);
+                            Renderer.renderCountry(country);
                         }
                     } else {
                         // Attacks.
 						Engine.attack(Game._selectedCountry, country, function(result) {
                             var prevCountry = Game._selectedCountry;
                             Game._selectedCountry = null;
-                            Renderer.paintCountry(prevCountry);
-                            Renderer.paintCountry(country);
+                            Renderer.renderCountry(prevCountry);
+                            Renderer.renderCountry(country);
                             $('#end_turn').prop('disabled', false);
                         });
                     }

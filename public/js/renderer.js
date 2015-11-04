@@ -15,17 +15,17 @@ $(function(){
 		},
 		
 		render: function(state) {
-			this.paintWorld();
+			this.renderWorld();
 			this.renderPlayers();
 		},
 		
-		paintWorld: function() {
+		renderWorld: function() {
 			if (Globals.suppress_ui) {
 				return;
 			}
 			var self = this;
 			Country._array.forEach(function(country) {
-				self.paintCountry(country);
+				self.renderCountry(country);
 			});
 		},
 		
@@ -157,7 +157,8 @@ $(function(){
 	        		var oldOwner = toCountry.owner();
 	        		toCountry.setNumDice(fromNumDice - 1);
 	        		fromPlayer.takeCountry(toCountry);
-	        		oldOwner.updateDisplay();
+	        		oldOwner.updateStatus();
+					Renderer.renderPlayer(oldOwner);
 	        	} else {
 					// defender wins
 	                if (Globals.play_sounds) {                
@@ -169,7 +170,12 @@ $(function(){
 				if (Engine.isHuman(fromPlayer._id) && fromPlayer == Engine.currentPlayer()) {
 					$('#end_turn').prop('disabled', false);
 				}
-	            callback();
+				
+				callback();
+				
+				Renderer.renderCountry(fromCountry);
+				Renderer.renderCountry(toCountry);
+				
 			}
 		
 		},
@@ -316,7 +322,7 @@ $(function(){
 
         },
 
-		paintCountry: function (country) {
+		renderCountry: function (country) {
 			if (Globals.suppress_ui || !country) {
 	        	return;
 			}
@@ -324,7 +330,7 @@ $(function(){
 			var self = this;
 			
 	        country._hexes.forEach(function(elem) {
-	            self.paintHex(elem);
+	            self.renderHex(elem);
 	        });
 
 	        var ctr = country.center();
@@ -375,7 +381,7 @@ $(function(){
 	        }
 		},
 
-		paintHex: function (hexToPaint) {
+		renderHex: function (hexToPaint) {
 			var self = this;
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];

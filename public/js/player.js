@@ -130,45 +130,43 @@ Player.prototype.canAttack = function(selectedCountry, country) {
 
 
 // Update the information for this player.
-Player.prototype.updateDisplay = function() {
+Player.prototype.updateStatus = function() {
 	var self = this;
 
 	// Did this player lose?
 	if (this.hasLost()) {
-Renderer.renderPlayer(this);
- 	return;
+		Renderer.renderPlayer(this);
+ 		return;
 	}
 
 
 	var alreadySeen = {};
 	var maxIslandSize = 0;
 
-var traverse = function(country) {
-if (alreadySeen[country.id()]) {
-return 0;
-}
-alreadySeen[country.id()] = true;
-return 1 + 
-country.adjacentCountries().reduce(function(total, adjacentCountry) {
-	if (adjacentCountry.owner() == self) {
-		total += traverse(adjacentCountry);
-	}
-	return total;
-}, 0);
-};
+	var traverse = function(country) {
+		if (alreadySeen[country.id()]) {
+			return 0;
+		}
+		alreadySeen[country.id()] = true;
+	
+		return 1 + 
+				country.adjacentCountries().reduce(function(total, adjacentCountry) {
+					if (adjacentCountry.owner() == self) {
+						total += traverse(adjacentCountry);
+					}
+					return total;
+				}, 0);
+	};
 
 	this._countries.forEach(function(country) {
 		islandSize = traverse(country);
 
-if (islandSize > maxIslandSize) {
-maxIslandSize = islandSize;
-}
-});
+		if (islandSize > maxIslandSize) {
+			maxIslandSize = islandSize;
+		}
+	});
 
 	this._numContiguousCountries = maxIslandSize;
-
-Renderer.renderPlayer(this);
-	
 };
 
 

@@ -58,8 +58,8 @@ Country.pruneLakes = function() {
 
 
 
-Country.prototype.setOwner = function(owner) { this._owner = owner; Renderer.paintCountry(this); };
-Country.prototype.setNumDice = function(num) { this._numDice = num; Renderer.paintCountry(this); };
+Country.prototype.setOwner = function(owner) { this._owner = owner;};
+Country.prototype.setNumDice = function(num) { this._numDice = num;};
 Country.prototype.setIsAttacking = function(isAttacking) { this._isAttacking = isAttacking;};
 
 Country.prototype.id = function() { return this._id; };
@@ -73,7 +73,7 @@ Country.prototype.numDice = function() { return this._numDice; };
 // Adds a die to the country.
 Country.prototype.addDie = function() {
     this._numDice++;
-Renderer.paintCountry(this);
+	Renderer.renderCountry(this);
 }
 
 

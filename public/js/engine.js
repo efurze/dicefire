@@ -71,11 +71,8 @@ Engine = (function() {
 
             Player.array().forEach(function(player) {
                 player.addDice(Globals.startingDice);
-                player.updateDisplay();
-            });
-
-            Country.array().forEach(function(country) {
-                //country.paint();
+                player.updateStatus();
+				Renderer.renderPlayer(player);
             });
 
             Game.startTurn(0);
@@ -138,9 +135,6 @@ Engine = (function() {
 				
 				fromCountry.setIsAttacking(false);
 	            toCountry.setIsAttacking(false);
-	
-				Renderer.paintCountry(fromCountry);
-				Renderer.paintCountry(toCountry);
 
 	            if (fromCountry.owner()._countries.length == Country.array().length) {
 	                Engine.gameOver();
