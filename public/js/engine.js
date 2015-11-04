@@ -24,8 +24,6 @@ Engine = (function() {
                 }
             });
 
-            //Engine.setupRollDivs();
-
             // Clear the Hex and Country statics.
             Player.init(playerCode.length);
             Hex.init(); 
@@ -83,58 +81,20 @@ Engine = (function() {
                 //country.paint();
             });
 
-            Engine.startTurn(0);
+            Game.startTurn(0);
 
         },
 
-
-        click: function(event) {
-            var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
-            if (hex) {
-                var country = hex.country();
-                var currentPlayer = Player.get(Engine._currentPlayerId);                    
-                if (country) {
-                    if (country.owner() == currentPlayer && country.numDice() > 1) {  
-                        // Select and deselect of countries owned by this user.                  
-                        if (Engine._selectedCountry == country) {
-                            Engine._selectedCountry = null;
-                            country.click();
-                        } else {
-                            var oldCountry = Engine._selectedCountry;
-                            Engine._selectedCountry = country;
-                            if (oldCountry) {
-                                oldCountry.click();
-                            }
-                            country.click();
-                        }
-                    } else {
-                        // Attacks.
-                        if (Engine._selectedCountry != null && currentPlayer.canAttack(Engine._selectedCountry, country)) {
-                            // Disable the button during attacks.
-                            $('#end_turn').prop('disabled', true);
-                            currentPlayer.attack(Engine._selectedCountry, country, function(result) {
-                                var prevCountry = Engine._selectedCountry;
-                                Engine._selectedCountry = null;
-                                //prevCountry.paint();
-                                //country.paint();
-                                $('#end_turn').prop('disabled', false);;
-                            });
-                        }
-                    }
-                }
-            }            
-        },
 
         startTurn: function(playerId) {
             Engine._currentPlayerId = playerId;
             Player.get(playerId).startTurn();
 
             if (Engine._playerCode[playerId] != "human") {
-                $('#end_turn').prop('disabled', true);
                 Engine._playerCode[playerId].startTurn(Engine.interface);
-            } else {
-                $('#end_turn').prop('disabled', false);
-            }
+            } 
+
+			Renderer.renderPlayers();
         },
 
         endTurn: function(event) {
@@ -153,7 +113,7 @@ Engine = (function() {
                 return;
             }
 
-            Engine.startTurn(Engine._currentPlayerId);
+            Game.startTurn(Engine._currentPlayerId);
         },
 
         // Called when an attack ends the game.

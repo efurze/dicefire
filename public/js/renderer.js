@@ -1,14 +1,116 @@
 $(function(){
 	window.Renderer = {
+		
+		init: function(playerCount) {
+			this.setupRollDivs();
+			this.setupPlayerDivs(playerCount);
+			
+		},
+		
 		render: function(state) {
 			this.paintWorld();
+			this.renderPlayers();
 		},
 		
 		paintWorld: function() {
+			if (Globals.suppress_ui) {
+				return;
+			}
 			var self = this;
 			Country._array.forEach(function(country) {
 				self.paintCountry(country);
 			});
+		},
+		
+		renderPlayers: function() {
+			var self = this;
+			Player._array.forEach(function(player){
+				self.renderPlayer(player);
+			});
+		},
+		
+		renderPlayer: function(player) {
+			if (Globals.suppress_ui || !player) {
+				return;
+			}
+			
+			if (player._countries.length == 0) {
+				$('#player' + player._id).css({'display': 'none'});
+			} else {
+				
+				// Highlight the player's status box
+				if (player == Game.currentPlayer()) {
+					$('#player' + player._id).css({'border': '3px double'});
+				} else {
+					$('#player' + player._id).css({'border': '1px solid'});
+				}
+				
+				// update stats
+				$('#dice' + player._id).html(player._numContiguousCountries);
+		    	$('#stored' + player._id).html(player._storedDice);
+			}
+		},
+		
+		setupPlayerDivs: function(playerCount) {
+			if (Globals.suppress_ui) {
+				return;
+			}
+			
+			$('#players').html('');
+			
+			// add a "country count" div for each player
+			for (var id=0; id < playerCount; ++id) {
+				
+				$('#players').append(
+		    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>" + 
+		    		"<div id='dice" + id + "'>1</div>" +
+		    		"<div id='stored" + id + "'>0</div></div>"
+		    	);
+
+		    	$('#player' + id).css(
+		    		{
+		    			'font-family': 'sans-serif',
+		    			'display': 'inline-block',
+		    			'margin': '10px',
+		    			'padding': '10px',
+		    			'width': '80px',
+		    			'height': '20px',
+		    			'border': '1px solid black'
+
+		    		}
+		    	);
+
+		    	$('#colorblock' + id).css( 
+			    	{
+			    		'display': 'inline-block',
+			    		'width': '20px',
+			    		'height': '20px',
+			    		'background-color': Player.colors[id]
+			    	}
+		    	);
+
+		    	$('#dice' + id).css(
+			    	{
+						'display': 'inline-block',
+						'margin-left': '12px',
+						'margin-top': '2px',
+						'vertical-align': 'top',
+						'text-align': 'center'
+			    	}
+		    	);
+
+				$('#stored' + id).css(
+			    	{
+						'display': 'inline-block',
+						'margin-left': '12px',
+						'margin-top': '2px',
+						'vertical-align': 'top',
+						'text-align': 'center',
+						'color': Player.colors[id]
+			    	}
+		    	);
+			}
+			
 		},
 		
 		setupRollDivs: function() {

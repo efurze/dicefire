@@ -12,7 +12,7 @@ $(function() {
 		
 		init: function (playerCode) {
 			Engine.init(playerCode);
-			Renderer.setupRollDivs();
+			Renderer.init(playerCode.length);
 			Renderer.render(Engine.serializeState());
 			
 			$(Globals.canvas).mousemove(Game.mouseMove);
@@ -22,6 +22,16 @@ $(function() {
 			$('#end_turn').click(Engine.endTurn);
 		},
 		
+		startTurn: function(playerId) {
+         
+            if (Engine._playerCode[playerId] != "human") {
+                $('#end_turn').prop('disabled', true);
+            } else {
+                $('#end_turn').prop('disabled', false);
+            }
+
+			Engine.startTurn(playerId);
+        },
 		
 		mouseMove: function(event) {
 

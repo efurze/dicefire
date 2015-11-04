@@ -7,60 +7,12 @@ $(function() {
     	this._numContiguousCountries = 0;
 
     	var id = this._id;
-    	$('#players').append(
-    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>" + 
-    		"<div id='dice" + id + "'>1</div>" +
-    		"<div id='stored" + id + "'>0</div></div>"
-    	);
-    	
-    	$('#player' + id).css(
-    		{
-    			'font-family': 'sans-serif',
-    			'display': 'inline-block',
-    			'margin': '10px',
-    			'padding': '10px',
-    			'width': '80px',
-    			'height': '20px',
-    			'border': '1px solid black'
-
-    		}
-    	);
-    	
-    	$('#colorblock' + id).css( 
-	    	{
-	    		'display': 'inline-block',
-	    		'width': '20px',
-	    		'height': '20px',
-	    		'background-color': Player.colors[id]
-	    	}
-    	);
-
-    	$('#dice' + id).css(
-	    	{
-				'display': 'inline-block',
-				'margin-left': '12px',
-				'margin-top': '2px',
-				'vertical-align': 'top',
-				'text-align': 'center'
-	    	}
-    	);
-
-		$('#stored' + id).css(
-	    	{
-				'display': 'inline-block',
-				'margin-left': '12px',
-				'margin-top': '2px',
-				'vertical-align': 'top',
-				'text-align': 'center',
-				'color': Player.colors[id]
-	    	}
-    	);    	
+    	    	
 
 		Player._array.push(this);
     };
 
     Player.init = function(count) {
-    	$('#players').html('');
 
     	if (count > Player.colors.length) {
     		count = Player.colors.length;
@@ -140,23 +92,12 @@ $(function() {
 
 
     Player.prototype.startTurn = function() {
-			$('#player' + this._id).css(
-    		{
-    			'border': '3px double'
-    		}
-    	);
+			Renderer.renderPlayer(this);
     };
 
     Player.prototype.endTurn = function() {
-    	if (!this.hasLost()) {
-			$('#player' + this._id).css(
-	    		{
-	    			'border': '1px solid'
-	    		}
-	    	);
-			this.addDice(this._numContiguousCountries);
-			this.updateDisplay();
-		}
+		this.addDice(this._numContiguousCountries);
+		Renderer.renderPlayer(this);
     };
 
     // Do an attack.
@@ -323,11 +264,7 @@ $(function() {
 
     	// Did this player lose?
     	if (this.hasLost()) {
-    		$('#player' + this._id).css(
-	    		{
-	    			'display': 'none'
-	    		}
-	    	);
+			Renderer.renderPlayer(this);
 	    	return;
     	}
 
@@ -358,8 +295,9 @@ $(function() {
 		});
 
     	this._numContiguousCountries = maxIslandSize;
-    	$('#dice' + this._id).html(maxIslandSize);
-    	$('#stored' + this._id).html(this._storedDice);
+
+		Renderer.renderPlayer(this);
+    	
     };
 
 });
