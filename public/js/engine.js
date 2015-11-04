@@ -13,9 +13,6 @@ Engine = (function() {
         init: function(playerCode) {
             console.time("DICEFIRE");
 
-            Globals.context.clearRect(0,0,2000,2000);
-            Globals.context.lineJoin = "straight";
-
             Engine._playerCode = playerCode;
             var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
             Engine._playerCode.forEach(function(elem, index) {

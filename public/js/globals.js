@@ -1,5 +1,4 @@
-$(function() {
-	window.Globals = {
+Globals = {
 	    debug: function(title) {
 	        console.log(title, arguments);
 	    },
@@ -17,32 +16,29 @@ $(function() {
 	};
 
 
-	Globals.canvas = document.getElementById("c");
-	Globals.context = Globals.canvas.getContext('2d');
 
-	Globals.shuffleArray = function(inArray) {
-		// Copy the array to avoid changing it.
-		var array = inArray.map(function(elem) { return elem; });
+Globals.shuffleArray = function(inArray) {
+	// Copy the array to avoid changing it.
+	var array = inArray.map(function(elem) { return elem; });
 
-	    var counter = array.length, temp, index;
+    var counter = array.length, temp, index;
 
-	    // While there are elements in the array
-	    while (counter > 0) {
-	        // Pick a random index
-	        index = Math.floor(Math.random() * counter);
+    // While there are elements in the array
+    while (counter > 0) {
+        // Pick a random index
+        index = Math.floor(Math.random() * counter);
 
-	        // Decrease counter by 1
-	        counter--;
+        // Decrease counter by 1
+        counter--;
 
-	        // And swap the last element with it
-	        temp = array[counter];
-	        array[counter] = array[index];
-	        array[index] = temp;
-	    }
+        // And swap the last element with it
+        temp = array[counter];
+        array[counter] = array[index];
+        array[index] = temp;
+    }
 
-	    return array;
-	};
+    return array;
+};
 
-});
 
 

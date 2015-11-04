@@ -1,6 +1,4 @@
-$(function() {
-
-    window.Dir = {
+Dir = {
         obj: {
             NW:     0,
             N:      1,
@@ -97,4 +95,3 @@ $(function() {
             return Hex.get(newHexId);
         }
     };
-});

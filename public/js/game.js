@@ -5,19 +5,20 @@ $(function() {
 		
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
+		_canvas: document.getElementById("c"),
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
+			Renderer.init(playerCode.length, Game._canvas);
 			Engine.init(playerCode);
-			Renderer.init(playerCode.length);
 			Renderer.render(Engine.serializeState());
 			
-			$(Globals.canvas).mousemove(Game.mouseMove);
-            $(Globals.canvas).mouseleave(Game.mouseLeave);
-            $(Globals.canvas).click(Game.click);
+			$(Game._canvas).mousemove(Game.mouseMove);
+            $(Game._canvas).mouseleave(Game.mouseLeave);
+            $(Game._canvas).click(Game.click);
             $('#start_test').click(Game.startTest);
 			$('#end_turn').click(Engine.endTurn);
 		},
@@ -39,7 +40,7 @@ $(function() {
             if (hex) {
                 var country = hex.country();
                 if (!country) {
-                    Globals.canvas.style.cursor = 'default';
+                    Game._canvas.style.cursor = 'default';
                 }
 
                 if (country != Game._mouseOverCountry) {
@@ -52,10 +53,10 @@ $(function() {
                     if (country) {
 						if ((country.owner() == currentPlayer && country.numDice() > 1) || 
                            (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country))) {
-							Globals.canvas.style.cursor = 'pointer';
+							Game._canvas.style.cursor = 'pointer';
                         	Renderer.paintCountry(Game._mouseOverCountry); 
                     	} else {
-                        	Globals.canvas.style.cursor = 'default';                        
+                        	Game._canvas.style.cursor = 'default';                        
 						}
                     }
                 }
@@ -65,7 +66,7 @@ $(function() {
                     Engine._mouseOverCountry = null;                   
                     Renderer.paintCountry(prevCountry);
                 }
-                Globals.canvas.style.cursor = 'default';
+                Game._canvas.style.cursor = 'default';
             }
         },
 
@@ -106,19 +107,6 @@ $(function() {
                             Renderer.paintCountry(country);
                             $('#end_turn').prop('disabled', false);
                         });
-				/*
-                        if (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country)) {
-                            // Disable the button during attacks.
-                            $('#end_turn').prop('disabled', true);
-                            currentPlayer.attack(Game._selectedCountry, country, function(result) {
-                                var prevCountry = Game._selectedCountry;
-                                Game._selectedCountry = null;
-                                Renderer.paintCountry(prevCountry);
-                                Renderer.paintCountry(country);
-                                $('#end_turn').prop('disabled', false);
-                            });
-                        }
-				*/
                     }
                 }
             }            

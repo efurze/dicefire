@@ -1,7 +1,14 @@
 $(function(){
 	window.Renderer = {
 		
-		init: function(playerCount) {
+		_canvas: null,
+		_context: null,
+		
+		init: function(playerCount, canvas) {
+			this._canvas = canvas;
+			this._context = this._canvas.getContext('2d');
+			this._context.clearRect(0,0,2000,2000);
+            this._context.lineJoin = "straight";
 			this.setupRollDivs();
 			this.setupPlayerDivs(playerCount);
 			
@@ -324,34 +331,34 @@ $(function(){
 
 	        // Draw the number box.
 	        var boxSize = 10;
-	        Globals.context.fillStyle = "white";
-	        Globals.context.fillRect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
-	        Globals.context.rect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
-	        Globals.context.lineWidth = 1;
-	        Globals.context.strokeStyle = "black";
-	        Globals.context.stroke();
+	        self._context.fillStyle = "white";
+	        self._context.fillRect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
+	        self._context.rect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
+	        self._context.lineWidth = 1;
+	        self._context.strokeStyle = "black";
+	        self._context.stroke();
 
-	        Globals.context.fillStyle = "black";
-	        Globals.context.textAlign = "center";
-	        Globals.context.font = "bold 18px sans-serif";
-	        Globals.context.fillText(country._numDice, ctr[0], ctr[1]);
+	        self._context.fillStyle = "black";
+	        self._context.textAlign = "center";
+	        self._context.font = "bold 18px sans-serif";
+	        self._context.fillText(country._numDice, ctr[0], ctr[1]);
 
 	        if (Globals.markCountryCenters) {
 	            var path = new Path2D();
 	            path.moveTo(ctr[0] - 4, ctr[1] - 4);
 	            path.lineTo(ctr[0] + 4, ctr[1] + 4);
 	            path.closePath();
-	            Globals.context.strokeStyle = "black";
-	            Globals.context.lineWidth = 2;
-	            Globals.context.stroke(path);
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 2;
+	            self._context.stroke(path);
 
 	            path = new Path2D();
 	            path.moveTo(ctr[0] - 4, ctr[1] + 4);
 	            path.lineTo(ctr[0] + 4, ctr[1] - 4);
 	            path.closePath();
-	            Globals.context.strokeStyle = "black";
-	            Globals.context.lineWidth = 2;
-	            Globals.context.stroke(path);
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 2;
+	            self._context.stroke(path);
 	        }
 
 	        if (Globals.drawCountryConnections) {
@@ -361,14 +368,15 @@ $(function(){
 	                path.moveTo(ctr[0], ctr[1]);
 	                path.lineTo(otherCenter[0], otherCenter[1]);
 	                path.closePath();
-	                Globals.context.strokeStyle = "black";
-	                Globals.context.lineWidth = 1;
-	                Globals.context.stroke(path);
+	                self._context.strokeStyle = "black";
+	                self._context.lineWidth = 1;
+	                self._context.stroke(path);
 	            });
 	        }
 		},
 
 		paintHex: function (hexToPaint) {
+			var self = this;
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
 
@@ -383,11 +391,11 @@ $(function(){
 	        path.closePath();
 
 
-	        Globals.context.fillStyle = hexToPaint._country ? hexToPaint._country.color() : "white";
+	        self._context.fillStyle = hexToPaint._country ? hexToPaint._country.color() : "white";
 	        if (hexToPaint._color) {
-	            Globals.context.fillStyle = hexToPaint._color;
+	            self._context.fillStyle = hexToPaint._color;
 	        }
-	        Globals.context.fill(path);
+	        self._context.fill(path);
 
 
 	        if (hexToPaint._country) {
@@ -433,17 +441,17 @@ $(function(){
 
 	                }
 	                edgePath.closePath();
-	                Globals.context.strokeStyle = hexToPaint._country.borderColor();
-	                Globals.context.lineWidth = hexToPaint.BORDER_THICKNESS;
+	                self._context.strokeStyle = hexToPaint._country.borderColor();
+	                self._context.lineWidth = hexToPaint.BORDER_THICKNESS;
 
-	                Globals.context.stroke(edgePath);
+	                self._context.stroke(edgePath);
 	            });
 	        }
 	
 			if (Globals.showNumbers) {
-	            Globals.context.lineWidth = 1;
-	            Globals.context.font = "11px sans-serif";
-	            Globals.context.strokeText(hexToPaint._id, upperLeftX, upperLeftY + hexToPaint.HEIGHT / 2);
+	            self._context.lineWidth = 1;
+	            self._context.font = "11px sans-serif";
+	            self._context.strokeText(hexToPaint._id, upperLeftX, upperLeftY + hexToPaint.HEIGHT / 2);
 	        }
 
 	        if (Globals.markHexCenters) {
@@ -452,17 +460,17 @@ $(function(){
 	            path.moveTo(ctr[0] - 2, ctr[1] - 2);
 	            path.lineTo(ctr[0] + 2, ctr[1] + 2);
 	            path.closePath();
-	            Globals.context.strokeStyle = "black";
-	            Globals.context.lineWidth = 1;
-	            Globals.context.stroke(path);
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 1;
+	            self._context.stroke(path);
 
 	            path = new Path2D();
 	            path.moveTo(ctr[0] - 2, ctr[1] + 2);
 	            path.lineTo(ctr[0] + 2, ctr[1] - 2);
 	            path.closePath();
-	            Globals.context.strokeStyle = "black";
-	            Globals.context.lineWidth = 1;
-	            Globals.context.stroke(path);
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 1;
+	            self._context.stroke(path);
 	        }
 			
 		}
