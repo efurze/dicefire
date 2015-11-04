@@ -273,7 +273,7 @@ $(function() {
             toCountry.setIsAttacking(false);
 
             if (self._countries.length == Country.array().length) {
-                Game.gameOver();
+                Engine.gameOver();
             }
 
             callback({

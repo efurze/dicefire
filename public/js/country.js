@@ -59,9 +59,9 @@ $(function() {
 
 
 
-    Country.prototype.setOwner = function(owner) { this._owner = owner; /*this.paint();*/ };
-    Country.prototype.setNumDice = function(num) { this._numDice = num; this.paint(); };
-    Country.prototype.setIsAttacking = function(isAttacking) { this._isAttacking = isAttacking; this.paint(); };
+    Country.prototype.setOwner = function(owner) { this._owner = owner; Renderer.paintCountry(this); };
+    Country.prototype.setNumDice = function(num) { this._numDice = num; Renderer.paintCountry(this); };
+    Country.prototype.setIsAttacking = function(isAttacking) { this._isAttacking = isAttacking;};
 
     Country.prototype.id = function() { return this._id; };
     Country.prototype.owner = function() { return this._owner; };
@@ -74,6 +74,7 @@ $(function() {
     // Adds a die to the country.
     Country.prototype.addDie = function() {
         this._numDice++;
+		Renderer.paintCountry(this);
     }
 
 
@@ -213,21 +214,5 @@ $(function() {
         });
     };
 
-
-    Country.prototype.mouseEnter = function() {
-        Globals.canvas.style.cursor = 'pointer';
-        this.paint();
-    };
-
-
-    Country.prototype.mouseLeave = function() {
-        this.paint();
-    };
-
-    Country.prototype.click = function() {
-        if (this._owner == Game.currentPlayer()) {
-            this.paint();
-        }
-    };
 
 });

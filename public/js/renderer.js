@@ -92,7 +92,7 @@ $(function(){
         },
 
 		paintCountry: function (country) {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !country) {
 	        	return;
 			}
 			
@@ -179,37 +179,37 @@ $(function(){
 	                    case Dir.obj.NW: 
 	                    case "NW":
 	                        edgePath.moveTo(upperLeftX, upperLeftY);
-	                        edgePath.lineTo(upperLeftX - hexToPaint.EDGE_LENGTH / 2, upperLeftY + hexToPaint.HEIGHT / 2);
+	                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
 	                        break;
 
 	                    case Dir.obj.N:
 	                    case "N":
 	                        edgePath.moveTo(upperLeftX, upperLeftY);
-	                        edgePath.lineTo(upperLeftX + hexToPaint.EDGE_LENGTH, upperLeftY);
+	                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
 	                        break;
 
 	                    case Dir.obj.NE:
 	                    case "NE":
-	                        edgePath.moveTo(upperLeftX + hexToPaint.EDGE_LENGTH, upperLeftY);
-	                        edgePath.lineTo(upperLeftX + hexToPaint.EDGE_LENGTH + hexToPaint.EDGE_LENGTH / 2, upperLeftY + hexToPaint.HEIGHT / 2);
+	                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
+	                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
 	                        break;
 
 	                    case Dir.obj.SE:
 	                    case "SE":
-	                        edgePath.moveTo(upperLeftX + hexToPaint.EDGE_LENGTH + hexToPaint.EDGE_LENGTH / 2, upperLeftY + hexToPaint.HEIGHT / 2);
-	                        edgePath.lineTo(upperLeftX + hexToPaint.EDGE_LENGTH, upperLeftY + hexToPaint.HEIGHT);
+	                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+	                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
 	                        break;
 
 	                    case Dir.obj.S:
 	                    case "S":
-	                        edgePath.moveTo(upperLeftX + hexToPaint.EDGE_LENGTH, upperLeftY + hexToPaint.HEIGHT);
-	                        edgePath.lineTo(upperLeftX, upperLeftY + hexToPaint.HEIGHT);
+	                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
+	                        edgePath.lineTo(upperLeftX, upperLeftY + Hex.HEIGHT);
 	                        break;
 
 	                    case Dir.obj.SW:
 	                    case "SW":
-	                        edgePath.moveTo(upperLeftX, upperLeftY + hexToPaint.HEIGHT);
-	                        edgePath.lineTo(upperLeftX - hexToPaint.EDGE_LENGTH / 2, upperLeftY + hexToPaint.HEIGHT / 2);
+	                        edgePath.moveTo(upperLeftX, upperLeftY + Hex.HEIGHT);
+	                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
 	                        break;                    
 
 
