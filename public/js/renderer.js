@@ -3,10 +3,8 @@ $(function(){
 		
 		_canvas: null,
 		_context: null,
-		_map: null,
 		
-		init: function(playerCount, hexes, canvas) {
-			this.ma = hexes;
+		init: function(playerCount, canvas) {
 			this._canvas = canvas;
 			this._context = this._canvas.getContext('2d');
 			this._context.clearRect(0,0,2000,2000);
@@ -16,7 +14,7 @@ $(function(){
 			
 		},
 		
-		render: function(state) {
+		render: function() {
 			this.renderWorld();
 			this.renderPlayers();
 		},

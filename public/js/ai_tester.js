@@ -15,10 +15,10 @@ $(function() {
 			Globals.suppress_ui = 0;
 			
 			Engine.init(playerCode);
-			Renderer.init(playerCode.length, Map._hexArray, Game._canvas);			
+			Renderer.init(playerCode.length, Game._canvas);			
 			Engine.setup();
 			
-			Renderer.render(Engine.serializeState());
+			Renderer.render();
 						
 			$(Game._canvas).mousemove(Game.mouseMove);
             $(Game._canvas).mouseleave(Game.mouseLeave);
