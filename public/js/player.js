@@ -64,39 +64,7 @@ Player.prototype.hasLost = function() { return this._countries.length == 0; };
 Player.prototype.storedDice = function() { return this._storedDice; };
 Player.prototype.numContiguousCountries = function() { return this._numContiguousCountries; };
 
-// Give dice to this player. In all cases, the dice go to random
-// countries
-Player.prototype.addDice = function(num) {
 
-	// Make stored dice available for distribution.
-	num += this._storedDice;
-	this._storedDice = 0;
-
-	var countriesWithSpace;
-	for (var i = 0; i < num; i++) {
-		// Have to do this again and again because countries may fill up.
- 	countriesWithSpace = this.countriesWithSpace();
- 	if (countriesWithSpace.length == 0) {
- 		this._storedDice += num - i;
- 		if (this._storedDice > Globals.maxStoredDice) {
- 			this._storedDice = Globals.maxStoredDice;
- 		}
- 		break;
- 	}
- 	var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
-		country.addDie();
-	}
-};
-
-
-Player.prototype.startTurn = function() {
-	Renderer.renderPlayer(this);
-};
-
-Player.prototype.endTurn = function() {
-	this.addDice(this._numContiguousCountries);
-	Renderer.renderPlayer(this);
-};
 
 
 // Take ownership of a country.
@@ -135,7 +103,6 @@ Player.prototype.updateStatus = function() {
 
 	// Did this player lose?
 	if (this.hasLost()) {
-		Renderer.renderPlayer(this);
  		return;
 	}
 

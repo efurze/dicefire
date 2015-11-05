@@ -41,7 +41,6 @@ Country.prototype.numDice = function() { return this._numDice; };
 // Adds a die to the country.
 Country.prototype.addDie = function() {
     this._numDice++;
-	Renderer.renderCountry(this);
 }
 
 

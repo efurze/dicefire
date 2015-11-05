@@ -27,10 +27,35 @@ Engine = {
 		
 		// assign initial dice
 		Player.array().forEach(function(player) {
-			player.addDice(Globals.startingDice);
+			Engine.addDiceToPlayer(player, Globals.startingDice);
 			player.updateStatus();
 			Renderer.renderPlayer(player);
 		});
+	},
+	
+	// Give dice to a player. In all cases, the dice go to random
+	// countries
+	addDiceToPlayer: function(player, num) {
+
+		// Make stored dice available for distribution.
+		num += player._storedDice;
+		player._storedDice = 0;
+
+		var countriesWithSpace;
+		for (var i = 0; i < num; i++) {
+			// Have to do this again and again because countries may fill up.
+	 		countriesWithSpace = player.countriesWithSpace();
+	 		if (countriesWithSpace.length == 0) {
+	 			player._storedDice += num - i;
+	 			if (player._storedDice > Globals.maxStoredDice) {
+	 				player._storedDice = Globals.maxStoredDice;
+	 			}
+	 			break;
+	 		}
+	 		var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
+			country.addDie();
+			Renderer.renderCountry(country);
+		}
 	},
 
 	isHuman: function(playerId) {
@@ -39,7 +64,6 @@ Engine = {
 
 	startTurn: function(playerId) {
 		Engine._currentPlayerId = playerId;
-		Player.get(playerId).startTurn();
 
 		if (Engine._playerCode[playerId] != "human") {
 			Engine._playerCode[playerId].startTurn(Engine.interface);
@@ -50,7 +74,10 @@ Engine = {
 	},
 
 	endTurn: function(event) {
-		Player.get(Engine._currentPlayerId).endTurn();
+		var player = Player.get(Engine._currentPlayerId);
+		Engine.addDiceToPlayer(player, player._numContiguousCountries);
+		Renderer.renderPlayer(player);
+		
 		Engine._currentPlayerId++;
 		if (Engine._currentPlayerId >= Engine._playerCode.length) {
 			Engine._currentPlayerId = 0;
@@ -114,6 +141,10 @@ Engine = {
 				toCountry.setNumDice(fromNumDice - 1);
 				fromPlayer.takeCountry(toCountry);
 				oldOwner.updateStatus();
+				
+				// this defeat may have knocked oldOwner out.
+				// Redraw its info
+				Renderer.renderPlayer(oldOwner);
 
 				if (fromCountry.owner()._countries.length == Map._countryArray.length) {
 					Engine.gameOver();

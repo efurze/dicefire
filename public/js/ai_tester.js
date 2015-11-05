@@ -13,10 +13,13 @@ $(function() {
 		
 		init: function (playerCode) {
 			Globals.suppress_ui = 0;
-			Renderer.init(playerCode.length, Game._canvas);
-			Engine.init(playerCode);
-			Renderer.render(Engine.serializeState());
 			
+			Engine.init(playerCode);
+			Renderer.init(playerCode.length, Map._hexArray, Game._canvas);			
+			Engine.setup();
+			
+			Renderer.render(Engine.serializeState());
+						
 			$(Game._canvas).mousemove(Game.mouseMove);
             $(Game._canvas).mouseleave(Game.mouseLeave);
             $(Game._canvas).click(Game.click);
