@@ -58,7 +58,7 @@ Globals.channels = [
 	3, //"ENGINE",
 	3, //"MAP",
 	3, //"HEX",
-	4, //"COUNTRY",
+	3, //"COUNTRY",
 	3 //"PLAYER"
 ];
 

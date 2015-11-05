@@ -2,7 +2,7 @@ Hex = function(id) {
 		this._id = id;
         this._x = this._id % Hex.NUM_WIDE;
         this._y = Math.floor(this._id / Hex.NUM_WIDE);
-        this._country = null;
+        this._countryId = -1;
         this._countryEdgeDirections = [];
 		Globals.debug("Constructed hex", this, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
     };
@@ -27,12 +27,15 @@ Hex.prototype.x = function() { return this._x; };
 Hex.prototype.y = function() { return this._y; };
 
 Hex.prototype.setCountry = function(country) { 
-	Globals.debug("Hex country for hex", this, country, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
-	this._country = country; 
+	Globals.debug("Set country for hex", this, country, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
+	if (country && country !== Map.getCountry(country._id)) {
+		Globals.debug("Parented to country not in country list", this, country, Globals.LEVEL.WARN, Globals.CHANNEL.HEX);
+	} 
+	this._countryId = country ? country._id : -1;
 };
 
 Hex.prototype.country = function() { 
-	return this._country; 
+	return Map.getCountry(this._countryId); 
 };
 
 // The directions which are boundaries between this cell and another country or the edge of the board.

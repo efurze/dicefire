@@ -128,7 +128,11 @@ $(function() {
 		},
 		
 		historyForward: function (event) {
-			
+			if (Game._historyIndex < Engine._history.length - 1) {
+				Game._historyIndex ++;
+				var gameState = Engine.deserialize(Engine._history[Game._historyIndex]);
+				Renderer.render(gameState.players, gameState.countries);
+			}
 		}
 		
 	};

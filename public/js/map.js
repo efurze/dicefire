@@ -4,9 +4,28 @@ Map = {
 	_countryArray: [],
 	
 	getHex: function(id) {
+		if (id < 0 || id >= this._hexArray.length) {
+			return null;
+		}
+		if (this._hexArray[id] === null) {
+			Globals.debug("Nonexistant hex requested", id, Globals.LEVEL.WARN, Globals.CHANNEL.MAP);
+			return null;
+		}
+		
 		return this._hexArray[id];
 	},
 	
+	getCountry: function(id) {
+		if (id < 0 || id >= this._countryArray.length) {
+			return null;
+		}
+		if (this._countryArray[id] === null) {
+			Globals.debug("Nonexistant country requested", id, Globals.LEVEL.WARN, Globals.CHANNEL.MAP);
+			return null;
+		}
+		
+		return this._countryArray[id];
+	},
 	
 	generateMap: function() {
 		
@@ -17,8 +36,9 @@ Map = {
 	    Globals.debug("Created hexes ", Hex._array, Globals.LEVEL.INFO, Globals.CHANNEL.MAP);
 		
 		var country = new Country(this._countryArray.length);
-		country.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)]);
 		this._countryArray.push(country);
+		country.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)]);
+		
 
 		for (var i = 0; i < Globals.numCountries - 1; i++) {
 			var countryStart = Math.floor(Math.random() * this._countryArray.length);
@@ -39,8 +59,8 @@ Map = {
 				break;
 			}
 			var newCountry = new Country(this._countryArray.length);
-			newCountry.landGrab(adjacentHex);
 			this._countryArray.push(newCountry);
+			newCountry.landGrab(adjacentHex);
 			if (newCountry.isLake()) {
 				i--;
 			}
@@ -84,7 +104,7 @@ Map = {
 	    });
 	    // Redo country ids to eliminate holes
 	    this._countryArray = this._countryArray.map(function(elem, index) {
-	        elem._id = index;
+	        elem.setId(index);
 	        return elem;
 	    });
 

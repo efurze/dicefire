@@ -13,6 +13,19 @@ Country = function(id) {
 Country.MAX_HEXES = 100;
 Country.MIN_HEXES = 30;
 
+
+Country.prototype.setId = function(id) {
+	Globals.debug("Changine country id from "+ this._id + " to " + id, this, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);
+	var self = this;
+	self._id = id;
+	if (Map.getCountry(id) != self) {
+		Globals.debug("Country id set to value which doesn't match Map array", this, Globals.LEVEL.WARN, Globals.CHANNEL.COUNTRY);
+	}
+	self._hexes.forEach(function(hex) {
+		hex.setCountry(self);
+	});
+}
+
 Country.prototype.serialize = function() {
 	var state = {
 		id : this._id,
@@ -53,7 +66,11 @@ Country.prototype.landGrab = function(starthex) {
 };
 
 Country.prototype.addAdjacentCountry = function(country) {
-	Globals.debug("adding adjacent country", this, country, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
+	if (!country) {
+		Globals.debug("tried to add NULL adjacent country", this, Globals.LEVEL.WARN, Globals.CHANNEL.COUNTRY);        
+	} else {
+		Globals.debug("adding adjacent country", this, country, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
+	}
 	this._adjacentCountries.push(country);
 }
 
@@ -73,8 +90,6 @@ Country.prototype.numDice = function() { return this._numDice; };
 Country.prototype.addDie = function() {
     this._numDice++;
 }
-
-
 
 
 Country.prototype.borderColor = function() {
@@ -122,7 +137,7 @@ Country.prototype.findAdjacentHex = function() {
         for ( var j = 0; j < Dir.array.length; j++) {
             var dir = Dir.array[Math.floor(Math.random() * Dir.array.length)];
             var newHex = Dir.nextHex(this._hexes[hex], dir);
-            if (newHex && newHex.country() === null) {
+            if (newHex && !newHex.country()) {
                 return newHex;
             }
 

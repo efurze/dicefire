@@ -367,7 +367,7 @@ $(function(){
 			var self = this;
 			
 	        country._hexes.forEach(function(elem) {
-	            self.renderHex(elem);
+	            self.renderHex(elem, country);
 	        });
 
 	        var ctr = country.center();
@@ -418,7 +418,7 @@ $(function(){
 	        }
 		},
 
-		renderHex: function (hexToPaint) {
+		renderHex: function (hexToPaint, country) {
 			var self = this;
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
@@ -434,14 +434,14 @@ $(function(){
 	        path.closePath();
 
 
-	        self._context.fillStyle = hexToPaint._country ? Renderer.countryDrawColor(hexToPaint._country) : "white";
+	        self._context.fillStyle = country ? Renderer.countryDrawColor(country) : "white";
 	        if (hexToPaint._color) {
 	            self._context.fillStyle = hexToPaint._color;
 	        }
 	        self._context.fill(path);
 
 
-	        if (hexToPaint._country) {
+	        if (country) {
 	            hexToPaint._countryEdgeDirections.forEach(function(dir) {
 	                var edgePath = new Path2D();
 	                switch(dir) {
@@ -484,7 +484,7 @@ $(function(){
 
 	                }
 	                edgePath.closePath();
-	                self._context.strokeStyle = hexToPaint._country.borderColor();
+	                self._context.strokeStyle = country.borderColor();
 	                self._context.lineWidth = hexToPaint.BORDER_THICKNESS;
 
 	                self._context.stroke(edgePath);
