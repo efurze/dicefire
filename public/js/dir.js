@@ -92,6 +92,6 @@ Dir = {
             }
 
 
-            return Hex.get(newHexId);
+            return Map.getHex(newHexId);
         }
     };

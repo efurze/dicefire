@@ -21,39 +21,9 @@ Engine = {
 
 		// Clear the Hex and Country statics.
 		Player.init(playerCode.length);
-		Hex.init(); 
 		Country.init();
-		var country = new Country(Hex.get(Math.floor(Math.random() * Hex.count())));
 
-		for (var i = 0; i < Globals.numCountries - 1; i++) {
-			var countryStart = Math.floor(Math.random() * Country.count());
-			var adjacentHex;
-
-			for (var j = 0; j < Country.count(); j++) {
-				var country = Country.get((j + countryStart) % Country.count());
-				if (country.isLake()) {
-					continue;
-				}
-				adjacentHex = country.findAdjacentHex(true);
-				if (adjacentHex) {
-					break;
-				}
-			}
-			if (!adjacentHex) {
-				Globals.debug("RAN OUT OF SPACE!", i);
-				break;
-			}
-			var newCountry = new Country(adjacentHex);
-			if (newCountry.isLake()) {
-				i--;
-			}
-		}
-
-		Globals.debug("Created countries", Country.array());
-
-		Hex.absorbSingles();
-		Country.pruneLakes();
-
+		var country = Map.generateMap();
 
 		// Use a shuffled countries list to randomize who gets what.
 		var shuffledCountries = Globals.shuffleArray(Country.array());

@@ -161,7 +161,7 @@ Country.prototype.growCountry = function() {
 Country.prototype.absorbLake = function() {
     var newCountry = null;
     this._hexes.forEach(function(hex) {
-        hex.moveToAdjacentCountry();
+        Map.moveToAdjacentCountry(hex);
     })
     this._hexes = [];
 };

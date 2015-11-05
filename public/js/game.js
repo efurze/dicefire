@@ -27,7 +27,7 @@ $(function() {
 		
 		mouseMove: function(event) {
 			var currentPlayer = Game.currentPlayer();
-            var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
+            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
             if (hex && Engine.isHuman(currentPlayer._id)) {
                 var country = hex.country();
                 if (!country) {
@@ -79,7 +79,7 @@ $(function() {
 				}
 				return;
 			}
-            var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
+            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
             if (hex) {
                 var country = hex.country();
                 

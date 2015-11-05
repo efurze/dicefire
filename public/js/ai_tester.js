@@ -29,7 +29,7 @@ $(function() {
 		
 		mouseMove: function(event) {
 
-            var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
+            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
             if (hex) {
                 var country = hex.country();
                 if (!country) {
@@ -73,7 +73,7 @@ $(function() {
 
 
 		click: function(event) {
-            var hex = Hex.fromMousePos(event.offsetX, event.offsetY);
+            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
             if (hex) {
                 var country = hex.country();
                 var currentPlayer = Game.currentPlayer(); 
