@@ -1,6 +1,26 @@
 Globals = {
+		// USAGE: debug("my msg", foo, bar, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	    debug: function(title) {
-	        console.log(title, arguments);
+			var argc = arguments.length;
+		
+			if (argc >= 3 
+				&& (typeof arguments[argc-1]) == 'number'
+				&& (typeof arguments[argc-2]) == 'number'
+				&& arguments[argc-1] < Globals.channels.length
+				) {
+				
+				var channel = arguments[argc-1];
+				var level = arguments[argc-2];
+				
+				if (level <= Globals.channels[channel]) {
+					delete arguments[argc-1];
+					delete arguments[argc-2];
+					console.log(title, arguments);
+				}
+				
+			} else {
+	        	console.log(title, arguments);
+			}
 	    },
 	    showNumbers: false,
 	    markHexCenters: false,
@@ -14,6 +34,31 @@ Globals = {
 		play_sounds: 0,
 		suppress_ui: 0
 	};
+
+Globals.LEVEL = {
+	"NONE" : 0,
+	"ERROR" : 1,
+	"WARN" : 2,
+	"INFO" : 3,
+	"DEBUG" : 4,
+	"TRACE" : 5 
+}
+
+// The order in CHANNEL and channels must match
+Globals.CHANNEL = {
+	"ENGINE" : 0,
+	"MAP" : 1,
+	"HEX" : 2,
+	"COUNTRY" : 3,
+	"PLAYER" : 4
+};
+Globals.channels = [
+	3, //"ENGINE",
+	4, //"MAP",
+	4, //"HEX",
+	4, //"COUNTRY",
+	3 //"PLAYER"
+];
 
 
 

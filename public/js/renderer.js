@@ -36,11 +36,18 @@ $(function(){
 			$('#forward_btn').prop('disabled', true);
 			
 			if (Engine.isHuman(Engine._currentPlayerId)) {
-				$('#end_turn').prop('disabled', false);
 				
 				var history_count = Engine._history.length;
-				var current = history_count;
-				$('#history').html(history_count + ' / ' + history_count);
+				var current = Game._historyIndex < 0 ? history_count : Game._historyIndex + 1;
+				
+				if (current == history_count) {
+					$('#end_turn').prop('disabled', false);
+				} else {
+					// don't let player end their turn while they're looking at history
+					$('#end_turn').prop('disabled', true);
+				}
+				
+				$('#history').html(current + ' / ' + history_count);
 				
 				if (current < history_count) {
 					$('#forward_btn').prop('disabled', false);

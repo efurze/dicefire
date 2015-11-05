@@ -7,13 +7,14 @@ Map = {
 		return this._hexArray[id];
 	},
 	
+	
 	generateMap: function() {
 		
 		this._hexArray = [];
 	    for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
 	        this._hexArray.push(new Hex(i));
 	    }
-	    Globals.debug("Created hexes", Hex._array);
+	    Globals.debug("Created hexes ", Hex._array, Globals.LEVEL.INFO, Globals.CHANNEL.MAP);
 		
 		var country = new Country(this._countryArray.length);
 		country.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)]);
@@ -34,7 +35,7 @@ Map = {
 				}
 			}
 			if (!adjacentHex) {
-				Globals.debug("RAN OUT OF SPACE!", i);
+				Globals.debug("RAN OUT OF SPACE! ", i, Globals.LEVEL.ERROR, Globals.CHANNEL.MAP);
 				break;
 			}
 			var newCountry = new Country(this._countryArray.length);
@@ -45,7 +46,7 @@ Map = {
 			}
 		}
 
-		Globals.debug("Created countries", this._countryArray);
+		Globals.debug("Created countries ", this._countryArray, Globals.LEVEL.INFO, Globals.CHANNEL.MAP);
 
 		// Finds all hexes which are alone and absorbs them into a nearby country. Do this because
 		// they look kind of bad.
@@ -141,7 +142,7 @@ Map = {
 	            return;
 	        }
 	    }
-	    Globals.debug("Can't find an adjacent country");
+	    Globals.debug("Can't find an adjacent country", Globals.LEVEL.ERROR, Globals.CHANNEL.MAP);
 	},
 	
 	fromMousePos: function(x, y) {

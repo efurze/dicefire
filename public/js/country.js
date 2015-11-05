@@ -21,13 +21,13 @@ Country.prototype.serialize = function() {
 	return state;
 };
 
-Country.prototype.deserialize = function(state) {
+Country.deserialize = function(state) {
 	var country = new Country(state.id);
 	country._owner = state.owner;
 	country._numDice = state.numDice;
 	
-	this._hexes = Map._countryArray[this._id]._hexes;
-	this._adjacentCountries = Map._countryArray[this._id]._adjacentCountries;
+	country._hexes = Map._countryArray[country._id]._hexes;
+	country._adjacentCountries = Map._countryArray[country._id]._adjacentCountries;
 	return country;
 };
 
@@ -135,7 +135,7 @@ Country.prototype.growCountry = function() {
     var hex = this.findAdjacentHex();
 
     if (!hex) {
-//            Globals.debug("Couldn't find a new spot for a hex!");        
+//            Globals.debug("Couldn't find a new spot for a hex!", Globals.LEVEL.ERROR, Globals.CHANNEL.COUNTRY);        
         return;
     }
 

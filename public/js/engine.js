@@ -101,7 +101,7 @@ Engine = {
 	},
 
 	attack: function(fromCountry, toCountry, callback) {
-		//Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id);
+		//Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		var self = this;
 
 		self._attackInProgress = true;
@@ -110,7 +110,7 @@ Engine = {
 		var toPlayer = toCountry.owner();
 
 		if (!fromCountry.adjacentCountries().find(function(elem) { return elem == toCountry; })) {
-			Globals.debug("Illegal attack", fromCountry, toCountry);
+			Globals.debug("Illegal attack", fromCountry, toCountry, Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 			return null;    		
 		}
 
@@ -141,7 +141,7 @@ Engine = {
 			fromCountry.setNumDice(1);
 
 			if (fromRoll > toRoll) {
-				//Globals.debug("Attacker wins");
+				//Globals.debug("Attacker wins", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 				var oldOwner = toCountry.owner();
 				toCountry.setNumDice(fromNumDice - 1);
 				fromPlayer.takeCountry(toCountry);
@@ -155,7 +155,7 @@ Engine = {
 					Engine.gameOver();
 				}
 			} else {
-				//Globals.debug("Attacker loses");
+				//Globals.debug("Attacker loses", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 			}
 			
 			// attack is done, save to history
@@ -183,8 +183,8 @@ Engine = {
 
 	serialize: function() {
 		var state = {
-			players: {},
-			countries: {},
+			players: [],
+			countries: [],
 			currentPlayerId: Engine._currentPlayerId,
 			previousAttack: {
 				fromCountryId: -1,
@@ -205,6 +205,25 @@ Engine = {
 		state.previousAttack = Engine._previousAttack;
 
 		return state;
+	},
+	
+	deserialize: function(state) {
+		var game = {
+			players: [],
+			countries: [],
+			currentPlayerId: state.currentPlayerId,
+			previousAttack: state.previousAttack
+		};
+		
+		state.players.forEach(function(player) {
+			game.players[player.id] = Player.deserialize(player);
+		});
+		
+		state.countries.forEach(function(country) {
+			game.countries[country.id] = Country.deserialize(country);
+		});
+		
+		return game;
 	},
 
 	// this is for the AI's. SerializeState is for history

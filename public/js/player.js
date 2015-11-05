@@ -15,7 +15,7 @@ Player.init = function(count) {
 	for (var i = 0; i < count; i++) {
 		Player._array.push(new Player(i));
 	}
-	Globals.debug("Created players", Player._array);
+	Globals.debug("Created players ", Player._array, Globals.LEVEL.INFO, Globals.CHANNEL.PLAYER);
 };
 
 
@@ -30,7 +30,7 @@ Player.prototype.serialize = function() {
 	return state;
 };
 
-Player.prototype.deserialize = function(state) {
+Player.deserialize = function(state) {
 	var player = new Player();
 	player._id = state.id;
 	player._countries = state.countries;

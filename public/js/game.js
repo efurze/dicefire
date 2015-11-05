@@ -6,6 +6,7 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
+		_historyIndex: -1,
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
@@ -23,6 +24,8 @@ $(function() {
             $(Game._canvas).mouseleave(Game.mouseLeave);
             $(Game._canvas).click(Game.click);
 			$('#end_turn').click(Engine.endTurn);
+			$('#back_btn').click(Game.historyBack);
+			$('#forward_btn').click(Game.historyForward);
 			
 			Engine.startTurn(0);
 		},
@@ -112,6 +115,21 @@ $(function() {
             }            
         },
 
+		historyBack: function (event) {
+			if (Game._historyIndex < 0) {
+				Game._historyIndex = Engine._history.length - 1;
+			}
+			
+			if (Game._historyIndex > 0) {
+				Game._historyIndex --;
+				var gameState = Engine.deserialize(Engine._history[Game._historyIndex]);
+				Renderer.render(gameState.players, gameState.countries);
+			}
+		},
+		
+		historyForward: function (event) {
+			
+		}
 		
 	};
 });
