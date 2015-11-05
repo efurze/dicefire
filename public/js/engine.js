@@ -157,6 +157,10 @@ Engine = {
 			} else {
 				//Globals.debug("Attacker loses");
 			}
+			
+			// attack is done, save to history
+			Engine._history.push(Engine.serialize());
+			Renderer.renderControls();
 
 			callback({
 				fromRollArray: fromRollArray,

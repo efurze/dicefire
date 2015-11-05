@@ -31,8 +31,25 @@ $(function(){
 		},
 		
 		renderControls: function() {
+			
+			$('#back_btn').prop('disabled', true);
+			$('#forward_btn').prop('disabled', true);
+			
 			if (Engine.isHuman(Engine._currentPlayerId)) {
 				$('#end_turn').prop('disabled', false);
+				
+				var history_count = Engine._history.length;
+				var current = history_count;
+				$('#history').html(history_count + ' / ' + history_count);
+				
+				if (current < history_count) {
+					$('#forward_btn').prop('disabled', false);
+				}
+				
+				if (current > 1) {
+					$('#back_btn').prop('disabled', false);
+				}
+				
 			} else {
 				$('#end_turn').prop('disabled', true);
 			}
