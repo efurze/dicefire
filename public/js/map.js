@@ -1,6 +1,7 @@
 Map = {
 
 	_hexArray: [],
+	_countryArray: [],
 	
 	getHex: function(id) {
 		return this._hexArray[id];
@@ -14,14 +15,14 @@ Map = {
 	    }
 	    Globals.debug("Created hexes", Hex._array);
 		
-		var country = new Country(this._hexArray[Math.floor(Math.random() * this._hexArray.length)]);
+		this._countryArray.push(new Country(this._hexArray[Math.floor(Math.random() * this._hexArray.length)], this._countryArray.length));
 
 		for (var i = 0; i < Globals.numCountries - 1; i++) {
-			var countryStart = Math.floor(Math.random() * Country.count());
+			var countryStart = Math.floor(Math.random() * this._countryArray.length);
 			var adjacentHex;
 
-			for (var j = 0; j < Country.count(); j++) {
-				var country = Country.get((j + countryStart) % Country.count());
+			for (var j = 0; j < this._countryArray.length; j++) {
+				var country = this._countryArray[(j + countryStart) % this._countryArray.length];
 				if (country.isLake()) {
 					continue;
 				}
@@ -34,13 +35,14 @@ Map = {
 				Globals.debug("RAN OUT OF SPACE!", i);
 				break;
 			}
-			var newCountry = new Country(adjacentHex);
+			var newCountry = new Country(adjacentHex, this._countryArray.length);
+			this._countryArray.push(newCountry);
 			if (newCountry.isLake()) {
 				i--;
 			}
 		}
 
-		Globals.debug("Created countries", Country.array());
+		Globals.debug("Created countries", this._countryArray);
 
 		// Finds all hexes which are alone and absorbs them into a nearby country. Do this because
 		// they look kind of bad.
@@ -57,9 +59,73 @@ Map = {
 	        } 
 	    });
 		
-		Country.pruneLakes();
+		this.pruneLakes();
 		
-		return country;
+		this.assignCountries();
+	},
+	
+	
+	// Removes lakes from the country list to simplify things.
+	pruneLakes: function() {
+	    this._countryArray = this._countryArray.filter(function(country) {
+	        if (!country.isLake()) {
+	            return true;
+	        } else {
+	            country.hexes().forEach(function(hex) {
+	                hex.setCountry(null);
+	                hex.setCountryEdgeDirections(null);
+	            });
+	            return false;
+	        }
+	    });
+	    // Redo country ids to eliminate holes
+	    this._countryArray = this._countryArray.map(function(elem, index) {
+	        elem._id = index;
+	        return elem;
+	    });
+
+	},
+	
+	assignCountries: function() {
+		// Use a shuffled countries list to randomize who gets what.
+		var self = this;
+		var shuffledCountries = Globals.shuffleArray(this._countryArray);
+		var currPlayer = 0;
+		shuffledCountries.forEach(function(country) {
+			Player.get(currPlayer).takeCountry(country);
+			self.setupCountryEdges(country);
+			currPlayer++;
+			if (currPlayer >= Player.count()) {
+				currPlayer = 0;
+			}
+		});
+	},
+	
+	// Once the map is setup, this function puts together the adjacency information the country
+	// needs, both to paint itself and to know what is next door.
+	// Marks hexes as internal or external. Also identifies which edges need border stroking for the hex.
+
+	setupCountryEdges: function(country) {
+
+	    var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
+
+	    country._hexes.forEach(function(hex) {
+	        var countryEdges = [];
+	        for (var i = 0; i < Dir.array.length; i++) {
+	            var newHex = Dir.nextHex(hex, i);
+
+	            if (!newHex || newHex.country() != country) {
+	                countryEdges.push(i);             
+	            }
+	            if (newHex && newHex.country() && newHex.country() != country && 
+	                !adjacentCountryHexes[newHex.country().id()]) {
+	                adjacentCountryHexes[newHex.country().id()] = true;
+	                country._adjacentCountries.push(newHex.country());
+	            }
+
+	        }
+	        hex.setCountryEdgeDirections(countryEdges);
+	    });
 	},
 
 	moveToAdjacentCountry: function(hex) {

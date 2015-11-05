@@ -19,30 +19,18 @@ Engine = {
 			}
 		});
 
-		// Clear the Hex and Country statics.
-		Player.init(playerCode.length);
-		Country.init();
-
-		var country = Map.generateMap();
-
-		// Use a shuffled countries list to randomize who gets what.
-		var shuffledCountries = Globals.shuffleArray(Country.array());
-		var currPlayer = 0;
-		shuffledCountries.forEach(function(country) {
-			Player.get(currPlayer).takeCountry(country);
-			country.setupEdges();
-			currPlayer++;
-			if (currPlayer >= Player.count()) {
-				currPlayer = 0;
-			}
-		});
-
+		Player.init(playerCode.length);		
+	},
+	
+	setup: function() {
+		Map.generateMap();
+		
+		// assign initial dice
 		Player.array().forEach(function(player) {
 			player.addDice(Globals.startingDice);
 			player.updateStatus();
 			Renderer.renderPlayer(player);
 		});
-
 	},
 
 	isHuman: function(playerId) {
@@ -127,7 +115,7 @@ Engine = {
 				fromPlayer.takeCountry(toCountry);
 				oldOwner.updateStatus();
 
-				if (fromCountry.owner()._countries.length == Country.array().length) {
+				if (fromCountry.owner()._countries.length == Map._countryArray.length) {
 					Engine.gameOver();
 				}
 			} else {
@@ -175,7 +163,7 @@ Engine = {
 			};
 		});
 
-		Country.array().forEach(function(country) {
+		Map._countryArray.forEach(function(country) {
 			state.countries[country.id()] = {
 				id: country.id(),
 				owner: country.owner().id(),
@@ -196,7 +184,7 @@ Engine = {
 		getState: function() { return Engine.serializeState(); },
 		attack: function(fromCountryId, toCountryId, callback) { 	
 
-			Engine.attack(Country.get(fromCountryId), Country.get(toCountryId), function(result) {	
+			Engine.attack(Map._countryArray[fromCountryId], Map._countryArray[toCountryId], function(result) {	
 				callback(result);    
 			});
 

@@ -90,12 +90,12 @@ Player.prototype.addDice = function(num) {
 
 
 Player.prototype.startTurn = function() {
-Renderer.renderPlayer(this);
+	Renderer.renderPlayer(this);
 };
 
 Player.prototype.endTurn = function() {
-this.addDice(this._numContiguousCountries);
-Renderer.renderPlayer(this);
+	this.addDice(this._numContiguousCountries);
+	Renderer.renderPlayer(this);
 };
 
 
@@ -103,8 +103,8 @@ Renderer.renderPlayer(this);
 Player.prototype.takeCountry = function(country) {
 	var oldOwner = country.owner();
 	if (oldOwner) {
- 	oldOwner.loseCountry(country);
- }
+ 		oldOwner.loseCountry(country);
+ 	}
 	country.setOwner(this);
 	this._countries.push(country);
 };

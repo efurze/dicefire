@@ -3,8 +3,10 @@ $(function(){
 		
 		_canvas: null,
 		_context: null,
+		_map: null,
 		
-		init: function(playerCount, canvas) {
+		init: function(playerCount, hexes, canvas) {
+			this.ma = hexes;
 			this._canvas = canvas;
 			this._context = this._canvas.getContext('2d');
 			this._context.clearRect(0,0,2000,2000);
@@ -24,7 +26,7 @@ $(function(){
 				return;
 			}
 			var self = this;
-			Country._array.forEach(function(country) {
+			Map._countryArray.forEach(function(country) {
 				self.renderCountry(country);
 			});
 		},

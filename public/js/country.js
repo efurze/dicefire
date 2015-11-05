@@ -1,6 +1,5 @@
-Country = function(starthex) {
-        this._id = Country._array.length;
-        Country._array.push(this);        
+Country = function(starthex, id) {
+        this._id = id; 
         this._hexes = [starthex];
         starthex.setCountry(this);
         this._adjacentCountries = [];        
@@ -25,37 +24,6 @@ Country = function(starthex) {
 
 Country.MAX_HEXES = 100;
 Country.MIN_HEXES = 30;
-
-
-Country.init = function() { 
-    Country._array = []; 
-    Globals.debug("Initialized country array");
-};
-Country.get = function(id) { return Country._array[id]; };
-Country.count = function() { return Country._array.length; };
-Country.array = function() { return Country._array; };
-
-// Removes lakes from the country list to simplify things.
-Country.pruneLakes = function() {
-    Country._array = Country._array.filter(function(country) {
-        if (!country.isLake()) {
-            return true;
-        } else {
-            country.hexes().forEach(function(hex) {
-                hex.setCountry(null);
-                hex.setCountryEdgeDirections(null);
-            });
-            return false;
-        }
-    });
-    // Redo country ids to eliminate holes
-    Country._array = Country._array.map(function(elem, index) {
-        elem._id = index;
-        return elem;
-    });
-
-};
-
 
 
 Country.prototype.setOwner = function(owner) { this._owner = owner;};
@@ -169,31 +137,5 @@ Country.prototype.absorbLake = function() {
 
 
 
-// Once the map is setup, this function puts together the adjacency information the country
-// needs, both to paint itself and to know what is next door.
-// Marks hexes as internal or external. Also identifies which edges need border stroking for the hex.
 
-Country.prototype.setupEdges = function() {
-    var self = this;
-
-    var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
-
-    this._hexes.forEach(function(hex) {
-        var countryEdges = [];
-        for (var i = 0; i < Dir.array.length; i++) {
-            var newHex = Dir.nextHex(hex, i);
-
-            if (!newHex || newHex.country() != self) {
-                countryEdges.push(i);             
-            }
-            if (newHex && newHex.country() && newHex.country() != self && 
-                !adjacentCountryHexes[newHex.country().id()]) {
-                adjacentCountryHexes[newHex.country().id()] = true;
-                self._adjacentCountries.push(newHex.country());
-            }
-
-        }
-        hex.setCountryEdgeDirections(countryEdges);
-    });
-};
 
