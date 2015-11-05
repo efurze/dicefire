@@ -14,17 +14,18 @@ $(function(){
 			
 		},
 		
-		render: function() {
-			this.renderWorld();
-			this.renderPlayers();
+		render: function(players, countries) {
+			this.renderMap(countries);
+			this.renderPlayers(players);
+			this.renderControls();
 		},
 		
-		renderWorld: function() {
+		renderMap: function(countries) {
 			if (Globals.suppress_ui) {
 				return;
 			}
 			var self = this;
-			Map._countryArray.forEach(function(country) {
+			countries.forEach(function(country) {
 				self.renderCountry(country);
 			});
 		},
@@ -37,9 +38,9 @@ $(function(){
 			}
 		},
 		
-		renderPlayers: function() {
+		renderPlayers: function(players) {
 			var self = this;
-			Player._array.forEach(function(player){
+			players.forEach(function(player){
 				self.renderPlayer(player);
 			});
 		},
@@ -52,6 +53,8 @@ $(function(){
 			if (player._countries.length == 0) {
 				$('#player' + player._id).css({'display': 'none'});
 			} else {
+				
+				$('#player' + player._id).css({'display': 'inline-block'});
 				
 				// Highlight the player's status box
 				if (player == Game.currentPlayer()) {

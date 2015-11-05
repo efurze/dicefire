@@ -17,7 +17,7 @@ $(function() {
 			
 			Engine.setup();
 			
-			Renderer.render();
+			Renderer.render(Player._array, Map._countryArray);
 			
 			$(Game._canvas).mousemove(Game.mouseMove);
             $(Game._canvas).mouseleave(Game.mouseLeave);

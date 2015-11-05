@@ -5,11 +5,14 @@ Engine = {
 	_gameOver: false,
 	_attackInProgress: false,
 	_previousAttack: {},
+	_history: [],
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 
 	init: function(playerCode) {
 		console.time("DICEFIRE");
+		
+		this._history = [];
 
 		Engine._playerCode = playerCode;
 		var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
@@ -31,6 +34,8 @@ Engine = {
 			player.updateStatus();
 			Renderer.renderPlayer(player);
 		});
+		
+		this._history.push(this.serialize());
 	},
 	
 	// Give dice to a player. In all cases, the dice go to random
@@ -69,7 +74,7 @@ Engine = {
 			Engine._playerCode[playerId].startTurn(Engine.interface);
 		} 
 
-		Renderer.renderPlayers();
+		Renderer.renderPlayers(Player._array);
 		Renderer.renderControls();
 	},
 
@@ -172,7 +177,7 @@ Engine = {
 	},
 
 
-	serializeState: function() {
+	serialize: function() {
 		var state = {
 			players: {},
 			countries: {},
@@ -183,6 +188,27 @@ Engine = {
 				fromRollArray: [],
 				toRollArray: []
 			}
+		};
+
+		Player.array().forEach(function(player) {
+			state.players[player.id()] = player.serialize();
+		});
+
+		Map._countryArray.forEach(function(country) {
+			state.countries[country.id()] = country.serialize();
+		});
+
+		state.previousAttack = Engine._previousAttack;
+
+		return state;
+	},
+
+	// this is for the AI's. SerializeState is for history
+	getState: function() {
+		var state = {
+			players: {},
+			countries: {},
+			currentPlayerId: Engine._currentPlayerId,
 		};
 
 		Player.array().forEach(function(player) {
@@ -205,14 +231,12 @@ Engine = {
 			};
 		});
 
-		state.previousAttack = Engine._previousAttack;
-
 		return state;
 	},
 
 	// The interface passed to AIs so they can control the game.
 	interface: {
-		getState: function() { return Engine.serializeState(); },
+		getState: function() { return Engine.getState(); },
 		attack: function(fromCountryId, toCountryId, callback) { 	
 
 			Engine.attack(Map._countryArray[fromCountryId], Map._countryArray[toCountryId], function(result) {	

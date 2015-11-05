@@ -15,7 +15,9 @@ Map = {
 	    }
 	    Globals.debug("Created hexes", Hex._array);
 		
-		this._countryArray.push(new Country(this._hexArray[Math.floor(Math.random() * this._hexArray.length)], this._countryArray.length));
+		var country = new Country(this._countryArray.length);
+		country.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)]);
+		this._countryArray.push(country);
 
 		for (var i = 0; i < Globals.numCountries - 1; i++) {
 			var countryStart = Math.floor(Math.random() * this._countryArray.length);
@@ -35,7 +37,8 @@ Map = {
 				Globals.debug("RAN OUT OF SPACE!", i);
 				break;
 			}
-			var newCountry = new Country(adjacentHex, this._countryArray.length);
+			var newCountry = new Country(this._countryArray.length);
+			newCountry.landGrab(adjacentHex);
 			this._countryArray.push(newCountry);
 			if (newCountry.isLake()) {
 				i--;

@@ -1,29 +1,54 @@
-Country = function(starthex, id) {
+Country = function(id) {
         this._id = id; 
-        this._hexes = [starthex];
-        starthex.setCountry(this);
+        this._hexes = [];
         this._adjacentCountries = [];        
         this._owner = null;
-        this._numHexes = Math.floor(Math.random() * (Country.MAX_HEXES - Country.MIN_HEXES + 1)) + 
-            Country.MIN_HEXES;
+        
         this._numDice = 1;
         this._isAttacking = false;
-
-        this.growCountry();
-        if (this._numHexes != this._hexes.length) {
-            // Mark it as a lake still so we can make enough countries. If it's a small lake,
-            // let it get absorbed into another country. If it's a big lake, it will remain
-            // and be pruned (in actual gameplay, all isLake() countries are gone)
-            this._isLake = true;
-            if (this._hexes.length <= 5) {
-                this.absorbLake();
-                return;
-            } 
-        }
     };
 
 Country.MAX_HEXES = 100;
 Country.MIN_HEXES = 30;
+
+Country.prototype.serialize = function() {
+	var state = {
+		id : this._id,
+		owner: this._owner,
+		numDice: this._numDice
+	};
+	
+	return state;
+};
+
+Country.prototype.deserialize = function(state) {
+	var country = new Country(state.id);
+	country._owner = state.owner;
+	country._numDice = state.numDice;
+	
+	this._hexes = Map._countryArray[this._id]._hexes;
+	this._adjacentCountries = Map._countryArray[this._id]._adjacentCountries;
+	return country;
+};
+
+Country.prototype.landGrab = function(starthex) {
+	this._hexes = [starthex];
+    starthex.setCountry(this);
+	this._numHexes = Math.floor(Math.random() * (Country.MAX_HEXES - Country.MIN_HEXES + 1)) + 
+        Country.MIN_HEXES;
+
+	this.growCountry();
+	if (this._numHexes != this._hexes.length) {
+		// Mark it as a lake still so we can make enough countries. If it's a small lake,
+		// let it get absorbed into another country. If it's a big lake, it will remain
+		// and be pruned (in actual gameplay, all isLake() countries are gone)
+		this._isLake = true;
+		if (this._hexes.length <= 5) {
+			this.absorbLake();
+				return;
+			} 
+		}
+};
 
 
 Country.prototype.setOwner = function(owner) { this._owner = owner;};

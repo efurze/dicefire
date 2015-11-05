@@ -1,14 +1,9 @@
-Player = function() {
-    	this._id = Player._array.length;
-    	this._countries = [];
-    	this._storedDice = 0;
-    	this._numContiguousCountries = 0;
-
-    	var id = this._id;
-    	    	
-
-		Player._array.push(this);
-    };
+Player = function(id) {
+	this._id = id;
+	this._countries = [];
+	this._storedDice = 0;
+	this._numContiguousCountries = 0;		
+};
 
 Player.init = function(count) {
 
@@ -18,10 +13,33 @@ Player.init = function(count) {
 
 	Player._array = [];
 	for (var i = 0; i < count; i++) {
-		new Player();
+		Player._array.push(new Player(i));
 	}
 	Globals.debug("Created players", Player._array);
 };
+
+
+Player.prototype.serialize = function() {
+	var state = {
+		id : this._id,
+		countries : this._countries,
+		storedDice : this._storedDice,
+		numContiguousCountries : this._numContiguousCountries
+	};
+	
+	return state;
+};
+
+Player.prototype.deserialize = function(state) {
+	var player = new Player();
+	player._id = state.id;
+	player._countries = state.countries;
+	player._storedDice = state.storedDice;
+	player._numContiguousCountries = state.numContiguousCountries;
+	
+	return player;
+}
+
 
 Player.array = function() { return Player._array; };
 Player.count = function() { return Player._array.length; };
