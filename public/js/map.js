@@ -124,7 +124,7 @@ Map = {
 	            if (newHex && newHex.country() && newHex.country() != country && 
 	                !adjacentCountryHexes[newHex.country().id()]) {
 	                adjacentCountryHexes[newHex.country().id()] = true;
-	                country._adjacentCountries.push(newHex.country());
+	                country.addAdjacentCountry(newHex.country());
 	            }
 
 	        }

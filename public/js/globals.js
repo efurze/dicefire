@@ -52,10 +52,12 @@ Globals.CHANNEL = {
 	"COUNTRY" : 3,
 	"PLAYER" : 4
 };
+
+// Loglevel for each channel. Numbers correspond to Globals.LEVEL
 Globals.channels = [
 	3, //"ENGINE",
-	4, //"MAP",
-	4, //"HEX",
+	3, //"MAP",
+	3, //"HEX",
 	4, //"COUNTRY",
 	3 //"PLAYER"
 ];

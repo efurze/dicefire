@@ -6,6 +6,8 @@ Country = function(id) {
         
         this._numDice = 1;
         this._isAttacking = false;
+
+		Globals.debug("Constructed country", this, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
     };
 
 Country.MAX_HEXES = 100;
@@ -50,6 +52,10 @@ Country.prototype.landGrab = function(starthex) {
 		}
 };
 
+Country.prototype.addAdjacentCountry = function(country) {
+	Globals.debug("adding adjacent country", this, country, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
+	this._adjacentCountries.push(country);
+}
 
 Country.prototype.setOwner = function(owner) { this._owner = owner;};
 Country.prototype.setNumDice = function(num) { this._numDice = num;};
@@ -135,12 +141,14 @@ Country.prototype.growCountry = function() {
     var hex = this.findAdjacentHex();
 
     if (!hex) {
-//            Globals.debug("Couldn't find a new spot for a hex!", Globals.LEVEL.ERROR, Globals.CHANNEL.COUNTRY);        
+        Globals.debug("Couldn't find a new spot for a hex!", Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);        
         return;
     }
 
     hex.setCountry(this);
     this._hexes.push(hex);
+
+	Globals.debug("growCountry", this, hex, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);        
 
     // Tail recursion to get the right number.
     this.growCountry();

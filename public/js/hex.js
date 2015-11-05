@@ -4,6 +4,7 @@ Hex = function(id) {
         this._y = Math.floor(this._id / Hex.NUM_WIDE);
         this._country = null;
         this._countryEdgeDirections = [];
+		Globals.debug("Constructed hex", this, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
     };
 
 
@@ -25,11 +26,20 @@ Hex.prototype.id = function() { return this._id; };
 Hex.prototype.x = function() { return this._x; };
 Hex.prototype.y = function() { return this._y; };
 
-Hex.prototype.setCountry = function(country) { this._country = country; };
-Hex.prototype.country = function() { return this._country; };
+Hex.prototype.setCountry = function(country) { 
+	Globals.debug("Hex country for hex", this, country, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
+	this._country = country; 
+};
+
+Hex.prototype.country = function() { 
+	return this._country; 
+};
 
 // The directions which are boundaries between this cell and another country or the edge of the board.
-Hex.prototype.setCountryEdgeDirections = function(array) { this._countryEdgeDirections = array; };
+Hex.prototype.setCountryEdgeDirections = function(array) { 
+	Globals.debug("Set countryEdgeDirections", this, array, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
+	this._countryEdgeDirections = array; 
+};
 Hex.prototype.countryEdgeDirections = function() { return this._countryEdgeDirections; };
 
 
