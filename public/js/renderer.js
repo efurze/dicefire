@@ -271,6 +271,27 @@ $(function(){
 	    	}
 		},
 		
+		
+		renderNumberBox: function (country) {
+			var self = this;
+			
+			var ctr = country.center();
+			
+			// Draw the number box.
+	        var boxSize = 10;
+	        self._context.fillStyle = "white";
+	        self._context.fillRect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
+	        self._context.rect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
+	        self._context.lineWidth = 1;
+	        self._context.strokeStyle = "black";
+	        self._context.stroke();
+
+	        self._context.fillStyle = "black";
+	        self._context.textAlign = "center";
+	        self._context.font = "bold 18px sans-serif";
+	        self._context.fillText(country._numDice, ctr[0], ctr[1]);
+		},
+		
 
 		renderCountry: function (country) {
 			if (Globals.suppress_ui || !country) {
@@ -285,19 +306,7 @@ $(function(){
 
 	        var ctr = country.center();
 
-	        // Draw the number box.
-	        var boxSize = 10;
-	        self._context.fillStyle = "white";
-	        self._context.fillRect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
-	        self._context.rect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
-	        self._context.lineWidth = 1;
-	        self._context.strokeStyle = "black";
-	        self._context.stroke();
-
-	        self._context.fillStyle = "black";
-	        self._context.textAlign = "center";
-	        self._context.font = "bold 18px sans-serif";
-	        self._context.fillText(country._numDice, ctr[0], ctr[1]);
+	        self.renderNumberBox(country);
 
 	        if (Globals.markCountryCenters) {
 	            var path = new Path2D();
@@ -329,6 +338,12 @@ $(function(){
 	                self._context.stroke(path);
 	            });
 	        }
+	
+			// number boxes can overlap between adjacent countries. Redraw
+			// them for all our neighbors
+			country.adjacentCountries().forEach(function(ac) {
+				self.renderNumberBox(ac);
+			});
 		},
 
 		renderHex: function (hexToPaint) {
