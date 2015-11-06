@@ -37,9 +37,11 @@ var Engine = {
 			player.updateStatus();
 			Renderer.renderPlayer(player);
 		});
-		
-		this._history.push(this.serialize());
-		this._historyIndex = this._history.length - 1;
+	},
+	
+	pushHistory: function() {
+		Engine._history.push(this.serialize());
+		Engine._historyIndex = this._history.length - 1;
 	},
 	
 	
@@ -74,6 +76,8 @@ var Engine = {
 
 	startTurn: function(playerId) {
 		Engine._currentPlayerId = playerId;
+		Engine._previousAttack = {};
+		Engine.pushHistory();
 
 		if (Engine._playerCode[playerId] != "human") {
 			Engine._playerCode[playerId].startTurn(Engine.interface);
@@ -166,8 +170,7 @@ var Engine = {
 			}
 			
 			// attack is done, save to history
-			Engine._history.push(Engine.serialize());
-			Engine._historyIndex = Engine._history.length - 1;
+			Engine.pushHistory();
 			
 			Renderer.renderControls();
 
@@ -221,10 +224,6 @@ var Engine = {
 	setHistoryIndex: function(index) {
 		this._historyIndex = index;
 		this.deserialize(this._history[index]);
-		if (this.isHistoryCurrent()) {
-			// this is a hack for now. I have make the states more granular
-			this._currentPlayerId = 0;
-		}
 	},
 	
 	isHistoryCurrent: function() {
