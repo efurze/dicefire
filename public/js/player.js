@@ -1,4 +1,6 @@
-Player = function(id) {
+"use strict"
+
+var Player = function(id) {
 	this._id = id;
 	this._countries = [];
 	this._storedDice = 0;
@@ -149,7 +151,7 @@ Player.prototype.updateStatus = function() {
 	};
 
 	this._countries.forEach(function(country) {
-		islandSize = traverse(country);
+		var islandSize = traverse(country);
 
 		if (islandSize > maxIslandSize) {
 			maxIslandSize = islandSize;

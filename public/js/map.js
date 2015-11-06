@@ -1,4 +1,6 @@
-Map = {
+"use strict"
+
+var Map = {
 
 	_hexArray: [],
 	_countryArray: [],
@@ -184,7 +186,7 @@ Map = {
 	},
 	
 	fromMousePos: function(x, y) {
-	    var oldX = x; oldY = y;
+	    var oldX = x; var oldY = y;
 	    y -= Hex.TOP_LEFT_Y;
 	    var total_height = Hex.NUM_HIGH * Hex.HEIGHT;
 	    // Note that there are 2 rows per row, to allow distinguishing the upper and lower halves

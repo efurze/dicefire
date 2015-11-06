@@ -1,4 +1,6 @@
-Country = function(id) {
+"use strict"
+
+var Country = function(id) {
         this._id = id; 
         this._hexes = [];
         this._adjacentCountries = [];        

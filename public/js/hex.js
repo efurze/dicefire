@@ -1,4 +1,6 @@
-Hex = function(id) {    
+"use strict"
+
+var Hex = function(id) {    
 		this._id = id;
         this._x = this._id % Hex.NUM_WIDE;
         this._y = Math.floor(this._id / Hex.NUM_WIDE);

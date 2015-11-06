@@ -1,4 +1,6 @@
-Dir = {
+"use strict"
+
+var Dir = {
         obj: {
             NW:     0,
             N:      1,

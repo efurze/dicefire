@@ -1,4 +1,6 @@
-Engine = {
+"use strict"
+
+var Engine = {
 		
 	_playerCode: null,
 	_currentPlayerId: 0,

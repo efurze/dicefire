@@ -1,4 +1,6 @@
-Globals = {
+"use strict"
+
+var Globals = {
 		// USAGE: debug("my msg", foo, bar, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	    debug: function(title) {
 			var argc = arguments.length;
