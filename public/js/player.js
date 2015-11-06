@@ -19,26 +19,31 @@ Player.init = function(count) {
 };
 
 
-Player.prototype.serialize = function() {
-	var state = {
-		id : this._id,
-		countries : this._countries,
-		storedDice : this._storedDice,
-		numContiguousCountries : this._numContiguousCountries
-	};
+Player.serialize = function() {
+	var state = [];
+	
+	Player._array.forEach(function(player) {
+		state.push({
+			id : player._id,
+			countries : player._countries,
+			storedDice : player._storedDice,
+			numContiguousCountries : player._numContiguousCountries
+		});
+	});
+	
 	
 	return state;
 };
 
 Player.deserialize = function(state) {
-	var player = new Player();
-	player._id = state.id;
-	player._countries = state.countries;
-	player._storedDice = state.storedDice;
-	player._numContiguousCountries = state.numContiguousCountries;
-	
-	return player;
-}
+		
+	for (var i=0; i < state.length; i++) {
+		Player._array[i]._countries = state[i].countries;
+		Player._array[i]._storedDice = state[i].storedDice;
+		Player._array[i]._numContiguousCountries = state[i].numContiguousCountries;
+	}
+
+};
 
 
 Player.array = function() { return Player._array; };

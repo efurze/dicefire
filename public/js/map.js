@@ -27,6 +27,24 @@ Map = {
 		return this._countryArray[id];
 	},
 	
+	serialize: function() {
+		var state = [];
+		this._countryArray.forEach(function(country) {
+			state.push(country.serialize());
+		});
+		return state;
+	},
+	
+	deserialize: function(state) {
+		var self = this;
+		var newArray = [];
+		state.forEach(function(countryState) {
+			newArray.push(Country.deserialize(countryState));
+		});
+		
+		self._countryArray = newArray;
+	},
+	
 	generateMap: function() {
 		
 		this._hexArray = [];

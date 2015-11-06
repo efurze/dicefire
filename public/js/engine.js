@@ -6,6 +6,7 @@ Engine = {
 	_attackInProgress: false,
 	_previousAttack: {},
 	_history: [],
+	_historyIndex: 0,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 
@@ -36,6 +37,7 @@ Engine = {
 		});
 		
 		this._history.push(this.serialize());
+		this._historyIndex = this._history.length - 1;
 	},
 	
 	// Give dice to a player. In all cases, the dice go to random
@@ -160,6 +162,8 @@ Engine = {
 			
 			// attack is done, save to history
 			Engine._history.push(Engine.serialize());
+			Engine._historyIndex = Engine._history.length - 1;
+			
 			Renderer.renderControls();
 
 			callback({
@@ -184,7 +188,7 @@ Engine = {
 	serialize: function() {
 		var state = {
 			players: [],
-			countries: [],
+			map: [],
 			currentPlayerId: Engine._currentPlayerId,
 			previousAttack: {
 				fromCountryId: -1,
@@ -194,36 +198,24 @@ Engine = {
 			}
 		};
 
-		Player.array().forEach(function(player) {
-			state.players[player.id()] = player.serialize();
-		});
-
-		Map._countryArray.forEach(function(country) {
-			state.countries[country.id()] = country.serialize();
-		});
-
+		state.players = Player.serialize();
+		state.map = Map.serialize();
 		state.previousAttack = Engine._previousAttack;
 
 		return state;
 	},
 	
 	deserialize: function(state) {
-		var game = {
-			players: [],
-			countries: [],
-			currentPlayerId: state.currentPlayerId,
-			previousAttack: state.previousAttack
-		};
 		
-		state.players.forEach(function(player) {
-			game.players[player.id] = Player.deserialize(player);
-		});
-		
-		state.countries.forEach(function(country) {
-			game.countries[country.id] = Country.deserialize(country);
-		});
-		
-		return game;
+		Player.deserialize(state.players);
+		Map.deserialize(state.map);
+		this.previousAttack = state.previousAttack;
+		this.currentPlayerId = state.currentPlayerId;
+	},
+	
+	setHistoryIndex: function(index) {
+		this._historyIndex = index;
+		this.deserialize(this._history[index]);
 	},
 
 	// this is for the AI's. SerializeState is for history

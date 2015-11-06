@@ -37,12 +37,9 @@ Country.prototype.serialize = function() {
 };
 
 Country.deserialize = function(state) {
-	var country = new Country(state.id);
+	var country = Map.getCountry(state.id);
 	country._owner = state.owner;
 	country._numDice = state.numDice;
-	
-	country._hexes = Map._countryArray[country._id]._hexes;
-	country._adjacentCountries = Map._countryArray[country._id]._adjacentCountries;
 	return country;
 };
 

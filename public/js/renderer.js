@@ -14,18 +14,18 @@ $(function(){
 			
 		},
 		
-		render: function(players, countries) {
-			this.renderMap(countries);
-			this.renderPlayers(players);
+		render: function() {
+			this.renderMap();
+			this.renderPlayers();
 			this.renderControls();
 		},
 		
-		renderMap: function(countries) {
+		renderMap: function() {
 			if (Globals.suppress_ui) {
 				return;
 			}
 			var self = this;
-			countries.forEach(function(country) {
+			Map._countryArray.forEach(function(country) {
 				self.renderCountry(country);
 			});
 		},
@@ -38,7 +38,7 @@ $(function(){
 			if (Engine.isHuman(Engine._currentPlayerId)) {
 				
 				var history_count = Engine._history.length;
-				var current = Game._historyIndex < 0 ? history_count : Game._historyIndex + 1;
+				var current = Engine._historyIndex < 0 ? history_count : Engine._historyIndex + 1;
 				
 				if (current == history_count) {
 					$('#end_turn').prop('disabled', false);
@@ -62,9 +62,9 @@ $(function(){
 			}
 		},
 		
-		renderPlayers: function(players) {
+		renderPlayers: function() {
 			var self = this;
-			players.forEach(function(player){
+			Player.array().forEach(function(player){
 				self.renderPlayer(player);
 			});
 		},
@@ -367,7 +367,7 @@ $(function(){
 			var self = this;
 			
 	        country._hexes.forEach(function(elem) {
-	            self.renderHex(elem, country);
+	            self.renderHex(elem);
 	        });
 
 	        var ctr = country.center();
@@ -418,8 +418,9 @@ $(function(){
 	        }
 		},
 
-		renderHex: function (hexToPaint, country) {
+		renderHex: function (hexToPaint) {
 			var self = this;
+			var country = hexToPaint.country();
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
 
