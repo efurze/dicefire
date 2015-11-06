@@ -40,6 +40,7 @@ Engine = {
 		this._historyIndex = this._history.length - 1;
 	},
 	
+	
 	// Give dice to a player. In all cases, the dice go to random
 	// countries
 	addDiceToPlayer: function(player, num) {
@@ -89,6 +90,7 @@ Engine = {
 		if (Engine._currentPlayerId >= Engine._playerCode.length) {
 			Engine._currentPlayerId = 0;
 		}
+		
 		// If that player has lost, skip him.
 		if (Player.get(Engine._currentPlayerId).hasLost()) {
 			Engine.endTurn();
@@ -101,6 +103,7 @@ Engine = {
 
 		Engine.startTurn(Engine._currentPlayerId);
 	},
+	
 
 	attack: function(fromCountry, toCountry, callback) {
 		//Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
@@ -135,8 +138,8 @@ Engine = {
 
 			self._attackInProgress = false;
 
-			fromCountry.setIsAttacking(false);
-			toCountry.setIsAttacking(false);
+			fromCountry.setIsFighting(false);
+			toCountry.setIsFighting(false);
 
 			// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
 			// goes down to 1 die.
@@ -209,13 +212,21 @@ Engine = {
 		
 		Player.deserialize(state.players);
 		Map.deserialize(state.map);
-		this.previousAttack = state.previousAttack;
-		this.currentPlayerId = state.currentPlayerId;
+		this._previousAttack = state.previousAttack;
+		this._currentPlayerId = state.currentPlayerId;
 	},
 	
 	setHistoryIndex: function(index) {
 		this._historyIndex = index;
 		this.deserialize(this._history[index]);
+		if (this.isHistoryCurrent()) {
+			// this is a hack for now. I have make the states more granular
+			this._currentPlayerId = 0;
+		}
+	},
+	
+	isHistoryCurrent: function() {
+		return this._historyIndex == (this._history.length - 1);
 	},
 
 	// this is for the AI's. SerializeState is for history

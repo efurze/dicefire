@@ -5,7 +5,7 @@ Country = function(id) {
         this._owner = null;
         
         this._numDice = 1;
-        this._isAttacking = false;
+        this._isFighting = false;
 
 		Globals.debug("Constructed country", this, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
     };
@@ -73,7 +73,8 @@ Country.prototype.addAdjacentCountry = function(country) {
 
 Country.prototype.setOwner = function(owner) { this._owner = owner;};
 Country.prototype.setNumDice = function(num) { this._numDice = num;};
-Country.prototype.setIsAttacking = function(isAttacking) { this._isAttacking = isAttacking;};
+Country.prototype.setIsFighting = function(isFighting) { this._isFighting = isFighting;};
+Country.prototype.isFighting = function() {return this._isFighting;}
 
 Country.prototype.id = function() { return this._id; };
 Country.prototype.owner = function() { return this._owner; };
@@ -90,7 +91,7 @@ Country.prototype.addDie = function() {
 
 
 Country.prototype.borderColor = function() {
-    return this._isAttacking ? "red" : "black";
+    return this._isFighting ? "red" : "black";
 };
 
 Country.prototype.center = function() {

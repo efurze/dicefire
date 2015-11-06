@@ -22,6 +22,14 @@ Globals = {
 	        	console.log(title, arguments);
 			}
 	    },
+	
+		ASSERT: function (condition) {
+			console.log("ASSERTION FAILURE");
+			if (!condition) {
+				debugger;
+			}
+		},
+		
 	    showNumbers: false,
 	    markHexCenters: false,
 	    markCountryCenters: false,

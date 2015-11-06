@@ -122,13 +122,30 @@ $(function() {
 			if (Engine._historyIndex > 0) {
 				Engine.setHistoryIndex(Engine._historyIndex - 1);
 				Renderer.render();
+				
+				if (!Engine.isHistoryCurrent()) {
+					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),
+						Map.getCountry(Engine._previousAttack.toCountryId),
+						Engine._previousAttack.fromRollArray,
+						Engine._previousAttack.toRollArray);
+						Renderer.renderControls();
+				}
 			}
 		},
 		
 		historyForward: function (event) {
 			if (Engine._historyIndex < Engine._history.length - 1) {
+				
 				Engine.setHistoryIndex(Engine._historyIndex + 1);
 				Renderer.render();
+				
+				if (!Engine.isHistoryCurrent()) {	
+					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),
+						Map.getCountry(Engine._previousAttack.toCountryId),
+						Engine._previousAttack.fromRollArray,
+						Engine._previousAttack.toRollArray);				
+						Renderer.renderControls();
+				}
 			}
 		}
 		

@@ -35,11 +35,10 @@ $(function(){
 			$('#back_btn').prop('disabled', true);
 			$('#forward_btn').prop('disabled', true);
 			
-			if (Engine.isHuman(Engine._currentPlayerId)) {
-				
-				var history_count = Engine._history.length;
-				var current = Engine._historyIndex < 0 ? history_count : Engine._historyIndex + 1;
-				
+			var history_count = Engine._history.length;
+			var current = Engine._historyIndex + 1;
+			
+			if (Engine.isHuman(Engine._currentPlayerId) || current != history_count) {	
 				if (current == history_count) {
 					$('#end_turn').prop('disabled', false);
 				} else {
@@ -119,43 +118,10 @@ $(function(){
 			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
 	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 			
-			// clear previous attack info
-			$('#roll').css({
-				"display": "none"
-	    	});
-
-	        $('#leftroll').css({
-	            "display": "none"
-	        });
-
-	        $('#rightroll').css({
-	            "display": "none"
-	        });
-	
-			// create a div for each die both countries have
-			for (var i = 0; i < Globals.maxDice; i++) {
-				$('#leftdie' + i).css({
-					'display': (i < fromNumDice ? 'inline-block' : 'none'),
-					'background-color': fromPlayer.color()
-				});
-
-				if (i < fromNumDice) {
-					$('#leftdie' + i).html(fromRollArray[i]);
-				}
-
-				$('#rightdie' + i).css({
-					'display': (i < toNumDice ? 'inline-block' : 'none'),
-					'background-color': toCountry.owner().color()				
-				});
-
-				if (i < fromNumDice) {
-					$('#rightdie' + i).html(toRollArray[i]);
-				}
-
-	    	}
+			this.resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
 	
 			// roll attacker
-			fromCountry.setIsAttacking(true);
+			fromCountry.setIsFighting(true);
 	        if (Globals.play_sounds) {
 	            $.playSound('/sounds/2_dice_throw_on_table');
 	        }
@@ -170,7 +136,7 @@ $(function(){
 	                "display": "inline-block"
 	            });
 
-	            toCountry.setIsAttacking(true);
+	            toCountry.setIsFighting(true);
 	            window.setTimeout(renderDefendRoll, Globals.timeout);
 			}
 			
@@ -217,147 +183,92 @@ $(function(){
 		
 		},
 		
-		setupPlayerDivs: function(playerCount) {
-			if (Globals.suppress_ui) {
+		renderHistoricalAttack: function(fromCountry, toCountry, fromRollArray, toRollArray) {
+			
+			if (!fromCountry || !toCountry || !fromRollArray || !toRollArray) {
 				return;
 			}
 			
-			$('#players').html('');
+			this.resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
 			
-			// add a "country count" div for each player
-			for (var id=0; id < playerCount; ++id) {
-				
-				$('#players').append(
-		    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>" + 
-		    		"<div id='dice" + id + "'>1</div>" +
-		    		"<div id='stored" + id + "'>0</div></div>"
-		    	);
-
-		    	$('#player' + id).css(
-		    		{
-		    			'font-family': 'sans-serif',
-		    			'display': 'inline-block',
-		    			'margin': '10px',
-		    			'padding': '10px',
-		    			'width': '80px',
-		    			'height': '20px',
-		    			'border': '1px solid black'
-
-		    		}
-		    	);
-
-		    	$('#colorblock' + id).css( 
-			    	{
-			    		'display': 'inline-block',
-			    		'width': '20px',
-			    		'height': '20px',
-			    		'background-color': Player.colors[id]
-			    	}
-		    	);
-
-		    	$('#dice' + id).css(
-			    	{
-						'display': 'inline-block',
-						'margin-left': '12px',
-						'margin-top': '2px',
-						'vertical-align': 'top',
-						'text-align': 'center'
-			    	}
-		    	);
-
-				$('#stored' + id).css(
-			    	{
-						'display': 'inline-block',
-						'margin-left': '12px',
-						'margin-top': '2px',
-						'vertical-align': 'top',
-						'text-align': 'center',
-						'color': Player.colors[id]
-			    	}
-		    	);
-			}
+			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
+	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 			
+			// Render attack roll
+			$('#lefttotal').html(fromRoll);
+            $('#roll').css({
+                "display": "inline-block"
+            });
+            $('#leftroll').css({
+                "display": "inline-block"
+            });
+
+			// Render defensive roll
+			$('#righttotal').html(toRoll);
+            $('#rightroll').css({
+                "display": "inline-block"
+            });
+			
+			
+			// draw countries as attacking
+			fromCountry.setIsFighting(true);
+			toCountry.setIsFighting(true);
+			
+			this.renderMap();
+			this.renderCountry(fromCountry);
+			this.renderCountry(toCountry);
+			
+			fromCountry.setIsFighting(false);
+			toCountry.setIsFighting(false);
 		},
 		
-		setupRollDivs: function() {
+		resetRollDivs: function(fromCountry, toCountry, fromRollArray, toRollArray) {
+	
+			// clear previous attack info
+			$('#roll').css({
+				"display": "none"
+	    	});
 
-            $('#roll').css({
-                "display": "none",
-                "vertical-align": "top",
-                "margin-top": "3px"
-            });
+	        $('#leftroll').css({
+	            "display": "none"
+	        });
 
-            $('#leftroll').css({
-                "display": "inline-block",
-                "margin-left": "20px"
-            });
+	        $('#rightroll').css({
+	            "display": "none"
+	        });
+	
+			if (!fromCountry || !toCountry || !fromRollArray || !toRollArray) {
+				return;
+			}
+	
+			var fromNumDice = fromRollArray.length;
+			var toNumDice = toRollArray.length;
+			
+			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
+	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+	
+			// create a div for each die both countries have
+			for (var i = 0; i < Globals.maxDice; i++) {
+				$('#leftdie' + i).css({
+					'display': (i < fromNumDice ? 'inline-block' : 'none'),
+					'background-color': fromCountry.owner().color()
+				});
 
-            $('#rightroll').css({
-                "display": "inline-block",
-                "margin-left": "20px"                
-            });
+				if (i < fromNumDice) {
+					$('#leftdie' + i).html(fromRollArray[i]);
+				}
 
-            var diceDivIds = [];
-            for (var i = 0; i < Globals.maxDice; i++) {
-                $('#leftroll').append(
-                    "<div id='leftdie" + i + "'>5</div>"
-                );
+				$('#rightdie' + i).css({
+					'display': (i < toNumDice ? 'inline-block' : 'none'),
+					'background-color': toCountry.owner().color()				
+				});
 
-                diceDivIds.push('#leftdie' + i);
-
-                $('#rightroll').append(
-                    "<div id='rightdie" + i + "'>5</div>"
-                );
-
-                diceDivIds.push('#rightdie' + i);
-            }
-
-            diceDivIds.forEach(function(divId) {
-                $(divId).css({
-                    "display": "inline-block",
-                    "width": "20px",
-                    "height": "20px",
-                    "border": "1px solid black",
-                    "background-color": "red",
-                    "font-family": "sans-serif",
-                    "color": "white",
-                    "font-size": "14px",
-                    "text-align": "center",
-                    "padding-top": "2px",
-                    "padding-bottom": "0px",
-                    "vertical-align": "top",
-                    "font-weight": "bold",
-                    "margin-left": "5px"
-                });
-            });
-
-
-
-            $('#leftroll').append(
-                "<div id='lefttotal'>35</div>"                    
-            );
-
-
-            $('#rightroll').append(
-                "<div id='righttotal'>35</div>"                    
-            );
-
-            var totalDivIds = [];
-            totalDivIds.push('#lefttotal');
-            totalDivIds.push('#righttotal');
-            totalDivIds.forEach(function(divId) {
-                $(divId).css({
-                    "display": "inline-block",
-                    "vertical-align": "top",
-                    "font-family": "sans-serif",
-                    "font-size": "18px",
-                    "text-align": "center",
-                    "color": "black",
-                    "margin-left": "20px"
-                });
-            });
-
-        },
+				if (i < fromNumDice) {
+					$('#rightdie' + i).html(toRollArray[i]);
+				}
+	    	}
+		},
+		
 
 		renderCountry: function (country) {
 			if (Globals.suppress_ui || !country) {
@@ -520,7 +431,9 @@ $(function(){
 		},
 		
 		countryDrawColor: function(country) {
-			if (country == Game.mouseOverCountry()) {
+			if (country.isFighting()) {
+				return "black";
+			} else if (country == Game.mouseOverCountry()) {
 		        if (country == Game.selectedCountry()) {
 		            return "gray";
 		        } else {
@@ -533,6 +446,148 @@ $(function(){
 		            return country._owner.color();
 		        }
 		    }
-		}
+		},
+		
+		setupPlayerDivs: function(playerCount) {
+			if (Globals.suppress_ui) {
+				return;
+			}
+			
+			$('#players').html('');
+			
+			// add a "country count" div for each player
+			for (var id=0; id < playerCount; ++id) {
+				
+				$('#players').append(
+		    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>" + 
+		    		"<div id='dice" + id + "'>1</div>" +
+		    		"<div id='stored" + id + "'>0</div></div>"
+		    	);
+
+		    	$('#player' + id).css(
+		    		{
+		    			'font-family': 'sans-serif',
+		    			'display': 'inline-block',
+		    			'margin': '10px',
+		    			'padding': '10px',
+		    			'width': '80px',
+		    			'height': '20px',
+		    			'border': '1px solid black'
+
+		    		}
+		    	);
+
+		    	$('#colorblock' + id).css( 
+			    	{
+			    		'display': 'inline-block',
+			    		'width': '20px',
+			    		'height': '20px',
+			    		'background-color': Player.colors[id]
+			    	}
+		    	);
+
+		    	$('#dice' + id).css(
+			    	{
+						'display': 'inline-block',
+						'margin-left': '12px',
+						'margin-top': '2px',
+						'vertical-align': 'top',
+						'text-align': 'center'
+			    	}
+		    	);
+
+				$('#stored' + id).css(
+			    	{
+						'display': 'inline-block',
+						'margin-left': '12px',
+						'margin-top': '2px',
+						'vertical-align': 'top',
+						'text-align': 'center',
+						'color': Player.colors[id]
+			    	}
+		    	);
+			}
+			
+		},
+		
+		setupRollDivs: function() {
+
+            $('#roll').css({
+                "display": "none",
+                "vertical-align": "top",
+                "margin-top": "3px"
+            });
+
+            $('#leftroll').css({
+                "display": "inline-block",
+                "margin-left": "20px"
+            });
+
+            $('#rightroll').css({
+                "display": "inline-block",
+                "margin-left": "20px"                
+            });
+
+            var diceDivIds = [];
+            for (var i = 0; i < Globals.maxDice; i++) {
+                $('#leftroll').append(
+                    "<div id='leftdie" + i + "'>5</div>"
+                );
+
+                diceDivIds.push('#leftdie' + i);
+
+                $('#rightroll').append(
+                    "<div id='rightdie" + i + "'>5</div>"
+                );
+
+                diceDivIds.push('#rightdie' + i);
+            }
+
+            diceDivIds.forEach(function(divId) {
+                $(divId).css({
+                    "display": "inline-block",
+                    "width": "20px",
+                    "height": "20px",
+                    "border": "1px solid black",
+                    "background-color": "red",
+                    "font-family": "sans-serif",
+                    "color": "white",
+                    "font-size": "14px",
+                    "text-align": "center",
+                    "padding-top": "2px",
+                    "padding-bottom": "0px",
+                    "vertical-align": "top",
+                    "font-weight": "bold",
+                    "margin-left": "5px"
+                });
+            });
+
+
+
+            $('#leftroll').append(
+                "<div id='lefttotal'>35</div>"                    
+            );
+
+
+            $('#rightroll').append(
+                "<div id='righttotal'>35</div>"                    
+            );
+
+            var totalDivIds = [];
+            totalDivIds.push('#lefttotal');
+            totalDivIds.push('#righttotal');
+            totalDivIds.forEach(function(divId) {
+                $(divId).css({
+                    "display": "inline-block",
+                    "vertical-align": "top",
+                    "font-family": "sans-serif",
+                    "font-size": "18px",
+                    "text-align": "center",
+                    "color": "black",
+                    "margin-left": "20px"
+                });
+            });
+
+        }
 	};
 });
