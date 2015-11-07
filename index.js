@@ -22,6 +22,11 @@ app.get('/test', function(req, res) {
 });
 
 
+app.get('/simulator', function(req, res) {
+	res.render("simulator.hbs", {layout: "simulator", title : "Simulator"});
+});
+
+
 app.listen(app.get('port'), function() {
       console.log('Node app is running on port', app.get('port'));
 });
