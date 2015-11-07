@@ -1,5 +1,4 @@
 "use strict"
-
 $(function() {
 
 	
@@ -153,3 +152,4 @@ $(function() {
 		
 	};
 });
+
