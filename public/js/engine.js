@@ -174,12 +174,7 @@ var Engine = {
 			
 			Renderer.renderControls();
 
-			callback({
-				fromRollArray: fromRollArray,
-				fromRoll: fromRoll,
-				toRollArray: toRollArray,
-				toRoll: toRoll
-			});
+			callback(fromRoll > toRoll);
 		});
 
 	},

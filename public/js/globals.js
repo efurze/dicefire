@@ -26,8 +26,8 @@ var Globals = {
 	    },
 	
 		ASSERT: function (condition) {
-			console.log("ASSERTION FAILURE");
 			if (!condition) {
+				console.log("ASSERTION FAILURE");
 				debugger;
 			}
 		},
@@ -60,7 +60,8 @@ Globals.CHANNEL = {
 	"MAP" : 1,
 	"HEX" : 2,
 	"COUNTRY" : 3,
-	"PLAYER" : 4
+	"PLAYER" : 4,
+	"PLYER" : 5
 };
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
@@ -69,7 +70,8 @@ Globals.channels = [
 	3, //"MAP",
 	3, //"HEX",
 	3, //"COUNTRY",
-	3 //"PLAYER"
+	3, //"PLAYER"
+	5 //"AI.PLYER"
 ];
 
 
