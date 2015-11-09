@@ -130,7 +130,7 @@ $(function() {
 			var possibleMoves = this.allReasonableMoves(state);
 			
 			// always consider doing nothing (zero-length attack chain)
-			attackChain.push([[]]);
+			attackChain.push([[[]]]);
 			
 			if (ply == 0) {
 				var spreads = possibleMoves.map(function(move) {
@@ -139,21 +139,25 @@ $(function() {
 											
 											// we have to consider 2 possible outcomes for each move: attack wins and
 											// attack loses.
+											Globals.debug("Evaluating possible move", move, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 											return [self.applyMove(move, state, true), self.applyMove(move, state, false)];
 										}).map(function(state) {
 											// state is now a 2-element array
-											return [self.eval(state[0]), self.eval(state[1])];
+											var ret = [self.evalPosition(state[0]), self.evalPosition(state[1])];
+											Globals.debug("Evaluation: "+ret[0]+" / "+ret[1], Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+											return ret;
 										});
 										
 				// spreads is now a 2-d array of width 2:
 				// spreads[n, 0] has success option for possibleMoves[n], spreads[n, 1] has failure option for that move
+				Globals.debug("Move evals", spreads, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 				
 				//reduce each success/failure pair to a probabilistically weighted avg
 				var scores = spreads.map(function(spread) {
-					return spread.reduce(function(successState, failureState, i) {
+					return spread.reduce(function(successScore, failureScore, i) {
 						var odds = self.moveOdds(state, possibleMoves[i]);
-						return ((odds * eval(successState)) +
-								(1 - odds) * eval(failureState) );
+						return ((odds * successScore) +
+								((1 - odds) * failureScore) );
 					});
 				});
 				
@@ -206,7 +210,7 @@ $(function() {
 			// find all 1-step moves from this position
 			var attackOptions = self.allReasonableAttacks(state);
 			
-			Globals.debug("first-level attack options from this position", attackOptions, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("first-level attack options from this position", attackOptions, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			
 			// for each possible move from this position, apply that move and recurse
 			for (var i=0; i < attackOptions.length; i++) {
@@ -214,7 +218,7 @@ $(function() {
 				Globals.ASSERT(Array.isArray(thisAttack) && thisAttack.length == 2 && typeof thisAttack[0] === 'number');
 				
 				// always consider stopping the move after this attack
-				Globals.debug("Pushing attack", thisAttack, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				Globals.debug("Pushing attack", thisAttack, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				allMoves.push([thisAttack]);
 				
 				// assume attack succeeds. Find allResonableMoves for the resulting game state
@@ -222,18 +226,18 @@ $(function() {
 				
 				// recurse off of each potential next attack
 				var potentialNextMoves = self.allReasonableMoves(permutedState);
-				Globals.debug("PotentialNextMoves: ", potentialNextMoves, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				Globals.debug("PotentialNextMoves: ", potentialNextMoves, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				if (potentialNextMoves) {
 					potentialNextMoves.forEach(function(nextMove){
 						Globals.ASSERT(Array.isArray(nextMove));
 						var compoundMove = [thisAttack].concat(nextMove);
-						Globals.debug("Pushing move", compoundMove, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+						Globals.debug("Pushing move", compoundMove, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 						allMoves.push(compoundMove);
 					});
 				} 
 			}
 			
-			Globals.debug("returning move list", allMoves, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("returning move list", allMoves, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			
 			return allMoves;
 		},
@@ -262,7 +266,7 @@ $(function() {
 					
 					var attack = [countryId, neighbor];
 					if (self.attackOdds(state, attack) >= threshold) {
-						Globals.debug("possible attack found", attack, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+						Globals.debug("possible attack found", attack, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 						attacks.push(attack);
 					}
 				});	
@@ -338,8 +342,11 @@ $(function() {
 				delete state.playerCountries[toPlayer][to];
 				state.playerCountries[fromPlayer][to] = to;
 			}
-			
 			from.numDice = 1;
+			
+			state.countries[attack[0]] = from;
+			state.countries[attack[0]] = to;
+			
 			return state;
 		},
 		
@@ -374,14 +381,14 @@ $(function() {
 			return maxIslandSize;
 		},
 	
-		eval: function(state) {
+		evalPosition: function(state) {
 			Globals.ASSERT(state && state.players);
 			var self = this;
 			var scores = [];
 			
 			scores.length = Object.keys(state.players).length;
 			Object.keys(state.players).forEach(function(playerId){
-				scores[playerId] = self.playerEval(state);
+				scores[playerId] = self.evalPlayer(state, playerId);
 			});
 			
 			var myScore = scores[_myId];
@@ -396,11 +403,12 @@ $(function() {
 			return myScore;
 		},
 	
-		playerEval: function(state) {
-			var playerId = state.currentPlayerId;
+		evalPlayer: function(state, playerId) {
 			var myCountryCount = AI.Plyer.totalCountries(playerId, state);
 			var myContiguous = state.players[playerId].numContiguousCountries;
 			var myDice = AI.Plyer.totalDice(playerId, state);
+			
+			//Globals.debug("Total dice for PlayerId", playerId, "=", myDice, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			
 			if (state.currentPlayerId == playerId) {
 				// for current player, count on them getting their end-of-turn dice injection
@@ -412,6 +420,9 @@ $(function() {
 			var myAvg = myDice/myCountryCount;
 			
 			var score = myAvg * myContiguous + myContiguous;
+			
+			Globals.debug("PlayerId", playerId, "countries", myCountryCount, "contiguous", myContiguous,
+			 				"diceDensity", myAvg, "SCORE", score, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 
 			return score;
 		},
