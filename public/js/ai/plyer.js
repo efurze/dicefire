@@ -1,7 +1,7 @@
 $(function() {
 
 
-	// USAGE: odds[attacking-1, defending-1] gives the odds that the attacker wins
+	// USAGE: odds[attackingDiceCount - 1, defendingDiceCount - 1] gives the odds that the attacker wins
 	var odds = [
 		[ 0.4098, 0.0603, 0.0047, 0, 0, 0, 0, 0 ], // 1 dice attacking
 		[ 0.8643, 0.4368, 0.1184, 0.0182, 0.0024, 0.0002, 0, 0 ], // 2 dice attacking
@@ -127,7 +127,7 @@ $(function() {
 				[[23, 34], [34, 43]]    // two-attack move
 			]
 			*/
-			var possibleMoves = this.allReasonableAttacks(state);
+			var possibleMoves = this.allReasonableMoves(state);
 			
 			// always consider doing nothing (zero-length attack chain)
 			attackChain.push([[]]);
@@ -188,18 +188,68 @@ $(function() {
 			}
 		},
 		
-		/* [
+	
+		/* 
+		returns a list of all possible move sequences which are possible by 
+		recursively considering allReasonableAttacks from current @state
+		
+		@return = [
 			[[]],
 			[[1, 2]]
 			[[1, 2], [2, 3]]
-			]
+			...]
 		
 		*/
-		// returns a list of all attacks that have at least a 45% chance of success
+		allReasonableMoves: function(state) {
+			var self = this;
+			var allMoves = [[[]]];
+			// find all 1-step moves from this position
+			var attackOptions = self.allReasonableAttacks(state);
+			
+			Globals.debug("first-level attack options from this position", attackOptions, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			
+			// for each possible move from this position, apply that move and recurse
+			for (var i=0; i < attackOptions.length; i++) {
+				var thisAttack = attackOptions[i];
+				Globals.ASSERT(Array.isArray(thisAttack) && thisAttack.length == 2 && typeof thisAttack[0] === 'number');
+				
+				// always consider stopping the move after this attack
+				Globals.debug("Pushing attack", thisAttack, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				allMoves.push([thisAttack]);
+				
+				// assume attack succeeds. Find allResonableMoves for the resulting game state
+				var permutedState = self.applyMove([thisAttack], state, true);
+				
+				// recurse off of each potential next attack
+				var potentialNextMoves = self.allReasonableMoves(permutedState);
+				Globals.debug("PotentialNextMoves: ", potentialNextMoves, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				if (potentialNextMoves) {
+					potentialNextMoves.forEach(function(nextMove){
+						Globals.ASSERT(Array.isArray(nextMove));
+						var compoundMove = [thisAttack].concat(nextMove);
+						Globals.debug("Pushing move", compoundMove, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+						allMoves.push(compoundMove);
+					});
+				} 
+			}
+			
+			Globals.debug("returning move list", allMoves, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			
+			return allMoves;
+		},
+		
+		/*
+		 Loops through all countries owned by @state.currentPlayerId.
+		 returns a list of all attacks that have at least a 45% chance of success:
+			@return = [
+						[1,2],
+						[4,3],
+					 	... ]
+		*/
 		allReasonableAttacks: function(state) {
 			var self = this;
 			var threshold = 0.45;
-			var attackOptions = [];
+			var attacks = [];
 			
 			// loop over all possible attacks, filter out the ones that are too improbable
 			Object.keys(state.playerCountries[state.currentPlayerId]).forEach(function(countryId) {
@@ -213,28 +263,11 @@ $(function() {
 					var attack = [countryId, neighbor];
 					if (self.attackOdds(state, attack) >= threshold) {
 						Globals.debug("possible attack found", attack, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-						attackOptions.push([attack]);
+						attacks.push(attack);
 					}
-				});
-				
+				});	
 			});
-			
-			Globals.debug("attack options", attackOptions, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-			
-			// for each possible move from this position, apply that move and recurse
-			var len = attackOptions.length;
-			for (var i=0; i < len; i++) {
-				var permutedState = self.applyMove([attackOptions[i]], state);
-				var nextOptions = self.allReasonableAttacks(permutedState);
-				if (nextOptions) {
-					nextOptions.forEach(function(move){
-						attackOptions.push(attackOptions[i].push(move));
-					});
-				} 
-			}
-			
-			return attackOptions;
-			
+			return attacks;
 		},
 	
 		// returns odds of success
