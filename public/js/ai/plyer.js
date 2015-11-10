@@ -1,4 +1,4 @@
-$(function() {
+
 
 
 	// USAGE: odds[attackingDiceCount - 1, defendingDiceCount - 1] gives the odds that the attacker wins
@@ -69,14 +69,15 @@ $(function() {
 			});
 			
 			var moveSequence = self.findBestMove(state, self._plyDepth);
-			self.makeMoves(moveSequence, {});
+			self.makeMoves(moveSequence);
 
 			interface.endTurn();
 		},	
 		
-		makeMoves: function(moves, countriesNotCaptured) {
+		makeMoves: function(move, countriesNotCaptured) {
 			var self = this;
-			if (!moves || !moves.length) {
+			countriesNotCaptured = countriesNotCaptured || {};
+			if (!move || !move.length) {
 				return;
 			}
 			
@@ -84,18 +85,23 @@ $(function() {
 			
 			// pop first move off - skip over any nonmoves or 
 			// moves we can't make because we lost an earlier attack
-			var move = null;
-			while (moves.length && (!move || !moves.length) && !countriesNotCaptured[moves[0]]) {
-				moves.shift();
+			var attack = null;
+			while (move.length && (!attack || !attack.length)) {
+				attack = move.shift();
+				if (countriesNotCaptured[attack[0]]) {
+					Globals.debug("Country " + attack[0] + " not captured, skipping move " + JSON.stringify(attack), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+					move = null;
+				}
 			}
 			
-			if (move && moves.length) {
-				self._interface.attack(move[0], move[1], function(result) {
+			if (attack && attack.length) {
+				Globals.debug("Attacking country " + attack[1] + " from country " + attack[0], Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+				self._interface.attack(attack[0], attack[1], function(result) {
 					if (!result) {
-						countriesNotCaptured[move[1]] = 1;
+						countriesNotCaptured[attack[1]] = 1;
 					}
 					// recurse
-					self.makeMoves(moves, countriesNotCaptured);
+					self.makeMoves(move, countriesNotCaptured);
 				});
 			}
 		},
@@ -128,7 +134,7 @@ $(function() {
 			]
 			*/
 			var possibleMoves = this.allReasonableMoves(state);
-			Globals.debug("Found "+possibleMoves.length+" moves for this position", JSON.stringify(possibleMoves), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("Found "+possibleMoves.length+" moves for this position", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			
 			
 			// always consider doing nothing (zero-length attack chain)
@@ -158,29 +164,25 @@ $(function() {
 				var scores = spreads.map(function(spread) {
 					return spread.reduce(function(successScore, failureScore, i) {
 						var odds = self.moveOdds(state, possibleMoves[i]);
-						/*
 						return ((odds * successScore) +
 						 		((1 - odds) * failureScore) );
-						*/
-						return successScore;
 					});
 				});
 				
 				var max = scores[0];
 				var maxIndex = 0;
 				scores.forEach(function(score, i) {
-					Globals.debug("Move " + i + " score " + score, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					Globals.debug("Move " + i + " score " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 					if (score > max) {
 						max = score;
 						maxIndex = i;
 					}
 				});
 				
-				Globals.debug("Selected move " + maxIndex + " with a score of " + max, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-				Globals.debug("Move " + maxIndex, possibleMoves[maxIndex], Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				Globals.debug("Selected move " + maxIndex + " with a score of " + max, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+				Globals.debug("Move " + maxIndex, JSON.stringify(possibleMoves[maxIndex]), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 				return possibleMoves[maxIndex];
 				
-										
 			} else {
 				Globals.ASSERT(false);
 				/*
@@ -216,12 +218,14 @@ $(function() {
 			var self = this;
 			depth = depth || 0;
 			var allMoves = [];
-			if (depth > 0) {
+			
+			if (depth > 3) {
 				return null;
 			}
 			
 			// find all 1-step moves from this position
 			var attackOptions = self.allReasonableAttacks(state);
+			
 			
 			//Globals.debug("attack options from position at depth " + depth, attackOptions, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			
@@ -234,32 +238,30 @@ $(function() {
 				Globals.debug("Pushing attack", thisAttack, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				allMoves.push([thisAttack]);
 				
-				/*
+				
 				// assume attack succeeds. Find allResonableMoves for the resulting game state
 				var permutedState = self.applyMove([thisAttack], state, true);
 				
 				// recurse off of each potential next attack
 				var potentialNextMoves = self.allReasonableMoves(permutedState, depth+1);
 				
-				Globals.debug("PotentialNextMoves: ", potentialNextMoves, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-				
 				if (potentialNextMoves) {
 					potentialNextMoves.forEach(function(nextMove){
 						// nextMove should be an array of attacks: [[1,2], [2,3]...]
-						if (nextMove && nextMove.length && nextMove[0].length) {
+						if (!nextMove || !nextMove.length || !nextMove[0].length) {
 							// only add non-empty moves
 							return;
 						}
 						var compoundMove = [thisAttack].concat(nextMove);
-						Globals.debug("Pushing move", compoundMove, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+						Globals.debug("Pushing move", JSON.stringify(compoundMove), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 						Globals.ASSERT(Array.isArray(compoundMove) && compoundMove.length && compoundMove[0].length == 2)
 						allMoves.push(compoundMove);
 					});
 				} 
-				*/
+				
 			}
 			
-			Globals.debug("returning move list", JSON.stringify(allMoves), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("returning move list", JSON.stringify(allMoves), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			
 			return allMoves;
 		},
@@ -295,7 +297,7 @@ $(function() {
 					}
 				});	
 			});
-			Globals.debug("returning attacks ", attacks, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			//Globals.debug("returning attacks ", attacks, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return attacks;
 		},
 	
@@ -323,12 +325,13 @@ $(function() {
 			
 			Globals.ASSERT(Array.isArray(move[0]))
 			
+			var self = this;
 			var prob = 1;
 			
 			move.forEach(function (attack) {
 				Globals.ASSERT(Array.isArray(attack))
-				prob *= this.attackOdds(state, attack);
-				state = this.applyMove([attack], state, true);
+				prob *= self.attackOdds(state, attack);
+				state = self.applyMove([attack], state, true);
 			});
 			
 			return prob;
@@ -344,8 +347,8 @@ $(function() {
 			// deep copy state
 			var state = JSON.parse(JSON.stringify(state));
 			
-			while (move.length) {
-				this.applyAttack(move.shift(), state, success);
+			for (var i=0; i < move.length; i++) {
+				this.applyAttack(move[i], state, success);
 			}
 			return state;
 		},
@@ -496,5 +499,3 @@ $(function() {
 			});
 		}
 	};
-
-});
