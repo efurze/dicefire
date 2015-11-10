@@ -46,7 +46,7 @@ var Globals = {
 	    maxDice: 8,
 	    maxStoredDice: 64,
 	    startingDice: 10,
-	    numCountries: 35,
+	    numCountries: 32,
 	    timeout: 0,
 		play_sounds: 0,
 		suppress_ui: 0
