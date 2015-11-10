@@ -13,6 +13,18 @@
 		[ 1, 1, 0.9998, 0.9967, 0.9681, 0.8787, 0.6909, 0.466 ] // 8 attacking
 	];
 
+/*	
+	var SHA1 = new Hashes.SHA1();
+	
+	var GameState = function(state) {
+		this._state = JSON.stringify(state);
+	};
+	
+	GameState.prototype.hashKey = function() {
+		SHA1.hex(this._state);
+	};
+*/	
+
 	/*
 		Here is what the interface contains:
 
@@ -44,6 +56,7 @@
 		_myId: -1,
 		_plyDepth: 0, // 0 = 1-ply
 		_interface: null,
+		_memoHash: {},
 		
 		
 		// Called when the AI is first started. Tells the AI its player number
@@ -58,31 +71,41 @@
 			
 			var self = this;
 			self._interface = iface;
+			self._memoHash = {};
 			var state = iface.getState();
 			
 			Globals.ASSERT(self._myId == state.currentPlayerId);
 			
-			state.playerCountries = {};
-			var playerIds = Object.keys(state.players);
-			playerIds.forEach(function(playerId) {
-				state.playerCountries[playerId] = self.countriesForPlayer(playerId, state);
-			});
+			state.playerCountries = self.countriesForPlayers(state);
+			
+			Globals.debug("I AM PLAYER " + self._myId, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			Object.keys(state.playerCountries).forEach(function(pid) {
+				Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries[pid]).join(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			})
+			
 			
 			var moveSequence = self.findBestMove(state, self._plyDepth);
 			self.makeMoves(moveSequence);
-
-			iface.endTurn();
 		},	
 		
 		makeMoves: function(move, countriesNotCaptured) {
 			var self = this;
 			countriesNotCaptured = countriesNotCaptured || {};
 			if (!move || !move.length) {
+				var state = self._interface.getState();
+				state.playerCountries = self.countriesForPlayers(state);
+				
+				Object.keys(state.playerCountries).forEach(function(pid) {
+					Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries[pid]).join(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+				})
+
+				self._interface.endTurn();
+				
 				return;
 			}
 			
 			countriesNotCaptured = countriesNotCaptured || {};
-			
+
 			// pop first move off - skip over any nonmoves or 
 			// moves we can't make because we lost an earlier attack
 			var attack = null;
@@ -95,10 +118,13 @@
 			}
 			
 			if (attack && attack.length) {
-				Globals.debug("Attacking country " + attack[1] + " from country " + attack[0], Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+				Globals.debug("Country " + attack[0] + " ATTACKING country " + attack[1], Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 				self._interface.attack(attack[0], attack[1], function(result) {
 					if (!result) {
+						Globals.debug("ATTACK FAILED", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 						countriesNotCaptured[attack[1]] = 1;
+					} else {
+						Globals.debug("ATTACK SUCCEEDED", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 					}
 					// recurse
 					self.makeMoves(move, countriesNotCaptured);
@@ -106,21 +132,26 @@
 			}
 		},
 		
-		countriesForPlayer: function(playerId, state) {
-			var countries = {};
-			var countryIds = Object.keys(state.countries);
-			countryIds.forEach(function(id){
-				if (state.countries[id].owner == playerId) {
-					countries[id] = id;
-				}
+		countriesForPlayers: function(state) {
+			
+			var playerCountries = {};
+			var playerIds = Object.keys(state.players);
+			playerIds.forEach(function(playerId) {
+				var countryIds = Object.keys(state.countries);
+				countryIds.forEach(function(id){
+					if (!playerCountries[state.countries[id].owner]) {
+						playerCountries[state.countries[id].owner] = {};
+					}
+					playerCountries[state.countries[id].owner][id] = id;
+				});
 			});
-			return countries;
+			
+			return playerCountries;
 		},
 		
 		findBestMove: function(state, ply) {
 			
 			var self = this;
-			var attackChain = [];
 			var playerId = state.currentPlayerId;
 	
 			
@@ -136,30 +167,40 @@
 			var possibleMoves = this.allReasonableMoves(state);
 			Globals.debug("Found "+possibleMoves.length+" moves for this position", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			
+			for (var i=0; i < possibleMoves.length; i++) {
+				var out = "";
+				possibleMoves[i].forEach(function(move) {
+					out += move[1] + ",";
+				})
+				console.log(out);
+			}
+			
+			
 			
 			// always consider doing nothing (zero-length attack chain)
-			attackChain.push([[[]]]);
+			//possibleMoves.push([[[]]]);
 			
 			if (ply == 0) {
-				var spreads = possibleMoves.map(function(move) {
+				var scores = possibleMoves.map(function(move) {
 											// move is an array of 2-element arrays:
 											// move[0] = [attackingId, defendingId] for first attack
 											
 											// we have to consider 2 possible outcomes for each move: attack wins and
 											// attack loses.
 											Globals.debug("Evaluating possible move", move, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-											return [self.applyMove(move, state, true), self.applyMove(move, state, false)];
-										}).map(function(state) {
-											// state is now a 2-element array
-											var ret = [self.evalPosition(state[0]), self.evalPosition(state[1])];
-											Globals.debug("Evaluation: "+ret[0]+" / "+ret[1], Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+											//return [self.applyMove(move, state, true), self.applyMove(move, state, false)];
+											
+											var newState = self.applyMove(move, state, true);
+											var ret = self.evalPosition(newState);
+											Globals.debug("Evaluation: "+ret, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 											return ret;
 										});
 										
-				// spreads is now a 2-d array of width 2:
-				// spreads[n, 0] has success option for possibleMoves[n], spreads[n, 1] has failure option for that move
-				Globals.debug("Move evals", spreads, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+				// scores is now an array of position scores:
+				// scores[n] has eval of possibleMoves[n] applied to @state
+				Globals.debug("Move evals", scores, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				
+				/*
 				//reduce each success/failure pair to a probabilistically weighted avg
 				var scores = spreads.map(function(spread) {
 					return spread.reduce(function(successScore, failureScore, i) {
@@ -168,6 +209,7 @@
 						 		((1 - odds) * failureScore) );
 					});
 				});
+				*/
 				
 				var max = scores[0];
 				var maxIndex = 0;
@@ -218,6 +260,7 @@
 			state.currentPlayerId++;
 			state.currentPlayerId = state.currentPlayerId % Object.keys(state.players).length;
 		},
+		
 	
 		/* 
 		returns a list of all possible move sequences which are possible by 
@@ -242,13 +285,15 @@
 			// find all 1-step moves from this position
 			var attackOptions = self.allReasonableAttacks(state);
 			
-			
-			//Globals.debug("attack options from position at depth " + depth, attackOptions, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug(attackOptions.length + " attacks at depth " + depth, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			
 			// for each possible move from this position, apply that move and recurse
 			for (var i=0; i < attackOptions.length; i++) {
 				var thisAttack = attackOptions[i];
 				Globals.ASSERT(Array.isArray(thisAttack) && thisAttack.length == 2 && typeof thisAttack[0] === 'number');
+				Globals.ASSERT(state.countries[thisAttack[0]].owner != state.countries[thisAttack[1]].owner);
+				Globals.ASSERT(state.playerCountries[state.currentPlayerId][thisAttack[0]] 
+									&& !state.playerCountries[state.currentPlayerId][thisAttack[1]]);
 				
 				// always consider stopping the move after this attack
 				Globals.debug("Pushing attack", thisAttack, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
@@ -361,19 +406,30 @@
 			Globals.ASSERT(Array.isArray(move[0]));
 			
 			// deep copy state
-			var state = JSON.parse(JSON.stringify(state));
+			var newState = JSON.parse(JSON.stringify(state));
 			
 			for (var i=0; i < move.length; i++) {
-				this.applyAttack(move[i], state, success);
+				newState = this.applyAttack(move[i], newState, success);
 			}
-			return state;
+			
+			var cur = state.currentPlayerId;
+			if (success) {
+				Globals.ASSERT(this.totalDice(cur, state) == this.totalDice(cur, newState))
+				Globals.ASSERT((Object.keys(state.playerCountries[cur]).length + move.length) ==
+										Object.keys(newState.playerCountries[cur]).length);
+			}
+			
+			return newState;
 		},
 		
 		// no return value. Parameter @state is MODIFIED IN PLACE
 		applyAttack: function(attack, state, success) {
 			if (!attack || !attack.length) {
-				return state;
+				return;
 			}
+			
+			// deep copy state
+			var state = JSON.parse(JSON.stringify(state));
 			
 			Globals.ASSERT(Array.isArray(attack));
 			Globals.ASSERT(attack.length == 2);
@@ -381,9 +437,12 @@
 			var from = state.countries[attack[0]];
 			var to = state.countries[attack[1]];
 			Globals.ASSERT(from && to);
+			Globals.ASSERT(from.id != to.id);
 			
 			var fromPlayer = from.owner;
 			var toPlayer = to.owner;
+			Globals.ASSERT(fromPlayer != toPlayer);
+			Globals.ASSERT(fromPlayer == state.currentPlayerId);
 			
 			if (success) {
 				to.numDice = from.numDice - 1;
@@ -394,6 +453,7 @@
 			}
 			from.numDice = 1;
 			
+			return state;
 		},
 		
 		maxIslandSize: function(playerId, state) {
