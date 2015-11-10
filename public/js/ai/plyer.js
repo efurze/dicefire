@@ -1,4 +1,4 @@
-
+"use strict"
 
 
 	// USAGE: odds[attackingDiceCount - 1, defendingDiceCount - 1] gives the odds that the attacker wins
@@ -54,11 +54,11 @@
 		},
 
 		// Called each time the AI has a turn.
-		startTurn: function(interface) {
+		startTurn: function(iface) {
 			
 			var self = this;
-			self._interface = interface;
-			var state = interface.getState();
+			self._interface = iface;
+			var state = iface.getState();
 			
 			Globals.ASSERT(self._myId == state.currentPlayerId);
 			
@@ -71,7 +71,7 @@
 			var moveSequence = self.findBestMove(state, self._plyDepth);
 			self.makeMoves(moveSequence);
 
-			interface.endTurn();
+			iface.endTurn();
 		},	
 		
 		makeMoves: function(move, countriesNotCaptured) {
@@ -90,7 +90,7 @@
 				attack = move.shift();
 				if (countriesNotCaptured[attack[0]]) {
 					Globals.debug("Country " + attack[0] + " not captured, skipping move " + JSON.stringify(attack), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-					move = null;
+					attack = null;
 				}
 			}
 			
@@ -138,7 +138,7 @@
 			
 			
 			// always consider doing nothing (zero-length attack chain)
-			//attackChain.push([[[]]]);
+			attackChain.push([[[]]]);
 			
 			if (ply == 0) {
 				var spreads = possibleMoves.map(function(move) {
@@ -184,24 +184,40 @@
 				return possibleMoves[maxIndex];
 				
 			} else {
-				Globals.ASSERT(false);
-				/*
-				// for each possible move, calculate the best response by each other player			
-				var responseScores = possible.map(function(move) {
-					// permute current state by every possible move
-					var nextState = applyMove(move, state);
-					var playerIds = Object.keys(state.players);
-					return playerIds.map(function(pid) {
-						if (pid == playerId) {
-							return 0;
-						}
-						return findBestMove(pid, nextState, ply-1);
+				var current = state.currentPlayerId;
+				var count = Object.keys(state.players).length;
+				endTurn(state);
+				
+				for (var player = current+1; (player % count) != current; player++) {
+					// for each possible move, calculate the best response by each other player			
+					var responseScores = possibleMoves.map(function(move) {
+						// permute current state by every possible move
+						var nextState = applyMove(move, state);
+						var playerIds = Object.keys(state.players);
+						return playerIds.map(function(pid) {
+							if (pid == playerId) {
+								return 0;
+							}
+							return findBestMove(pid, nextState, ply-1);
+						});
 					});
-				});
-				*/
+					
+					endTurn(state);
+				}	
 			}
 		},
 		
+		endTurn: function (state) {
+			// add 1 die to each country for currentPlayer
+			Object.keys(state.playerCountries[state.currentPlayerId]).forEach(function(id) {
+				id = Number(id);
+				state.countries[id].numDice ++;
+				state.countries[id].numDice = Math.min(state.countries[id].numDice, 8);
+			});
+			
+			state.currentPlayerId++;
+			state.currentPlayerId = state.currentPlayerId % Object.keys(state.players).length;
+		},
 	
 		/* 
 		returns a list of all possible move sequences which are possible by 
@@ -282,7 +298,7 @@
 			
 			// loop over all possible attacks, filter out the ones that are too improbable
 			Object.keys(state.playerCountries[state.currentPlayerId]).forEach(function(cid) {
-				countryId = Number(cid);
+				var countryId = Number(cid);
 				Globals.ASSERT(state.countries[countryId] && state.countries[countryId].adjacentCountries);
 				// for each country, loop through all adjacent enemies
 				state.countries[countryId].adjacentCountries.forEach(function (neighbor) {
