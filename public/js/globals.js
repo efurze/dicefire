@@ -17,7 +17,13 @@ var Globals = {
 				if (level <= Globals.channels[channel]) {
 					delete arguments[argc-1];
 					delete arguments[argc-2];
-					console.log(title, arguments);
+					//console.log(title, arguments);
+					var msg = ""
+					var args = arguments;
+					Object.keys(arguments).forEach(function(key) {
+						console.log(args[key]);
+					});
+
 				}
 				
 			} else {
@@ -33,6 +39,7 @@ var Globals = {
 		},
 		
 	    showNumbers: false,
+		showCountryIds: false,
 	    markHexCenters: false,
 	    markCountryCenters: false,
 	    drawCountryConnections: false,
@@ -71,7 +78,7 @@ Globals.channels = [
 	3, //"HEX",
 	3, //"COUNTRY",
 	3, //"PLAYER"
-	5 //"AI.PLYER"
+	4 //"AI.PLYER"
 ];
 
 

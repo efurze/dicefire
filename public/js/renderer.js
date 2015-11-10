@@ -279,17 +279,33 @@ $(function(){
 			
 			// Draw the number box.
 	        var boxSize = 10;
+			if (Globals.showCountryIds) {
+				boxSize = 12;
+			}
 	        self._context.fillStyle = "white";
 	        self._context.fillRect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
 	        self._context.rect(ctr[0] - boxSize, ctr[1] - boxSize * 1.6, boxSize * 2, boxSize * 2);
-	        self._context.lineWidth = 1;
-	        self._context.strokeStyle = "black";
-	        self._context.stroke();
+			if (!Globals.showCountryIds) {
+	        	self._context.lineWidth = 1;
+	        	self._context.strokeStyle = "black";
+	        	self._context.stroke();
+			}
 
 	        self._context.fillStyle = "black";
-	        self._context.textAlign = "center";
 	        self._context.font = "bold 18px sans-serif";
-	        self._context.fillText(country._numDice, ctr[0], ctr[1]);
+			if (Globals.showCountryIds) {
+	        	self._context.textAlign = "right";
+			} else {
+	        	self._context.textAlign = "center";
+			}
+			self._context.fillText(country._numDice, ctr[0], ctr[1]);
+			
+			if (Globals.showCountryIds) {
+	        	self._context.fillStyle = "black";
+				self._context.textAlign = "left";
+	        	self._context.font = "10px sans-serif";
+	        	self._context.fillText(country.id(), ctr[0], ctr[1]);
+			}
 		},
 		
 
