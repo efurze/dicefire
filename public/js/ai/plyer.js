@@ -171,27 +171,19 @@
 		Globals.ASSERT(typeof state === "object");
 		
 		// deep copy state
-		try {
-			state = JSON.parse(JSON.stringify(state));
-		} catch (e) {
-			console.log(state);
-			console.log(typeof state);
-			Globals.ASSERT(false);
-		}
+		state = JSON.parse(JSON.stringify(state));
 		
-		try {
-			// add 1 die to each country for currentPlayer
-			Object.keys(state.playerCountries[state.currentPlayerId]).forEach(function(id) {
-				id = Number(id);
-				state.countries[id].numDice ++;
-				state.countries[id].numDice = Math.min(state.countries[id].numDice, 8);
-			});
-		} catch (e) {
-			console.log(e.toString());
-			Globals.ASSERT(false);
-		}
-		state.currentPlayerId++;
-		state.currentPlayerId = state.currentPlayerId % Object.keys(state.players).length;
+		// add 1 die to each country for currentPlayer
+		Object.keys(state.playerCountries[state.currentPlayerId]).forEach(function(id) {
+			id = Number(id);
+			state.countries[id].numDice ++;
+			state.countries[id].numDice = Math.min(state.countries[id].numDice, 8);
+		});
+
+		do {
+			state.currentPlayerId++;
+			state.currentPlayerId = state.currentPlayerId % Object.keys(state.players).length;
+		} while (state.players[state.currentPlayerId].hasLost);
 		
 		return state;
 	};
@@ -473,6 +465,10 @@
 
 	window.AI.Plyer.prototype.evalPlayer = function(state, playerId) {
 		var self = this;
+		
+		if (state.players[playerId].hasLost) {
+			return 0;
+		}
 		
 		var myCountryCount = self.totalCountries(playerId, state);
 		var myContiguous = state.players[playerId].numContiguousCountries;
