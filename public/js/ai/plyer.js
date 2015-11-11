@@ -60,6 +60,7 @@
 		_plyDepth: 0, // 0 = 1-ply
 		_MAX_PLIES: 2,
 		_interface: null,
+		_plyTracker: [],
 		
 		
 		// Called when the AI is first started. Tells the AI its player number
@@ -89,7 +90,10 @@
 			*/
 			
 			//var moveSequence = self.findBestMove(state, self._plyDepth);
-			var moveSequence = self.bestMoveFromState(state).move;
+			self._plyTracker = [];
+			self._plyTracker.length = self._MAX_PLIES;
+			var moveSequence = self.bestMoveFromState(state);
+			Globals.debug("Positions evaluated at each ply: ", self._plyTracker, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 			self.makeMoves(moveSequence);
 		},	
 				
@@ -187,20 +191,18 @@
 		bestMoveFromState: function(state, ply) {
 			var self = this;
 			ply = ply || 0;
-			var ret = {move: null, score: 0};
+			var move = null;
 			var playerId = state.currentPlayerId;
 			
-			if (ply >= self._MAX_PLIES) {
-				// eval position
-				ret.move = null;
-				ret.score = self.evalPosition(state);
-			} else {
-				ret.move = self.constructBestMove(state, ply);
-				ret.score = self.evalMove(ret.move, state);
-				Globals.debug("[PLY " + ply + "] Best move for position: " + JSON.stringify(ret.move), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			
+			if (ply < self._MAX_PLIES) {
+				move = self.constructBestMove(state, ply);
+				if (ply == 0) {
+					Globals.debug("[PLY " + ply + "] Best move for position: " + JSON.stringify(move), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+				}
 			}
 			
-			return ret;
+			return move;
 		},
 		
 		constructBestMove: function(state, ply) {
@@ -224,9 +226,10 @@
 					Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 					var bestResponse = self.bestMoveFromState(nextState, ply+1);
 					Globals.debug("Best response: " + JSON.stringify(bestResponse), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-					nextState = self.applyMove(bestResponse.move, nextState);
+					nextState = self.applyMove(bestResponse, nextState);
 				}
 				
+				self._plyTracker[ply] = self._plyTracker[ply] ? self._plyTracker[ply] + 1 : 1;
 				var score = self.evalPosition(nextState);
 				Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for attack " + JSON.stringify(attack) + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				return score;
@@ -434,6 +437,7 @@
 		evalPosition: function(state) {
 			Globals.ASSERT(state && state.players);
 			var self = this;
+			
 			var scores = [];
 			
 			scores.length = Object.keys(state.players).length;
@@ -441,22 +445,27 @@
 				scores[playerId] = self.evalPlayer(state, playerId);
 			});
 			
-			var myScore = scores[self._myId];
-			scores.sort();
+			var myScore = scores[state.currentPlayerId];
 			
-			if (myScore == scores[scores.length-1]) {
-				myScore = myScore - scores[scores.length-2];
-			} else {
-				myScore = myScore - scores[scores.length-1];
+			var others=0;
+			for(var i=0; i < scores.length; i++) {
+				if (i != state.currentPlayerId) {
+					others += Math.pow(scores[i], 2);
+				}
 			}
+			others = Math.sqrt(others);
 			
-			return scores[self._myId];
+			return scores[state.currentPlayerId] - others;
 		},
 	
 		evalPlayer: function(state, playerId) {
-			var myCountryCount = AI.Plyer.totalCountries(playerId, state);
+			var self = this;
+			
+			var myCountryCount = self.totalCountries(playerId, state);
 			var myContiguous = state.players[playerId].numContiguousCountries;
 			var myDice = AI.Plyer.totalDice(playerId, state);
+			
+			return (2*myContiguous) - myCountryCount;
 			
 			//Globals.debug("Total dice for PlayerId", playerId, "=", myDice, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			
