@@ -80,7 +80,9 @@ var Engine = {
 		Engine.pushHistory();
 
 		if (Engine._playerCode[playerId] != "human") {
-			Engine._playerCode[playerId].startTurn(Engine.interface);
+			window.setTimeout(function() {
+					Engine._playerCode[playerId].startTurn(Engine.interface)
+				}, 0);
 		} 
 
 		Renderer.renderPlayers(Player._array);
