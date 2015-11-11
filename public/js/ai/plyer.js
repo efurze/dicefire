@@ -58,7 +58,7 @@
 		
 		_myId: -1,
 		_plyDepth: 0, // 0 = 1-ply
-		_MAX_PLIES: 1,
+		_MAX_PLIES: 2,
 		_interface: null,
 		
 		
@@ -220,7 +220,7 @@
 				// Assume move ends after this attack. 
 				// do all of the other players' counterattacks and evaluate the position
 				var nextState = self.applyAttack(attack, state, true);
-				while ((nextState=self.doEndOfTurn(nextState)).currentPlayerId != self._myId) {
+				while ((nextState=self.doEndOfTurn(nextState)).currentPlayerId != state.currentPlayerId) {
 					Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 					var bestResponse = self.bestMoveFromState(nextState, ply+1);
 					Globals.debug("Best response: " + JSON.stringify(bestResponse), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
