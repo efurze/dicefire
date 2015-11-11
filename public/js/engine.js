@@ -21,7 +21,7 @@ var Engine = {
 		var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
 		Engine._playerCode.forEach(function(elem, index) {
 			if (elem != "human") {
-				elem.init(index, isHumanList);
+				Engine._playerCode[index] = elem.create(index, isHumanList);
 			}
 		});
 

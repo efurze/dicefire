@@ -1,4 +1,3 @@
-$(function() {
 
 	/*
 		Here is what the interface contains:
@@ -26,17 +25,20 @@ $(function() {
 	*/
 
 	window.AI = window.AI || {};
-	window.AI.DoNothing = {
-		// Called when the AI is first started. Tells the AI its player number
-		// and the list of other players, so it can know who is human and where
-		// in the turn order this AI shows up.
-		init: function(playerId, isHumanList) {
-		},
-
-		// Called each time the AI has a turn.
-		startTurn: function(interface) {
-			interface.endTurn();
-		}	
+	window.AI.DoNothing = function (id){
+		
+	};
+	
+	// Factory method. Called when the AI is first started. Tells the AI its player number
+	// and the list of other players, so it can know who is human and where
+	// in the turn order this AI shows up.
+	window.AI.DoNothing.create = function(playerId, isHumanList) {
+		return new window.AI.DoNothing(playerId);
 	};
 
-});
+	// Called each time the AI has a turn.
+	window.AI.DoNothing.prototype.startTurn = function(interface) {
+		interface.endTurn();
+	};
+
+
