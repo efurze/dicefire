@@ -57,7 +57,7 @@ Player.prototype.lose = function(isAttacker) {
 var INITIAL_DENSITY = 8; // 8 dice per territory
 var MAX_RESERVES = 64;
 
-var calculateOdds = function(p1InitialTerritories, p2InitialTerritories, initialDensity) {
+var calculateOdds = function(p1InitialTerritories, p2InitialTerritories, initialDensity1, initialDensity2) {
 	
 	//console.log("beginning simulation for", p1InitialTerritories, p2InitialTerritories, initialDensity);
 	
@@ -65,7 +65,7 @@ var calculateOdds = function(p1InitialTerritories, p2InitialTerritories, initial
 	var trials = 500;
 	
 	for (var i=0; i < trials; i++) {
-		if (simulateBattle(p1InitialTerritories, p2InitialTerritories, initialDensity)) {
+		if (simulateBattle(p1InitialTerritories, p2InitialTerritories, initialDensity1, initialDensity2)) {
 			p1Wins ++;
 		}
 	}
@@ -78,10 +78,10 @@ var calculateOdds = function(p1InitialTerritories, p2InitialTerritories, initial
 };
 
 // returns true if player1 wins. Player1 attacks first
-var simulateBattle = function(p1InitialTerritories, p2InitialTerritories, initialDensity) {
+var simulateBattle = function(p1InitialTerritories, p2InitialTerritories, initialDensity1, initialDensity2) {
 	
-	var p1 = new Player(p1InitialTerritories, initialDensity, 0);
-	var p2 = new Player(p2InitialTerritories, initialDensity, 0);;
+	var p1 = new Player(p1InitialTerritories, initialDensity1, 0);
+	var p2 = new Player(p2InitialTerritories, initialDensity2, 0);;
 	
 	while (p1.countries.length && p2.countries.length) {
 		//console.log("p1 attacks p2");
@@ -130,17 +130,17 @@ var doOneAttack = function(p1, p2) {
 };
 
 //console.log(typeof odds[0][0]);
-//calculateOdds(2, 2, 8);
+//calculateOdds(2, 2, 8, 8);
 
-var calculateOddsTable = function(from, to) {
+var equalDensityTable = function(from, to) {
 	var results = [];
 	results.push(["Defending"]);
 	
 	for (var attacker = from; attacker <= to; attacker++) {
-		results[0].push(attacker.toString());
+		results[0].push(attacker.toString() + " attacking");
 		var row = [attacker];
 		for (var defender = from; defender <= to; defender++) {
-			row.push(calculateOdds(attacker, defender, 8));
+			row.push(calculateOdds(attacker, defender, 8, 8));
 		}
 		results.push(row);
 	}
@@ -148,10 +148,20 @@ var calculateOddsTable = function(from, to) {
 	return results;
 };
 
-//calculateOddsTable(1, 8);
+
+function equalDiceTotalsDifferentDensities(total) {
+	var minCountries = Math.ceil(total/8);
+	var maxCountries = minCountries * 2;
+	
+	var result = [];
+	result.push(['Odds', "Attacking with 7 per territory"]);
+	
+	for (var i=minCountries; i <= maxCountries; i++) {
+	}
+};
 
 function drawChart() {
-    var data = google.visualization.arrayToDataTable(calculateOddsTable(1, 8));
+    var data = google.visualization.arrayToDataTable(equalDensityTable(1, 8));
 
 /*
 	var data = google.visualization.arrayToDataTable([
@@ -165,8 +175,8 @@ function drawChart() {
 
     var options = {
       title: 'Odds of Defending By Relative Country Count',
-      curveType: 'function',
-      legend: { position: 'bottom' }
+      //curveType: 'function',
+      legend: { position: 'bottom', text: "foo" }
     };
 
     var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));

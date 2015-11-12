@@ -18,16 +18,94 @@
 	var hashState = function(state) {
 		return SHA1.hex(JSON.stringify(state));
 	};
-	/*
-	var GameState = function(state) {
-		this._state = JSON.stringify(state);
+
+	var Attack = function(fromId, toId) {
+		if ((typeof fromId !== 'undefined') && (typeof toId !== 'undefined')) {
+			this._from = fromId;
+			this._to = toId;
+		} else {
+			this._from = -1;
+			this._to = -1;
+		}
 	};
 	
-	GameState.prototype.hashKey = function() {
-		SHA1.hex(this._state);
+	Attack.isAttack = function(a) {
+			return (a !== null) && a.__proto__ == Attack.prototype;
 	};
-	*/
-
+	Attack.prototype.clear = function() {
+		this._from = -1;
+		this._to = -1;
+	};
+	Attack.prototype.from = function() {return this._from};
+	Attack.prototype.to = function() {return this._to};
+	Attack.prototype.isEmpty = function() {return ((this._from < 0) || (this._to < 0))};
+	Attack.prototype.toString = function() {
+		if (this.isEmpty()) {
+			return "()";
+		} else {
+			return "(" + this._from + "," + this._to + ")";
+		}
+	};
+	
+	Attack.arrayString = function(ary) {
+		var str = "[";
+		if (Array.isArray(ary)) {
+			if (ary.length) {
+				return "[]";
+			} else {
+				Globals.ASSERT(Attack.isAttack(ary[0]));
+				for (var i=0; i < ary.length; i++) {
+					str += ary[i].toString();
+				}
+			}
+		}
+		str += "]";
+		return str;
+	};
+	
+	var Move = function() {
+		this._attacks = [];
+	};
+		
+	Move.isMove = function(m) {
+		return (m !== null && m.hasOwnProperty('_attacks') && m.__proto__ == Move.prototype);
+	};
+	
+	Move.prototype.length = function() {return this._attacks.length;}
+	
+	// adds to end
+	Move.prototype.push = function(attack) {
+		Globals.ASSERT(Array.isArray(attack) || Attack.isAttack(attack));
+		if (Array.isArray(attack)) {
+			this._attacks.push(new Attack(attack[0], attack[1]));
+		} else {
+			this._attacks.push(attack);
+		}
+	};
+	Move.prototype.append = function(m) {
+		Globals.ASSERT(Move.isMove(m));
+		this._attacks = this._attacks.concat(m._attacks);
+	};
+	// removes first attack and returns it
+	Move.prototype.pop = function() {
+		return (this._attacks.shift() || new Attack());
+	};
+	Move.prototype.at = function(index) {
+		Globals.ASSERT(index >= 0 && index < this._attacks.length);
+		return this._attacks[index];
+	};
+	Move.prototype.hasMoreAttacks = function() {
+		return (this._attacks.length && !this._attacks[0].isEmpty());
+	};
+	Move.prototype.toString = function() {
+		var str = '[';
+		for (var i=0; i < this._attacks.length; i++) {
+			str += this._attacks[i].toString();
+		}
+		str += ']';
+		return str;
+	};
+	
 	/*
 		Here is what the interface contains:
 
@@ -104,26 +182,27 @@
 		
 		// pop first move off - skip over any nonmoves or 
 		// moves we can't make because we lost an earlier attack
-		var attack = null;
-		while (move && move.length && (!attack || !attack.length)) {
-			attack = move.shift();
-			if (countriesNotCaptured[attack[0]]) {
-				Globals.debug("Country " + attack[0] + " not captured, skipping move " + JSON.stringify(attack), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-				attack = null;
+		var attack = new Attack();
+		while (move.hasMoreAttacks() && attack.isEmpty()) {
+			attack = move.pop();
+			if (countriesNotCaptured[attack.from()]) {
+				Globals.debug("Country " + attack.from() + " not captured, skipping move " + attack.toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+				attack.clear();
 			}
 		}
 		
-		if ((!move || !move.length) && (!attack || !attack.length)) {
+		// TODO: I think this is wrong
+		if (!move.hasMoreAttacks() && attack.isEmpty()) {
 			self.finishTurn();
 			return;
 		}			
 		
-		if (attack && attack.length) {
-			Globals.debug("Country " + attack[0] + " ATTACKING country " + attack[1], Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-			self._interface.attack(attack[0], attack[1], function(result) {
+		if (!attack.isEmpty()) {
+			Globals.debug("Country " + attack.from() + " ATTACKING country " + attack.to(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			self._interface.attack(attack.from(), attack.to(), function(result) {
 				if (!result) {
 					Globals.debug("ATTACK FAILED", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-					countriesNotCaptured[attack[1]] = 1;
+					countriesNotCaptured[attack.to()] = 1;
 				} else {
 					Globals.debug("ATTACK SUCCEEDED", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 				}
@@ -196,14 +275,14 @@
 	window.AI.Plyer.prototype.bestMoveFromState = function(state, ply) {
 		var self = this;
 		ply = ply || 0;
-		var move = null;
+		var move = new Move();
 		var playerId = state.currentPlayerId;
 		
 		
 		if (ply < self._MAX_PLIES) {
 			move = self.constructBestMove(state, ply);
 			if (ply == 0) {
-				Globals.debug("[PLY " + ply + "] Best move for position: " + JSON.stringify(move), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+				Globals.debug("[PLY " + ply + "] Best move for position: " + move.toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 			}
 		}
 		
@@ -213,30 +292,33 @@
 	window.AI.Plyer.prototype.constructBestMove = function(state, ply) {
 		Globals.debug("[PLY " + ply + "] constructBestMove", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		var self = this;
-		var bestMove = [];
+		var bestMove = new Move();
+		
 		// find all 1-step moves from this position
 		var attackOptions = self.allReasonableAttacks(state);
+		
 		// always consider doing nothing
-		attackOptions.push([]);
-		Globals.debug("Considering these attacks: " + JSON.stringify(attackOptions), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		attackOptions.push(new Attack());
+		Globals.debug("Considering these attacks: " + Attack.arrayString(attackOptions), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		
 		// score each attack option by looking at all responses (ply deep)
 		var attackScores = attackOptions.map(function(attack) {
-			Globals.debug("Considering attack " + JSON.stringify(attack), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			Globals.ASSERT(attack && Array.isArray(attack) && (attack.length == 0 || attack.length == 2));
+			Globals.debug("Considering attack " + attack.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+			Globals.ASSERT(Attack.isAttack(attack));
+			
 			// Assume move ends after this attack. 
 			// do all of the other players' counterattacks and evaluate the position
 			var nextState = self.applyAttack(attack, state, true);
 			while ((nextState=self.doEndOfTurn(nextState)).currentPlayerId != state.currentPlayerId) {
 				Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 				var bestResponse = self.bestMoveFromState(nextState, ply+1);
-				Globals.debug("Best response: " + JSON.stringify(bestResponse), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+				Globals.debug("Best response: " + bestResponse.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				nextState = self.applyMove(bestResponse, nextState);
 			}
 			
 			self._plyTracker[ply] = self._plyTracker[ply] ? self._plyTracker[ply] + 1 : 1;
 			var score = self.evalPosition(nextState);
-			Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for attack " + JSON.stringify(attack) + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+			Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for attack " + attack.toString() + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			return score;
 		});
 		
@@ -252,33 +334,35 @@
 		var bestAttack = attackOptions[maxIndex];
 		
 		
-		if (bestAttack.length == 0) {
+		if (bestAttack.isEmpty()) {
 			// best move was to do nothing
 			Globals.debug("Best attack is to do nothing", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return bestMove;
 		} else {
-			Globals.debug("Adding attack to bestMove: " + JSON.stringify(bestAttack), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("Adding attack to bestMove: " + bestAttack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			bestMove.push(bestAttack);
 			var nextState = self.applyAttack(bestAttack, state, true);
 			Globals.ASSERT(hashState(state) != hashState(nextState));
 			var nextMove = self.constructBestMove(nextState, ply);
-			if (nextMove.length && nextMove[0].length) {
-				bestMove = bestMove.concat(nextMove);
+			if (nextMove.hasMoreAttacks()) {
+				bestMove.append(nextMove);
 			}
-			Globals.debug("returning best move: " + JSON.stringify(bestMove), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("returning best move: " + bestMove.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return bestMove;
 		}
 	};
 
 
+	window.AI.Plyer.prototype.allReasonableMoves = function(state, maxLength) {
+		maxLength = maxLength || 1;
+		var self = this;
+		
+	};
 	
 	/*
 	 Loops through all countries owned by @state.currentPlayerId.
 	 returns a list of all attacks that have at least a 45% chance of success:
-		@return = [
-					[1,2],
-					[4,3],
-				 	... ]
+		@return = array of Attack objects
 	*/
 	window.AI.Plyer.prototype.allReasonableAttacks = function(state) {
 		Globals.ASSERT(state && state.countries);
@@ -299,26 +383,28 @@
 			neighbors.forEach(function (neighbor) {
 				Globals.ASSERT (state.countries[neighbor].owner != state.currentPlayerId);
 				
-				var attack = [countryId, neighbor];
+				var attack = new Attack(countryId, neighbor);
 				if (self.attackOdds(state, attack) >= threshold) {
-					//Globals.debug("possible attack found", attack, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					//Globals.debug("possible attack found", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 					attacks.push(attack);
 				} else {
-					//Globals.debug("attack too improbable", attack, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					//Globals.debug("attack too improbable", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 				}
 			});	
 		});
-		//Globals.debug("returning attacks ", attacks, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		//Globals.debug("returning attacks ", Attack.arrayString(attacks), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		return attacks;
 	};
 
 	// returns odds of success
-	// @attack is [attackingCountryId, defendingCountryId]
+	// @attack is an Attack object
 	window.AI.Plyer.prototype.attackOdds = function(state, attack) {
-		if (attack && attack.length == 2) {
-			Globals.ASSERT(!Array.isArray(attack[0]));
-			var a = state.countries[attack[0]].numDice;
-			var d = state.countries[attack[1]].numDice;
+		Globals.ASSERT(state && state.countries);
+		Globals.ASSERT(state.countries.hasOwnProperty(attack.from()) && state.countries.hasOwnProperty(attack.to()));
+		if (!attack.isEmpty()) {
+			Globals.ASSERT(Attack.isAttack(attack));
+			var a = state.countries[attack.from()].numDice;
+			var d = state.countries[attack.to()].numDice;
 			var o = odds[a - 1][d - 1];
 			//Globals.debug("Attack odds for " + a + " vs " + d + " = " + o, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return o;
@@ -329,23 +415,22 @@
 
 	
 	window.AI.Plyer.prototype.applyMove = function(move, state) {
-		if (!move || !move.length || !move[0].length) {
+		Globals.ASSERT(Move.isMove(move));
+		if (!move.hasMoreAttacks()) {
 			return state;
 		}
-		
-		Globals.ASSERT(Array.isArray(move[0]));
 		
 		// deep copy state
 		var newState = JSON.parse(JSON.stringify(state));
 		
-		for (var i=0; i < move.length; i++) {
-			newState = this.applyAttack(move[i], newState, true);
+		for (var i=0; i < move.length(); i++) {
+			newState = this.applyAttack(move.at(i), newState, true);
 		}
 		
 		var cur = state.currentPlayerId;
 		
 		Globals.ASSERT(this.totalDice(cur, state) == this.totalDice(cur, newState))
-		Globals.ASSERT((Object.keys(state.playerCountries[cur]).length + move.length)
+		Globals.ASSERT((Object.keys(state.playerCountries[cur]).length + move.length())
 							== Object.keys(newState.playerCountries[cur]).length);
 		
 		return newState;
@@ -356,16 +441,14 @@
 		// deep copy state
 		var state = JSON.parse(JSON.stringify(state));
 		
-		if (!attack || !attack.length) {
+		Globals.ASSERT(Attack.isAttack(attack));
+		if (attack.isEmpty()) {
 			return state;
 		}
 		var self = this;
 		
-		Globals.ASSERT(Array.isArray(attack));
-		Globals.ASSERT(attack.length == 2);
-		
-		var from = state.countries[attack[0]];
-		var to = state.countries[attack[1]];
+		var from = state.countries[attack.from()];
+		var to = state.countries[attack.to()];
 		Globals.ASSERT(from && to);
 		Globals.ASSERT(from.id != to.id);
 		
@@ -422,18 +505,21 @@
 	};
 
 	window.AI.Plyer.prototype.evalMove = function(move, state) {
-		Globals.debug("evalMove: ", JSON.stringify(move), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+		Globals.ASSERT(Move.isMove(move));
+		Globals.debug("evalMove: ", move.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 		var self = this;
 		var score = 0;
-		if (!move || !move.length || !move[0] || move[0].length != 2) {
+		if (!move.hasMoreAttacks()) {
 			score = self.evalPosition(state);
 		} else {
-			var attack = move[0];
+			// deep-copy move
+			move = JSON.parse(JSON.stringify(move));
+			var attack = move.pop();
 			var winState = self.applyAttack(attack, state, true);
 			var loseState = self.applyAttack(attack, state, false);
 			var winOdds = self.attackOdds(state, attack);
 			// recurse
-			score = ((1 - winOdds) * self.evalPosition(loseState)) + (winOdds * self.evalMove(move.slice(1), winState));
+			score = ((1 - winOdds) * self.evalPosition(loseState)) + (winOdds * self.evalMove(move, winState));
 		}
 		
 		return score;
@@ -537,142 +623,5 @@
 			}
 		});
 	};
-	
-/*
-	findBestMove = function(state, ply) {
-		
-		var self = this;
-		var playerId = state.currentPlayerId;
 
-		
-					
-//		 an attack is a 2-element array: [23, 34] which specifies that country 23 attacks 34
-//		 a 'move' is a series of 0 or more attacks. so possible moves looks like:
-//		[
-//			[[]], 					// don't do anything
-//			[[23, 34]],				// one-attack move
-//			[[23, 34], [34, 43]]    // two-attack move
-//		]
-				
-		var possibleMoves = this.allReasonableMoves(state);
-		Globals.debug("Found "+possibleMoves.length+" moves for this position", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		
-		// always consider doing nothing (zero-length attack chain)
-		//possibleMoves.push([[[]]]);
-		
-		if (ply == 0) {
-			var scores = possibleMoves.map(function(move) {
-										// move is an array of 2-element arrays:
-										// move[0] = [attackingId, defendingId] for first attack
-										Globals.debug("Evaluating possible move", JSON.stringify(move), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-										var ret = self.evalMove(move, state);
-										Globals.debug("Evaluation: "+ret, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-										return ret;
-									});
-									
-			// scores is now an array of position scores:
-			// scores[n] has eval of possibleMoves[n] applied to @state
-			Globals.debug("Move evals", scores, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			
-			// select best score
-			var max = scores[0];
-			var maxIndex = 0;
-			scores.forEach(function(score, i) {
-				Globals.debug("Move " + i + " score " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-				if (score > max) {
-					max = score;
-					maxIndex = i;
-				}
-			});
-			
-			Globals.debug("Selected move " + maxIndex + " with a score of " + max, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-			Globals.debug("Move " + maxIndex, JSON.stringify(possibleMoves[maxIndex]), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-			return possibleMoves[maxIndex];
-			
-		} else {
-			var current = state.currentPlayerId;
-			var count = Object.keys(state.players).length;
-			state = doEndOfTurn(state);
-			
-			for (var player = current+1; (player % count) != current; player++) {
-				// for each possible move, calculate the best response by each other player			
-				var responseScores = possibleMoves.map(function(move) {
-					// permute current state by every possible move
-					var nextState = applyMove(move, state);
-					var playerIds = Object.keys(state.players);
-					return playerIds.map(function(pid) {
-						if (pid == playerId) {
-							return 0;
-						}
-						return findBestMove(pid, nextState, ply-1);
-					});
-				});
-				
-				state = doEndOfTurn(state);
-			}	
-		}
-	},
-	
-	
-//	returns a list of all possible move sequences which are possible by 
-//	recursively considering allReasonableAttacks from current @state
-//	
-//	@return = [
-//		[[]],
-//		[[1, 2]]
-//		[[1, 2], [2, 3]]
-//		...]		
-	allReasonableMoves = function(state, depth) {
-		var self = this;
-		depth = depth || 0;
-		var allMoves = [];
-		
-		if (depth > 3) {
-			return null;
-		}
-		
-		// find all 1-step moves from this position
-		var attackOptions = self.allReasonableAttacks(state);
-		
-		Globals.debug(attackOptions.length + " attacks at depth " + depth, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-		
-		// for each possible move from this position, apply that move and recurse
-		for (var i=0; i < attackOptions.length; i++) {
-			var thisAttack = attackOptions[i];
-			Globals.ASSERT(Array.isArray(thisAttack) && thisAttack.length == 2 && typeof thisAttack[0] === 'number');
-			Globals.ASSERT(state.countries[thisAttack[0]].owner != state.countries[thisAttack[1]].owner);
-			Globals.ASSERT(self.playerHasCountry(state.currentPlayerId, state, thisAttack[0])
-								&& !self.playerHasCountry(state.currentPlayerId, state, thisAttack[1]));				
-			// always consider stopping the move after this attack
-			Globals.debug("Pushing attack", thisAttack, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			allMoves.push([thisAttack]);
-			
-			
-			// assume attack succeeds. Find allResonableMoves for the resulting game state
-			var permutedState = self.applyAttack(thisAttack, state, true);
-			
-			// recurse off of each potential next attack
-			var potentialNextMoves = self.allReasonableMoves(permutedState, depth+1);
-			
-			if (potentialNextMoves) {
-				potentialNextMoves.forEach(function(nextMove){
-					// nextMove should be an array of attacks: [[1,2], [2,3]...]
-					if (!nextMove || !nextMove.length || !nextMove[0].length) {
-						// only add non-empty moves
-						return;
-					}
-					var compoundMove = [thisAttack].concat(nextMove);
-					Globals.debug("Pushing move", JSON.stringify(compoundMove), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-					Globals.ASSERT(Array.isArray(compoundMove) && compoundMove.length && compoundMove[0].length == 2)
-					allMoves.push(compoundMove);
-				});
-			} 
-			
-		}
-		
-		Globals.debug("returning move list", JSON.stringify(allMoves), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-		
-		return allMoves;
-	},
-*/
 
