@@ -74,17 +74,15 @@
 	Move.prototype.length = function() {return this._attacks.length;}
 	
 	// adds to end
-	Move.prototype.push = function(attack) {
-		Globals.ASSERT(Array.isArray(attack) || Attack.isAttack(attack));
-		if (Array.isArray(attack)) {
-			this._attacks.push(new Attack(attack[0], attack[1]));
-		} else {
-			this._attacks.push(attack);
+	Move.prototype.push = function(next) {
+		Globals.ASSERT(Array.isArray(next) || Attack.isAttack(next) || Move.isMove(next));
+		if (Array.isArray(next)) {
+			this._attacks.push(new Attack(next[0], next[1]));
+		} else if (Attack.isAttack(next)){
+			this._attacks.push(next);
+		} else if (Move.isMove(next)) {
+			this._attacks = this._attacks.concat(next._attacks);
 		}
-	};
-	Move.prototype.append = function(m) {
-		Globals.ASSERT(Move.isMove(m));
-		this._attacks = this._attacks.concat(m._attacks);
 	};
 	// removes first attack and returns it
 	Move.prototype.pop = function() {
@@ -295,11 +293,16 @@
 		var bestMove = new Move();
 		
 		// find all 1-step moves from this position
-		var attackOptions = self.allReasonableAttacks(state);
+		var attackOptions = self.findAllMoves(state, 1).map(function(move) {
+			return move.at(0);
+		});
 		
 		// always consider doing nothing
 		attackOptions.push(new Attack());
 		Globals.debug("Considering these attacks: " + Attack.arrayString(attackOptions), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		if (ply == 0) {
+			Globals.debug("Considering " + attackOptions.length + " attacks", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		}
 		
 		// score each attack option by looking at all responses (ply deep)
 		var attackScores = attackOptions.map(function(attack) {
@@ -345,18 +348,34 @@
 			Globals.ASSERT(hashState(state) != hashState(nextState));
 			var nextMove = self.constructBestMove(nextState, ply);
 			if (nextMove.hasMoreAttacks()) {
-				bestMove.append(nextMove);
+				bestMove.push(nextMove);
 			}
 			Globals.debug("returning best move: " + bestMove.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return bestMove;
 		}
 	};
 
-
-	window.AI.Plyer.prototype.allReasonableMoves = function(state, maxLength) {
-		maxLength = maxLength || 1;
+	// return array of Move objects
+	window.AI.Plyer.prototype.findAllMoves = function(state, length) {
+		length = length || 1;
 		var self = this;
+		var moves = [];
+		var attacks = this.findAllAttacks(state);
 		
+		attacks.forEach(function(attack) {
+			var move = new Move();
+			move.push(attack);
+			moves.push(move);
+			if (length > 1) {
+				// recurse
+				move = new Move();
+				move.push(attack);
+				move.append(this.findAllMoves(this.applyAttack(attack, state, true)), length-1);
+				moves.push(move);
+			}
+		});
+		
+		return moves;
 	};
 	
 	/*
@@ -364,7 +383,7 @@
 	 returns a list of all attacks that have at least a 45% chance of success:
 		@return = array of Attack objects
 	*/
-	window.AI.Plyer.prototype.allReasonableAttacks = function(state) {
+	window.AI.Plyer.prototype.findAllAttacks = function(state) {
 		Globals.ASSERT(state && state.countries);
 		//Globals.debug("Find attacks for player " + state.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		var self = this;
@@ -414,23 +433,27 @@
 	};
 
 	
-	window.AI.Plyer.prototype.applyMove = function(move, state) {
-		Globals.ASSERT(Move.isMove(move));
-		if (!move.hasMoreAttacks()) {
+	window.AI.Plyer.prototype.applyMove = function(next, state) {
+		Globals.ASSERT(Move.isMove(next) || Attack.isAttack(next));
+		if (Attack.isAttack(next)) {
+			return this.applyAttack(next, state, true);
+		}
+		
+		if (!next.hasMoreAttacks()) {
 			return state;
 		}
 		
 		// deep copy state
 		var newState = JSON.parse(JSON.stringify(state));
 		
-		for (var i=0; i < move.length(); i++) {
-			newState = this.applyAttack(move.at(i), newState, true);
+		for (var i=0; i < next.length(); i++) {
+			newState = this.applyAttack(next.at(i), newState, true);
 		}
 		
 		var cur = state.currentPlayerId;
 		
 		Globals.ASSERT(this.totalDice(cur, state) == this.totalDice(cur, newState))
-		Globals.ASSERT((Object.keys(state.playerCountries[cur]).length + move.length())
+		Globals.ASSERT((Object.keys(state.playerCountries[cur]).length + next.length())
 							== Object.keys(newState.playerCountries[cur]).length);
 		
 		return newState;
@@ -624,4 +647,4 @@
 		});
 	};
 
-
+var testState = "{\"players\":{\"0\":{\"id\":0,\"hasLost\":false,\"storedDice\":0,\"numContiguousCountries\":12},\"1\":{\"id\":1,\"hasLost\":false,\"storedDice\":0,\"numContiguousCountries\":8}},\"countries\":{\"0\":{\"id\":0,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[1,3,4]},\"1\":{\"id\":1,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[0,2,4]},\"2\":{\"id\":2,\"owner\":0,\"numDice\":1,\"adjacentCountries\":[1,17,4,5]},\"3\":{\"id\":3,\"owner\":0,\"numDice\":3,\"adjacentCountries\":[0,10,19,6,4,5]},\"4\":{\"id\":4,\"owner\":0,\"numDice\":3,\"adjacentCountries\":[2,5,1,3,0]},\"5\":{\"id\":5,\"owner\":1,\"numDice\":3,\"adjacentCountries\":[4,8,9,6,17,2,3]},\"6\":{\"id\":6,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[5,3,8,7,10]},\"7\":{\"id\":7,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[6,8,10,14,12,13]},\"8\":{\"id\":8,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[7,6,5,9,13,20]},\"9\":{\"id\":9,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[5,8,17,20]},\"10\":{\"id\":10,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[6,3,7,19,11,12]},\"11\":{\"id\":11,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[10,24,19]},\"12\":{\"id\":12,\"owner\":0,\"numDice\":4,\"adjacentCountries\":[10,7,23,15]},\"13\":{\"id\":13,\"owner\":0,\"numDice\":4,\"adjacentCountries\":[8,7,18,14,20]},\"14\":{\"id\":14,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[13,7,23,25,29,18]},\"15\":{\"id\":15,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[12,23,28,22,16]},\"16\":{\"id\":16,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[15,28,24]},\"17\":{\"id\":17,\"owner\":0,\"numDice\":1,\"adjacentCountries\":[2,9,5]},\"18\":{\"id\":18,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[13,14,31,25,20]},\"19\":{\"id\":19,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[3,10,11,24]},\"20\":{\"id\":20,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[8,18,13,9,21,31]},\"21\":{\"id\":21,\"owner\":0,\"numDice\":4,\"adjacentCountries\":[20,31]},\"22\":{\"id\":22,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[15,29,27,23,28,26]},\"23\":{\"id\":23,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[12,15,14,22,29]},\"24\":{\"id\":24,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[11,16,30,19]},\"25\":{\"id\":25,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[14,18,31]},\"26\":{\"id\":26,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[22,29,27]},\"27\":{\"id\":27,\"owner\":0,\"numDice\":1,\"adjacentCountries\":[26,22,28]},\"28\":{\"id\":28,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[15,16,27,22]},\"29\":{\"id\":29,\"owner\":0,\"numDice\":3,\"adjacentCountries\":[22,23,26,14]},\"30\":{\"id\":30,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[24]},\"31\":{\"id\":31,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[18,21,20,25]}},\"currentPlayerId\":1,\"playerCountries\":{\"0\":{\"1\":1,\"2\":2,\"3\":3,\"4\":4,\"8\":8,\"9\":9,\"11\":11,\"12\":12,\"13\":13,\"17\":17,\"19\":19,\"20\":20,\"21\":21,\"23\":23,\"27\":27,\"29\":29},\"1\":{\"0\":0,\"5\":5,\"6\":6,\"7\":7,\"10\":10,\"14\":14,\"15\":15,\"16\":16,\"18\":18,\"22\":22,\"24\":24,\"25\":25,\"26\":26,\"28\":28,\"30\":30,\"31\":31}}}";
