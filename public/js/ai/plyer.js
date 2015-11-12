@@ -55,7 +55,11 @@
 			} else {
 				Globals.ASSERT(Attack.isAttack(ary[0]) || Move.isMove(ary[0]));
 				for (var i=0; i < ary.length; i++) {
-					str += ary[i].toString();
+					if (ary[i]){
+						str += ary[i].toString();
+					} else {
+						Globals.ASSERT(false);
+					}
 				}
 			}
 		}
@@ -83,9 +87,12 @@
 			this._attacks.push(new Attack(next[0], next[1]));
 		} else if (Attack.isAttack(next)){
 			this._attacks.push(next);
-		} else if (Move.isMove(next)) {
+		} else if (Move.isMove(next) && next.hasMoreAttacks()) {
 			this._attacks = this._attacks.concat(next._attacks);
 		}
+		this._attacks.forEach(function(item) {
+			Globals.ASSERT(item);
+		})
 	};
 	// removes first attack and returns it
 	Move.prototype.pop = function() {
@@ -294,7 +301,7 @@
 	};
 	
 	window.AI.Plyer.prototype.constructBestMove = function(state, ply) {
-		Globals.debug("[PLY " + ply + "] constructBestMove", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		//Globals.debug("[PLY " + ply + "] constructBestMove", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		var self = this;
 		var bestMove = new Move();
 		
@@ -303,29 +310,27 @@
 		
 		// always consider doing nothing
 		nextMoves.push(new Move(new Attack()));
-		Globals.debug("Considering these attacks: " + Attack.arrayString(nextMoves), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		if (ply == 0) {
-			Globals.debug("Considering " + nextMoves.length + " attacks", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		}
+		//Globals.debug("Considering these attacks: " + Attack.arrayString(nextMoves), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		//Globals.debug("[PLY " + ply + "] Considering " + nextMoves.length + " attacks", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		
 		// score each attack option by looking at all responses (ply deep)
 		var attackScores = nextMoves.map(function(move) {
-			Globals.debug("Considering counterattacks to move " + move.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			//Globals.debug("Considering counterattacks to move " + move.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			Globals.ASSERT(Move.isMove(move));
 			
 			// Assume move ends after this move. 
 			// do all of the other players' counterattacks and evaluate the position
 			var nextState = self.applyMove(move, state);
 			while ((nextState=self.doEndOfTurn(nextState)).currentPlayerId != state.currentPlayerId) {
-				Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				//Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				var bestResponse = self.bestMoveFromState(nextState, ply+1);
-				Globals.debug("Best response: " + bestResponse.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+				//Globals.debug("Best response: " + bestResponse.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				nextState = self.applyMove(bestResponse, nextState);
 			}
 			
 			self._plyTracker[ply] = self._plyTracker[ply] ? self._plyTracker[ply] + 1 : 1;
 			var score = self.evalPosition(nextState);
-			Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for move " + move.toString() + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+			//Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for move " + move.toString() + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			return score;
 		});
 		
@@ -343,10 +348,10 @@
 		
 		if (bestAttack.isEmpty()) {
 			// best move was to do nothing
-			Globals.debug("Best attack is to do nothing", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("Best attack is to do nothing", Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			return bestMove;
 		} else {
-			Globals.debug("Adding attack to bestMove: " + bestAttack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			//Globals.debug("Adding attack to bestMove: " + bestAttack.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			bestMove.push(bestAttack);
 			var nextState = self.applyMove(bestAttack, state, true);
 			Globals.ASSERT(hashState(state) != hashState(nextState));
@@ -354,7 +359,7 @@
 			if (nextMove.hasMoreAttacks()) {
 				bestMove.push(nextMove);
 			}
-			Globals.debug("returning best move: " + bestMove.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			//Globals.debug("returning best move: " + bestMove.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			return bestMove;
 		}
 	};
@@ -363,19 +368,22 @@
 	window.AI.Plyer.prototype.findAllMoves = function(state, length) {
 		length = length || 1;
 		var self = this;
-		var moves = [];
+		var moves_ary = [];
 		var attacks = this.findAllAttacks(state);
 		
 		attacks.forEach(function(attack) {
-			moves.push(new Move(attack));
+			moves_ary.push(new Move(attack));
 			if (length > 1) {
 				// recurse
-				var move = new Move(attack).push(this.findAllMoves(this.applyAttack(attack, state, true)), length-1);
-				moves.push(move);
+				self.findAllMoves(self.applyAttack(attack, state, true), length-1).forEach(function(nextMove) {
+					var move = new Move(attack);
+					move.push(nextMove);
+					moves_ary.push(move);
+				});
 			}
 		});
 		
-		return moves;
+		return moves_ary;
 	};
 	
 	/*
@@ -394,6 +402,9 @@
 		Object.keys(state.playerCountries[state.currentPlayerId]).forEach(function(cid) {
 			var countryId = Number(cid);
 			Globals.ASSERT(state.countries[countryId] && state.countries[countryId].adjacentCountries);
+			if (state.countries[countryId].numDice == 1) {
+				return;
+			}
 			// for each country, loop through all adjacent enemies
 			var neighbors = state.countries[countryId].adjacentCountries.filter(function(neighbor) {
 				return (state.countries[neighbor].owner != state.currentPlayerId)
