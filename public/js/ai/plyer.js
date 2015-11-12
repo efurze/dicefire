@@ -50,10 +50,10 @@
 	Attack.arrayString = function(ary) {
 		var str = "[";
 		if (Array.isArray(ary)) {
-			if (ary.length) {
+			if (!ary.length) {
 				return "[]";
 			} else {
-				Globals.ASSERT(Attack.isAttack(ary[0]));
+				Globals.ASSERT(Attack.isAttack(ary[0]) || Move.isMove(ary[0]));
 				for (var i=0; i < ary.length; i++) {
 					str += ary[i].toString();
 				}
@@ -63,8 +63,11 @@
 		return str;
 	};
 	
-	var Move = function() {
+	var Move = function(attack) {
 		this._attacks = [];
+		if (typeof attack !== 'undefined') {
+			this._attacks.push(attack);
+		}
 	};
 		
 	Move.isMove = function(m) {
@@ -92,8 +95,11 @@
 		Globals.ASSERT(index >= 0 && index < this._attacks.length);
 		return this._attacks[index];
 	};
+	Move.prototype.isEmpty = function() {
+		return (!this._attacks.length || this._attacks[0].isEmpty());
+	};
 	Move.prototype.hasMoreAttacks = function() {
-		return (this._attacks.length && !this._attacks[0].isEmpty());
+		return !this.isEmpty();
 	};
 	Move.prototype.toString = function() {
 		var str = '[';
@@ -293,25 +299,23 @@
 		var bestMove = new Move();
 		
 		// find all 1-step moves from this position
-		var attackOptions = self.findAllMoves(state, 1).map(function(move) {
-			return move.at(0);
-		});
+		var nextMoves = self.findAllMoves(state, 1);
 		
 		// always consider doing nothing
-		attackOptions.push(new Attack());
-		Globals.debug("Considering these attacks: " + Attack.arrayString(attackOptions), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		nextMoves.push(new Move(new Attack()));
+		Globals.debug("Considering these attacks: " + Attack.arrayString(nextMoves), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		if (ply == 0) {
-			Globals.debug("Considering " + attackOptions.length + " attacks", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			Globals.debug("Considering " + nextMoves.length + " attacks", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		}
 		
 		// score each attack option by looking at all responses (ply deep)
-		var attackScores = attackOptions.map(function(attack) {
-			Globals.debug("Considering attack " + attack.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			Globals.ASSERT(Attack.isAttack(attack));
+		var attackScores = nextMoves.map(function(move) {
+			Globals.debug("Considering counterattacks to move " + move.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.ASSERT(Move.isMove(move));
 			
-			// Assume move ends after this attack. 
+			// Assume move ends after this move. 
 			// do all of the other players' counterattacks and evaluate the position
-			var nextState = self.applyAttack(attack, state, true);
+			var nextState = self.applyMove(move, state);
 			while ((nextState=self.doEndOfTurn(nextState)).currentPlayerId != state.currentPlayerId) {
 				Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 				var bestResponse = self.bestMoveFromState(nextState, ply+1);
@@ -321,7 +325,7 @@
 			
 			self._plyTracker[ply] = self._plyTracker[ply] ? self._plyTracker[ply] + 1 : 1;
 			var score = self.evalPosition(nextState);
-			Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for attack " + attack.toString() + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+			Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for move " + move.toString() + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			return score;
 		});
 		
@@ -334,7 +338,7 @@
 				maxIndex = i;
 			}
 		}
-		var bestAttack = attackOptions[maxIndex];
+		var bestAttack = nextMoves[maxIndex];
 		
 		
 		if (bestAttack.isEmpty()) {
@@ -344,7 +348,7 @@
 		} else {
 			Globals.debug("Adding attack to bestMove: " + bestAttack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			bestMove.push(bestAttack);
-			var nextState = self.applyAttack(bestAttack, state, true);
+			var nextState = self.applyMove(bestAttack, state, true);
 			Globals.ASSERT(hashState(state) != hashState(nextState));
 			var nextMove = self.constructBestMove(nextState, ply);
 			if (nextMove.hasMoreAttacks()) {
@@ -363,14 +367,10 @@
 		var attacks = this.findAllAttacks(state);
 		
 		attacks.forEach(function(attack) {
-			var move = new Move();
-			move.push(attack);
-			moves.push(move);
+			moves.push(new Move(attack));
 			if (length > 1) {
 				// recurse
-				move = new Move();
-				move.push(attack);
-				move.append(this.findAllMoves(this.applyAttack(attack, state, true)), length-1);
+				var move = new Move(attack).push(this.findAllMoves(this.applyAttack(attack, state, true)), length-1);
 				moves.push(move);
 			}
 		});
