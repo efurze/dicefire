@@ -42,18 +42,16 @@
 		var self = this;
 		var state = interface.getState();
 
-		var playerId = state.currentPlayerId;
-		var countryIds = Object.keys(state.countries);
+		var playerId = state.currentPlayerId();
+		var countryIds = state.countryIds();
 		for (var i = 0; i < countryIds.length; i++) {
 			var countryId = countryIds[i];
-			var country = state.countries[countryId];
-			if (country.owner == playerId) {
+			if (state.countryOwner(countryId) == playerId) {
 				var possibleAttacks = [];
-				country.adjacentCountries.forEach(function(adjacentCountryId) {
-					var adjacentCountry = state.countries[adjacentCountryId];
-					if (adjacentCountry.owner != playerId && country.numDice > 1 && 
-						country.numDice >= adjacentCountry.numDice) {
-						possibleAttacks.push(adjacentCountry.id);
+				state.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
+					if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
+						state.countryDice(countryId) >= state.countryDice(adjacentCountryId)) {
+						possibleAttacks.push(adjacentCountryId);
 					}
 				});
 

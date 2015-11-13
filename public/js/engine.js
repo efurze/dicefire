@@ -229,33 +229,7 @@ var Engine = {
 
 	// this is for the AI's. SerializeState is for history
 	getState: function() {
-		var state = {
-			players: {},
-			countries: {},
-			currentPlayerId: Engine._currentPlayerId,
-		};
-
-		Player.array().forEach(function(player) {
-			state.players[player.id()] = {
-				id: player.id(),
-				hasLost: player.hasLost(),
-				storedDice: player.storedDice(),
-				numContiguousCountries: player.numContiguousCountries()
-			};
-		});
-
-		Map._countryArray.forEach(function(country) {
-			state.countries[country.id()] = {
-				id: country.id(),
-				owner: country.owner().id(),
-				numDice: country.numDice(),
-				adjacentCountries: country.adjacentCountries().map(function(adjacentCountry) {
-					return adjacentCountry.id();
-				})
-			};
-		});
-
-		return state;
+		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId);
 	},
 
 	// The interface passed to AIs so they can control the game.
