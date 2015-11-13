@@ -29,9 +29,6 @@
 		}
 	};
 	
-	Attack.isAttack = function(a) {
-			return (a !== null) && a.__proto__ == Attack.prototype;
-	};
 	Attack.prototype.clear = function() {
 		this._from = -1;
 		this._to = -1;
@@ -53,7 +50,7 @@
 			if (!ary.length) {
 				return "[]";
 			} else {
-				Globals.ASSERT(Attack.isAttack(ary[0]) || Move.isMove(ary[0]));
+				Globals.ASSERT(ary[0] instanceof Attack || ary[0] instanceof Move);
 				for (var i=0; i < ary.length; i++) {
 					if (ary[i]){
 						str += ary[i].toString();
@@ -74,20 +71,17 @@
 		}
 	};
 		
-	Move.isMove = function(m) {
-		return (m !== null && m.hasOwnProperty('_attacks') && m.__proto__ == Move.prototype);
-	};
 	
 	Move.prototype.length = function() {return this._attacks.length;}
 	
 	// adds to end
 	Move.prototype.push = function(next) {
-		Globals.ASSERT(Array.isArray(next) || Attack.isAttack(next) || Move.isMove(next));
+		Globals.ASSERT(Array.isArray(next) || next instanceof Attack || next instanceof Move);
 		if (Array.isArray(next)) {
 			this._attacks.push(new Attack(next[0], next[1]));
-		} else if (Attack.isAttack(next)){
+		} else if (next instanceof Attack){
 			this._attacks.push(next);
-		} else if (Move.isMove(next) && next.hasMoreAttacks()) {
+		} else if (next instanceof Move && next.hasMoreAttacks()) {
 			this._attacks = this._attacks.concat(next._attacks);
 		}
 		this._attacks.forEach(function(item) {
@@ -116,6 +110,7 @@
 		str += ']';
 		return str;
 	};
+	
 	
 	/*
 		Here is what the interface contains:
@@ -261,7 +256,7 @@
 		Globals.ASSERT(typeof state === "object");
 		
 		// deep copy state
-		state = JSON.parse(JSON.stringify(state));
+		var state = JSON.parse(JSON.stringify(state));
 		
 		// add 1 die to each country for currentPlayer
 		Object.keys(state.playerCountries[state.currentPlayerId]).forEach(function(id) {
@@ -274,7 +269,7 @@
 			state.currentPlayerId++;
 			state.currentPlayerId = state.currentPlayerId % Object.keys(state.players).length;
 		} while (state.players[state.currentPlayerId].hasLost);
-		
+
 		return state;
 	};
 	
@@ -283,15 +278,16 @@
 	@returns {move: [[1,2], [2,3]...],
 				 score: 34.8}
 	*/
-	window.AI.Plyer.prototype.bestMoveFromState = function(state, ply) {
+	window.AI.Plyer.prototype.bestMoveFromState = function(state, ply, maxMoveLength) {
 		var self = this;
 		ply = ply || 0;
+		maxMoveLength = maxMoveLength || 5;
 		var move = new Move();
 		var playerId = state.currentPlayerId;
 		
 		
 		if (ply < self._MAX_PLIES) {
-			move = self.constructBestMove(state, ply);
+			move = self.constructBestMove(state, ply, maxMoveLength);
 			if (ply == 0) {
 				Globals.debug("[PLY " + ply + "] Best move for position: " + move.toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 			}
@@ -300,7 +296,7 @@
 		return move;
 	};
 	
-	window.AI.Plyer.prototype.constructBestMove = function(state, ply) {
+	window.AI.Plyer.prototype.constructBestMove = function(state, ply, maxMoveLength) {
 		//Globals.debug("[PLY " + ply + "] constructBestMove", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		var self = this;
 		var bestMove = new Move();
@@ -311,19 +307,23 @@
 		// always consider doing nothing
 		nextMoves.push(new Move(new Attack()));
 		//Globals.debug("Considering these attacks: " + Attack.arrayString(nextMoves), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		//Globals.debug("[PLY " + ply + "] Considering " + nextMoves.length + " attacks", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		if (ply == 0) {
+			Globals.debug("[PLY " + ply + "] Considering " + nextMoves.length + " attacks", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		}
+
+		//var nextMoves = self.BestNMoves(nextMoves, 10);
 		
 		// score each attack option by looking at all responses (ply deep)
 		var attackScores = nextMoves.map(function(move) {
 			//Globals.debug("Considering counterattacks to move " + move.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			Globals.ASSERT(Move.isMove(move));
+			Globals.ASSERT(move instanceof Move);
 			
 			// Assume move ends after this move. 
 			// do all of the other players' counterattacks and evaluate the position
 			var nextState = self.applyMove(move, state);
 			while ((nextState=self.doEndOfTurn(nextState)).currentPlayerId != state.currentPlayerId) {
 				//Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-				var bestResponse = self.bestMoveFromState(nextState, ply+1);
+				var bestResponse = self.bestMoveFromState(nextState, ply+1, 1);
 				//Globals.debug("Best response: " + bestResponse.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				nextState = self.applyMove(bestResponse, nextState);
 			}
@@ -355,7 +355,7 @@
 			bestMove.push(bestAttack);
 			var nextState = self.applyMove(bestAttack, state, true);
 			Globals.ASSERT(hashState(state) != hashState(nextState));
-			var nextMove = self.constructBestMove(nextState, ply);
+			var nextMove = self.constructBestMove(nextState, ply, maxMoveLength);
 			if (nextMove.hasMoreAttacks()) {
 				bestMove.push(nextMove);
 			}
@@ -364,6 +364,31 @@
 		}
 	};
 
+	window.AI.Plyer.prototype.bestNMoves = function(moves, count) {
+
+		var minHeap = new MinHeap([], function(item1, item2) {
+			return item1.score == item2.score ? 0 : item1.score < item2.score ? -1 : 1;
+		});
+		for (var i=0; i < moves.length; i++) {
+			self._plyTracker[ply] = self._plyTracker[ply] ? self._plyTracker[ply] + 1 : 1;
+			var score = self.evalPosition(self.doEndOfTurn(self.applyMove(moves[i], state)));
+			if (minHeap.size() < count || score > minHeap.getMin().score) {
+				minHeap.push({'score': score, 'index': i});
+			}
+			if (minHeap.size() > count) {
+				minHeap.pop();
+			}
+		}
+		
+		var temp = [];
+		while(minHeap.size()) {
+			temp.push(moves[minHeap.pop().index]);
+		};
+		
+		return temp;
+		
+	};
+	
 	// return array of Move objects
 	window.AI.Plyer.prototype.findAllMoves = function(state, length) {
 		length = length || 1;
@@ -432,7 +457,7 @@
 		Globals.ASSERT(state && state.countries);
 		Globals.ASSERT(state.countries.hasOwnProperty(attack.from()) && state.countries.hasOwnProperty(attack.to()));
 		if (!attack.isEmpty()) {
-			Globals.ASSERT(Attack.isAttack(attack));
+			Globals.ASSERT(attack instanceof Attack);
 			var a = state.countries[attack.from()].numDice;
 			var d = state.countries[attack.to()].numDice;
 			var o = odds[a - 1][d - 1];
@@ -445,8 +470,8 @@
 
 	
 	window.AI.Plyer.prototype.applyMove = function(next, state) {
-		Globals.ASSERT(Move.isMove(next) || Attack.isAttack(next));
-		if (Attack.isAttack(next)) {
+		Globals.ASSERT(next instanceof Move || next instanceof Attack);
+		if (next instanceof Attack) {
 			return this.applyAttack(next, state, true);
 		}
 		
@@ -475,7 +500,7 @@
 		// deep copy state
 		var state = JSON.parse(JSON.stringify(state));
 		
-		Globals.ASSERT(Attack.isAttack(attack));
+		Globals.ASSERT(attack instanceof Attack);
 		if (attack.isEmpty()) {
 			return state;
 		}
@@ -539,7 +564,7 @@
 	};
 
 	window.AI.Plyer.prototype.evalMove = function(move, state) {
-		Globals.ASSERT(Move.isMove(move));
+		Globals.ASSERT(move instanceof Move);
 		Globals.debug("evalMove: ", move.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 		var self = this;
 		var score = 0;
@@ -592,13 +617,13 @@
 		
 		var myCountryCount = self.totalCountries(playerId, state);
 		var myContiguous = state.players[playerId].numContiguousCountries;
-		var myDice = self.totalDice(playerId, state);
+		var myDice = self.totalDice(playerId, state) + state.players[playerId].storedDice;
 		
-		return (2*myContiguous) - myCountryCount;
+		return ((2*myContiguous) - myCountryCount + myDice);
 		
 		//Globals.debug("Total dice for PlayerId", playerId, "=", myDice, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		
-		if (state.currentPlayerId == playerId) {
+		if (false) {//(state.currentPlayerId == playerId) {
 			// for current player, count on them getting their end-of-turn dice injection
 			myDice += Math.min(state.players[playerId].storedDice + myContiguous, 64);
 		} else {
