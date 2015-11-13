@@ -71,10 +71,7 @@ Gamestate.prototype.toString = function() {
 };
 
 Gamestate.prototype.playerCountries = function() {
-	if (!this._playerCountries) {
-		this._playerCountries = {};
-	}
-	return JSON.parse(JSON.stringify(this._playerCountries));
+	return this._playerCountries;
 };
 Gamestate.prototype.setPlayerCountries = function(playerCountries) {this._playerCountries = playerCountries;};
 
