@@ -1,42 +1,15 @@
 "use strict"
 
 
-/*
-var state = {
-	players: {},
-	countries: {},
-	currentPlayerId: Engine._currentPlayerId,
-};
 
-Player.array().forEach(function(player) {
-	state.players[player.id()] = {
-		id: player.id(),
-		hasLost: player.hasLost(),
-		storedDice: player.storedDice(),
-		numContiguousCountries: player.numContiguousCountries()
-	};
-});
-
-Map._countryArray.forEach(function(country) {
-	state.countries[country.id()] = {
-		id: country.id(),
-		owner: country.owner().id(),
-		numDice: country.numDice(),
-		adjacentCountries: country.adjacentCountries().map(function(adjacentCountry) {
-			return adjacentCountry.id();
-		})
-	};
-});
-
-*/
-
-var Gamestate = function(players, countries, currentPlayerId) {
+var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 	var self = this;
 	self._currentPlayerId = typeof currentPlayerId === 'undefined' ? -1 : currentPlayerId;
 	self._players = {};
 	self._countries = {};
 	self._adjacencyList = {};
 	self._playerCountries = {};
+	self._previousAttack = {};
 	if (players) {
 		players.forEach(function(player) {
 			self._players[player.id()] = {
@@ -61,6 +34,25 @@ var Gamestate = function(players, countries, currentPlayerId) {
 			//self._playerCountries[country.owner().id()][country.id()] = country.id();
 		});
 	}
+	if (previousAttack) {
+		self._previousAttack = previousAttack;
+	}
+};
+
+Gamestate.prototype.serialize = function() {
+	return JSON.stringify(this);
+};
+
+Gamestate.deserialize = function(state) {
+	var gs = JSON.parse(state);
+	var gamestate = new Gamestate();
+	gamestate._currentPlayerId = gs._currentPlayerId;
+	gamestate._players = gs._players;
+	gamestate._countries = gs._countries;
+	gamestate._adjacencyList = gs._adjacencyList;
+	gamestate._playerCountries = gs._playerCountries;
+	gamestate._previousAttack = gs._previousAttack;
+	return gamestate;
 };
 
 Gamestate.prototype.clone = function() {
@@ -70,6 +62,7 @@ Gamestate.prototype.clone = function() {
 	copy._countries = JSON.parse(JSON.stringify(this._countries));
 	copy._adjacencyList = this._adjacencyList;
 	copy._playerCountries = JSON.parse(JSON.stringify(this._playerCountries));
+	copy._previousAttack = JSON.parse(JSON.stringify(this._previousAttack));
 	return copy;
 };
 
@@ -77,10 +70,16 @@ Gamestate.prototype.toString = function() {
 	return JSON.stringify(this);
 };
 
-Gamestate.prototype.playerCountries = function() {return this._playerCountries;};
+Gamestate.prototype.playerCountries = function() {
+	if (!this._playerCountries) {
+		this._playerCountries = {};
+	}
+	return JSON.parse(JSON.stringify(this._playerCountries));
+};
 Gamestate.prototype.setPlayerCountries = function(playerCountries) {this._playerCountries = playerCountries;};
 
 Gamestate.prototype.playerIds = function() {return Object.keys(this._players);};
+Gamestate.prototype.players = function() {return this._players;};
 
 Gamestate.prototype.currentPlayerId = function() {return this._currentPlayerId;};
 Gamestate.prototype.setCurrentPlayerId = function(id) {this._currentPlayerId = id;};
@@ -99,6 +98,13 @@ Gamestate.prototype.setNumContiguous = function(playerId, count) {this._players[
 
 
 Gamestate.prototype.countryIds = function() {return Object.keys(this._countries);};
+Gamestate.prototype.countries = function() {
+	if (!this._countries) {
+		this._countries = {};
+	} 
+	
+	return JSON.parse(JSON.stringify(this._countries));
+};
 
 Gamestate.prototype.countryOwner = function(countryId) {return this._countries[countryId].owner;};
 Gamestate.prototype.setCountryOwner = function(countryId, owner) {
@@ -109,3 +115,15 @@ Gamestate.prototype.countryDice = function(countryId) {return this._countries[co
 Gamestate.prototype.setCountryDice = function(countryId, count) {this._countries[countryId].numDice = count;};
 
 Gamestate.prototype.adjacentCountries = function(countryId) {return this._adjacencyList[countryId];};
+
+Gamestate.prototype.previousAttack = function() {
+	if (!this._previousAttack) {
+		this._previousAttack =  {
+			fromCountryId: -1,
+			toCountryId: -1,
+			fromRollArray: [],
+			toRollArray: []
+		};
+	} 
+	return JSON.parse(JSON.stringify(this._previousAttack));
+};

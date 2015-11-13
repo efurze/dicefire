@@ -191,31 +191,13 @@ var Engine = {
 
 
 	serialize: function() {
-		var state = {
-			players: [],
-			map: [],
-			currentPlayerId: Engine._currentPlayerId,
-			previousAttack: {
-				fromCountryId: -1,
-				toCountryId: -1,
-				fromRollArray: [],
-				toRollArray: []
-			}
-		};
-
-		state.players = Player.serialize();
-		state.map = Map.serialize();
-		state.previousAttack = Engine._previousAttack;
-
-		return state;
+		return this.getState().serialize();
 	},
 	
 	deserialize: function(state) {
 		
-		Player.deserialize(state.players);
-		Map.deserialize(state.map);
-		this._previousAttack = state.previousAttack;
-		this._currentPlayerId = state.currentPlayerId;
+		var gamestate = Gamestate.deserialize(state);
+		this.setState(gamestate);
 	},
 	
 	setHistoryIndex: function(index) {
@@ -227,9 +209,15 @@ var Engine = {
 		return this._historyIndex == (this._history.length - 1);
 	},
 
-	// this is for the AI's. SerializeState is for history
 	getState: function() {
-		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId);
+		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId, Engine._previousAttack);
+	},
+	
+	setState: function(gamestate) {
+		Map.setState(gamestate);
+		Player.setState(gamestate);
+		this._previousAttack = gamestate.previousAttack();
+		this._currentPlayerId = gamestate.currentPlayerId();
 	},
 
 	// The interface passed to AIs so they can control the game.

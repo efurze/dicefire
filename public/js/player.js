@@ -2,7 +2,7 @@
 
 var Player = function(id) {
 	this._id = id;
-	this._countries = [];
+	this._countries = []; // array of country objects
 	this._storedDice = 0;
 	this._numContiguousCountries = 0;		
 };
@@ -21,30 +21,22 @@ Player.init = function(count) {
 };
 
 
-Player.serialize = function() {
-	var state = [];
+
+Player.setState = function(gamestate) {
 	
-	Player._array.forEach(function(player) {
-		state.push({
-			id : player._id,
-			countries : player._countries,
-			storedDice : player._storedDice,
-			numContiguousCountries : player._numContiguousCountries
+	Player._array = [];
+	Player._array.length = gamestate.playerIds().length;
+	
+	gamestate.playerIds().forEach(function(playerId) {
+		var player = new Player(playerId);
+		player._countries = gamestate.countryIds().map(function(countryId) {
+			// TODO: FIXME: _countries should be an array of Ids, not objects
+			return Map.getCountry(countryId);
 		});
+		player._storedDice = gamestate.storedDice(playerId);
+		player._numContiguousCountries = gamestate.numContiguous(playerId);
+		Player._array[playerId] = player;
 	});
-	
-	
-	return state;
-};
-
-Player.deserialize = function(state) {
-		
-	for (var i=0; i < state.length; i++) {
-		Player._array[i]._countries = state[i].countries;
-		Player._array[i]._storedDice = state[i].storedDice;
-		Player._array[i]._numContiguousCountries = state[i].numContiguousCountries;
-	}
-
 };
 
 
@@ -88,8 +80,6 @@ Player.prototype.color = function() { return Player.colors[this._id]; };
 Player.prototype.hasLost = function() { return this._countries.length == 0; };
 Player.prototype.storedDice = function() { return this._storedDice; };
 Player.prototype.numContiguousCountries = function() { return this._numContiguousCountries; };
-
-
 
 
 // Take ownership of a country.

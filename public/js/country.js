@@ -28,22 +28,21 @@ Country.prototype.setId = function(id) {
 	});
 }
 
-Country.prototype.serialize = function() {
+Country.prototype.getState = function() {
 	var state = {
 		id : this._id,
-		owner: this._owner,
+		owner: this._owner.id(),
 		numDice: this._numDice
 	};
 	
 	return state;
 };
 
-Country.deserialize = function(state) {
-	var country = Map.getCountry(state.id);
-	country._owner = state.owner;
-	country._numDice = state.numDice;
-	return country;
+Country.prototype.setState = function(gamestate, id) {
+	this._owner = Player.get(gamestate.countryOwner(id));
+	this._numDice = gamestate.countryDice(id);
 };
+
 
 Country.prototype.landGrab = function(starthex) {
 	this._hexes = [starthex];

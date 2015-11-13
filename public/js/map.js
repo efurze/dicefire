@@ -29,24 +29,21 @@ var Map = {
 		return this._countryArray[id];
 	},
 	
-	serialize: function() {
+	getState: function() {
 		var state = [];
 		this._countryArray.forEach(function(country) {
-			state.push(country.serialize());
+			state.push(country.getState());
 		});
 		return state;
 	},
 	
-	deserialize: function(state) {
+	setState: function(gamestate) {
 		var self = this;
-		var newArray = [];
-		state.forEach(function(countryState) {
-			newArray.push(Country.deserialize(countryState));
+		gamestate.countryIds().forEach(function(countryId) {
+			self._countryArray[countryId].setState(gamestate, countryId);
 		});
-		
-		self._countryArray = newArray;
 	},
-	
+		
 	generateMap: function() {
 		
 		this._hexArray = [];
