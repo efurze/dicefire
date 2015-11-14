@@ -3,7 +3,6 @@
 var Country = function(id) {
         this._id = id; 
         this._hexes = [];
-        this._adjacentCountries = [];        
         this._owner = null;
         
         this._numDice = 1;
@@ -63,14 +62,6 @@ Country.prototype.landGrab = function(starthex) {
 		}
 };
 
-Country.prototype.addAdjacentCountry = function(country) {
-	if (!country) {
-		Globals.debug("tried to add NULL adjacent country", this, Globals.LEVEL.WARN, Globals.CHANNEL.COUNTRY);        
-	} else {
-		Globals.debug("adding adjacent country", this, country, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
-	}
-	this._adjacentCountries.push(country);
-}
 
 Country.prototype.setOwner = function(owner) { this._owner = owner;};
 Country.prototype.setNumDice = function(num) { this._numDice = num;};
@@ -81,7 +72,6 @@ Country.prototype.id = function() { return this._id; };
 Country.prototype.owner = function() { return this._owner; };
 Country.prototype.hexes = function() { return this._hexes; };
 Country.prototype.isLake = function() { return this._isLake; };
-Country.prototype.adjacentCountries = function() { return this._adjacentCountries; };
 Country.prototype.numDice = function() { return this._numDice; };
 
 
@@ -110,15 +100,6 @@ Country.prototype.center = function() {
 };
 
 
-Country.prototype.isConnected = function(otherCountry) {
-    for (var i = 0; i < this._adjacentCountries.length; i++) {
-        if (this._adjacentCountries[i] == otherCountry) {
-            return true;
-        }
-    }
-
-    return false;
-};
 
 
 // Find a hex that is adjacent to this country but is not occupied by this country.

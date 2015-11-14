@@ -4,6 +4,7 @@ var Map = {
 
 	_hexArray: [],
 	_countryArray: [],
+	_adjacencyList: {}, // countryId: [neighborId, ...]
 	
 	getHex: function(id) {
 		if (id < 0 || id >= this._hexArray.length) {
@@ -29,6 +30,14 @@ var Map = {
 		return this._countryArray[id];
 	},
 	
+	adjacentCountries: function(countryId) {
+		return this._adjacencyList[countryId];
+	},
+	
+	adjacencyList: function() {
+		return this._adjacencyList;
+	},
+	
 	getState: function() {
 		var state = [];
 		this._countryArray.forEach(function(country) {
@@ -46,6 +55,7 @@ var Map = {
 		
 	generateMap: function() {
 		
+		this._adjacencyList = {};
 		this._hexArray = [];
 	    for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
 	        this._hexArray.push(new Hex(i));
@@ -105,6 +115,14 @@ var Map = {
 		this.assignCountries();
 	},
 	
+	isConnected: function(countryId1, countryId2) {
+	    for (var i = 0; i < this._adjacencyList[countryId1].length; i++) {
+	        if (this._adjacencyList[countryId1][i] == countryId2) {
+	            return true;
+	        }
+	    }
+	    return false;
+	},
 	
 	// Removes lakes from the country list to simplify things.
 	pruneLakes: function() {
@@ -147,9 +165,10 @@ var Map = {
 	// Marks hexes as internal or external. Also identifies which edges need border stroking for the hex.
 
 	setupCountryEdges: function(country) {
-
+		var self = this;
 	    var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
-
+		this._adjacencyList[country.id()] = [];
+		
 	    country._hexes.forEach(function(hex) {
 	        var countryEdges = [];
 	        for (var i = 0; i < Dir.array.length; i++) {
@@ -161,7 +180,7 @@ var Map = {
 	            if (newHex && newHex.country() && newHex.country() != country && 
 	                !adjacentCountryHexes[newHex.country().id()]) {
 	                adjacentCountryHexes[newHex.country().id()] = true;
-	                country.addAdjacentCountry(newHex.country());
+	                self._adjacencyList[country.id()].push(newHex.country().id());
 	            }
 
 	        }

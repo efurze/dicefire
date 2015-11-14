@@ -108,7 +108,7 @@ Player.prototype.countriesWithSpace = function() {
 
 // Can the player attack this country from the country that's selected?
 Player.prototype.canAttack = function(selectedCountry, country) {
-	return selectedCountry.isConnected(country) && country.owner() != this;
+	return Map.isConnected(selectedCountry.id(), country.id()) && country.owner != this;
 };
 
 
@@ -132,7 +132,8 @@ Player.prototype.updateStatus = function() {
 		alreadySeen[country.id()] = true;
 	
 		return 1 + 
-				country.adjacentCountries().reduce(function(total, adjacentCountry) {
+				Map.adjacentCountries(country.id()).reduce(function(total, adjacentCountryId) {
+					var adjacentCountry = Map.getCountry(adjacentCountryId);
 					if (adjacentCountry.owner() == self) {
 						total += traverse(adjacentCountry);
 					}

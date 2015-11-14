@@ -2,7 +2,7 @@
 
 
 
-var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
+var Gamestate = function(players, countries, adjacencyList, currentPlayerId, previousAttack) {
 	var self = this;
 	self._currentPlayerId = typeof currentPlayerId === 'undefined' ? -1 : currentPlayerId;
 	self._players = {};
@@ -28,9 +28,9 @@ var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 				owner: country.owner().id(),
 				numDice: country.numDice()
 			};
-			self._adjacencyList[country.id()] = country.adjacentCountries().map(function(ac) {
-				return ac.id();
-			});
+			if (adjacencyList) {
+				self._adjacencyList[country.id()] = adjacencyList[country.id()];
+			}
 			//self._playerCountries[country.owner().id()][country.id()] = country.id();
 		});
 	}
@@ -45,13 +45,7 @@ Gamestate.prototype.serialize = function() {
 
 Gamestate.deserialize = function(state) {
 	var gs = JSON.parse(state);
-	var gamestate = new Gamestate();
-	gamestate._currentPlayerId = gs._currentPlayerId;
-	gamestate._players = gs._players;
-	gamestate._countries = gs._countries;
-	gamestate._adjacencyList = gs._adjacencyList;
-	gamestate._playerCountries = gs._playerCountries;
-	gamestate._previousAttack = gs._previousAttack;
+	var gamestate = Gamestate.prototype.clone.call(gs);
 	return gamestate;
 };
 

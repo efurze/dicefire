@@ -37,6 +37,8 @@ var Engine = {
 			player.updateStatus();
 			Renderer.renderPlayer(player);
 		});
+		
+		Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	},
 	
 	pushHistory: function() {
@@ -121,8 +123,18 @@ var Engine = {
 
 		var fromPlayer = fromCountry.owner();
 		var toPlayer = toCountry.owner();
+		
+		var neighbors = Map.adjacentCountries(fromCountry.id());
+		var ok = false;
+		for (var i=0; i < neighbors.length; i++) {
+			if (neighbors[i] == toCountry.id()) {
+				ok = true;
+				break;
+			}
+		}
 
-		if (!fromCountry.adjacentCountries().find(function(elem) { return elem == toCountry; })) {
+		if (!ok) {
+			Globals.ASSERT(false);
 			Globals.debug("Illegal attack", fromCountry, toCountry, Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 			return null;    		
 		}
@@ -210,7 +222,7 @@ var Engine = {
 	},
 
 	getState: function() {
-		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId, Engine._previousAttack);
+		return new Gamestate(Player.array(), Map._countryArray, Map.adjacencyList(), Engine._currentPlayerId, Engine._previousAttack);
 	},
 	
 	setState: function(gamestate) {

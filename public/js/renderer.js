@@ -343,7 +343,7 @@ $(function(){
 	        }
 
 	        if (Globals.drawCountryConnections) {
-	            country._adjacentCountries.forEach(function(country) {
+	            Map.adjacentCountries(country.id()).forEach(function(country) {
 	                var otherCenter = country.center();
 	                var path = new Path2D();
 	                path.moveTo(ctr[0], ctr[1]);
@@ -357,8 +357,8 @@ $(function(){
 	
 			// number boxes can overlap between adjacent countries. Redraw
 			// them for all our neighbors
-			country.adjacentCountries().forEach(function(ac) {
-				self.renderNumberBox(ac);
+			Map.adjacentCountries(country.id()).forEach(function(neighborId) {
+				self.renderNumberBox(Map.getCountry(neighborId));
 			});
 		},
 
