@@ -433,7 +433,7 @@
 				return;
 			}
 			// for each country, loop through all adjacent enemies
-			var neighbors = state.adjacentCountries(countryId).filter(function(neighbor) {
+			var neighbors = self._interface.adjacentCountries(countryId).filter(function(neighbor) {
 				return (state.countryOwner(neighbor) != state.currentPlayerId())
 			});
 			//Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
@@ -533,6 +533,7 @@
 	window.AI.Plyer.prototype.maxIslandSize = function(playerId, state) {
 		var alreadySeen = {};
 		var maxIslandSize = 0;
+		var self = this;
 
 		var traverse = function(countryId) {
 			if (alreadySeen[countryId]) {
@@ -541,7 +542,7 @@
 			alreadySeen[countryId] = true;
 
 			return 1 + 
-					state.adjacentCountries(countryId).reduce(function(total, adjacentCountry) {
+					self._interface.adjacentCountries(countryId).reduce(function(total, adjacentCountry) {
 						if (state.countryOwner(adjacentCountry) == playerId) {
 							total += traverse(adjacentCountry);
 						}
@@ -670,4 +671,3 @@
 	};
 	
 	
-var testState = "{\"players\":{\"0\":{\"id\":0,\"hasLost\":false,\"storedDice\":0,\"numContiguousCountries\":12},\"1\":{\"id\":1,\"hasLost\":false,\"storedDice\":0,\"numContiguousCountries\":8}},\"countries\":{\"0\":{\"id\":0,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[1,3,4]},\"1\":{\"id\":1,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[0,2,4]},\"2\":{\"id\":2,\"owner\":0,\"numDice\":1,\"adjacentCountries\":[1,17,4,5]},\"3\":{\"id\":3,\"owner\":0,\"numDice\":3,\"adjacentCountries\":[0,10,19,6,4,5]},\"4\":{\"id\":4,\"owner\":0,\"numDice\":3,\"adjacentCountries\":[2,5,1,3,0]},\"5\":{\"id\":5,\"owner\":1,\"numDice\":3,\"adjacentCountries\":[4,8,9,6,17,2,3]},\"6\":{\"id\":6,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[5,3,8,7,10]},\"7\":{\"id\":7,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[6,8,10,14,12,13]},\"8\":{\"id\":8,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[7,6,5,9,13,20]},\"9\":{\"id\":9,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[5,8,17,20]},\"10\":{\"id\":10,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[6,3,7,19,11,12]},\"11\":{\"id\":11,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[10,24,19]},\"12\":{\"id\":12,\"owner\":0,\"numDice\":4,\"adjacentCountries\":[10,7,23,15]},\"13\":{\"id\":13,\"owner\":0,\"numDice\":4,\"adjacentCountries\":[8,7,18,14,20]},\"14\":{\"id\":14,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[13,7,23,25,29,18]},\"15\":{\"id\":15,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[12,23,28,22,16]},\"16\":{\"id\":16,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[15,28,24]},\"17\":{\"id\":17,\"owner\":0,\"numDice\":1,\"adjacentCountries\":[2,9,5]},\"18\":{\"id\":18,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[13,14,31,25,20]},\"19\":{\"id\":19,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[3,10,11,24]},\"20\":{\"id\":20,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[8,18,13,9,21,31]},\"21\":{\"id\":21,\"owner\":0,\"numDice\":4,\"adjacentCountries\":[20,31]},\"22\":{\"id\":22,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[15,29,27,23,28,26]},\"23\":{\"id\":23,\"owner\":0,\"numDice\":2,\"adjacentCountries\":[12,15,14,22,29]},\"24\":{\"id\":24,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[11,16,30,19]},\"25\":{\"id\":25,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[14,18,31]},\"26\":{\"id\":26,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[22,29,27]},\"27\":{\"id\":27,\"owner\":0,\"numDice\":1,\"adjacentCountries\":[26,22,28]},\"28\":{\"id\":28,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[15,16,27,22]},\"29\":{\"id\":29,\"owner\":0,\"numDice\":3,\"adjacentCountries\":[22,23,26,14]},\"30\":{\"id\":30,\"owner\":1,\"numDice\":2,\"adjacentCountries\":[24]},\"31\":{\"id\":31,\"owner\":1,\"numDice\":1,\"adjacentCountries\":[18,21,20,25]}},\"currentPlayerId\":1,\"playerCountries\":{\"0\":{\"1\":1,\"2\":2,\"3\":3,\"4\":4,\"8\":8,\"9\":9,\"11\":11,\"12\":12,\"13\":13,\"17\":17,\"19\":19,\"20\":20,\"21\":21,\"23\":23,\"27\":27,\"29\":29},\"1\":{\"0\":0,\"5\":5,\"6\":6,\"7\":7,\"10\":10,\"14\":14,\"15\":15,\"16\":16,\"18\":18,\"22\":22,\"24\":24,\"25\":25,\"26\":26,\"28\":28,\"30\":30,\"31\":31}}}";

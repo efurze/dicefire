@@ -222,7 +222,7 @@ var Engine = {
 	},
 
 	getState: function() {
-		return new Gamestate(Player.array(), Map._countryArray, Map.adjacencyList(), Engine._currentPlayerId, Engine._previousAttack);
+		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId, Engine._previousAttack);
 	},
 	
 	setState: function(gamestate) {
@@ -234,6 +234,7 @@ var Engine = {
 
 	// The interface passed to AIs so they can control the game.
 	interface: {
+		adjacentCountries: function(countryId) { return Map.adjacentCountries(countryId);},
 		getState: function() { return Engine.getState(); },
 		attack: function(fromCountryId, toCountryId, callback) { 	
 

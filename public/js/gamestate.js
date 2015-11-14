@@ -2,12 +2,11 @@
 
 
 
-var Gamestate = function(players, countries, adjacencyList, currentPlayerId, previousAttack) {
+var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 	var self = this;
 	self._currentPlayerId = typeof currentPlayerId === 'undefined' ? -1 : currentPlayerId;
 	self._players = {};
 	self._countries = {};
-	self._adjacencyList = {};
 	self._playerCountries = {};
 	self._previousAttack = {};
 	if (players) {
@@ -28,9 +27,6 @@ var Gamestate = function(players, countries, adjacencyList, currentPlayerId, pre
 				owner: country.owner().id(),
 				numDice: country.numDice()
 			};
-			if (adjacencyList) {
-				self._adjacencyList[country.id()] = adjacencyList[country.id()];
-			}
 			//self._playerCountries[country.owner().id()][country.id()] = country.id();
 		});
 	}
@@ -54,7 +50,6 @@ Gamestate.prototype.clone = function() {
 	copy._currentPlayerId = this._currentPlayerId;
 	copy._players = JSON.parse(JSON.stringify(this._players));
 	copy._countries = JSON.parse(JSON.stringify(this._countries));
-	copy._adjacencyList = this._adjacencyList;
 	copy._playerCountries = JSON.parse(JSON.stringify(this._playerCountries));
 	copy._previousAttack = JSON.parse(JSON.stringify(this._previousAttack));
 	return copy;
@@ -63,6 +58,8 @@ Gamestate.prototype.clone = function() {
 Gamestate.prototype.toString = function() {
 	return JSON.stringify(this);
 };
+
+
 
 Gamestate.prototype.playerCountries = function() {
 	return this._playerCountries;
@@ -104,8 +101,6 @@ Gamestate.prototype.setCountryOwner = function(countryId, owner) {
 
 Gamestate.prototype.countryDice = function(countryId) {return this._countries[countryId].numDice;};
 Gamestate.prototype.setCountryDice = function(countryId, count) {this._countries[countryId].numDice = count;};
-
-Gamestate.prototype.adjacentCountries = function(countryId) {return this._adjacencyList[countryId];};
 
 Gamestate.prototype.previousAttack = function() {
 	if (!this._previousAttack) {

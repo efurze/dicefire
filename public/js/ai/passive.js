@@ -50,7 +50,7 @@
 			var countryId = countryIds[i];
 			if (state.countryOwner(countryId) == playerId) {
 				var possibleAttacks = [];
-				state.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
+				interface.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
 					if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
 						state.countryDice(countryId) > state.countryDice(adjacentCountryId)) {
 						possibleAttacks.push(adjacentCountryId);

@@ -38,6 +38,14 @@ var Map = {
 		return this._adjacencyList;
 	},
 	
+	serializeHexes: function() {
+		return JSON.serialize(this._hexArray);
+	},
+	
+	deserializeHexes: function(json) {
+		this._hexArray = JSON.parse(json);
+	},
+	
 	getState: function() {
 		var state = [];
 		this._countryArray.forEach(function(country) {
