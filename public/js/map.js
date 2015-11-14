@@ -30,6 +30,10 @@ var Map = {
 		return this._countryArray[id];
 	},
 	
+	countryCount: function() {
+		return this._countryArray.length;
+	},
+	
 	adjacentCountries: function(countryId) {
 		return this._adjacencyList[countryId];
 	},
@@ -39,7 +43,7 @@ var Map = {
 	},
 	
 	serializeHexes: function() {
-		return JSON.serialize(this._hexArray);
+		return JSON.stringify(this._hexArray);
 	},
 	
 	deserializeHexes: function(json) {
@@ -62,9 +66,17 @@ var Map = {
 	},
 		
 	generateMap: function() {
-		
+		for (var i=0; i < this._countryArray.length; i++) {
+			this._countryArray[i]._hexes = [];
+			delete this._countryArray[i];
+		}
+		for (var i=0; i < this._hexArray.length; i++) {
+			delete this._hexArray[i];
+		}
 		this._adjacencyList = {};
+		this._countryArray = [];
 		this._hexArray = [];
+		
 	    for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
 	        this._hexArray.push(new Hex(i));
 	    }

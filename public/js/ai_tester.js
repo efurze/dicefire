@@ -8,108 +8,48 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
+		_runCount: 0,
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
-			Globals.suppress_ui = 0;
+			Globals.suppress_ui = 1;
+			Game._runCount = 0;
+			Renderer.init(players.length, Game._canvas);			
 			
-			Engine.init(playerCode);
-			Renderer.init(playerCode.length, Game._canvas);			
-			Engine.setup();
-			
-			Renderer.render();
-						
-			$(Game._canvas).mousemove(Game.mouseMove);
-            $(Game._canvas).mouseleave(Game.mouseLeave);
-            $(Game._canvas).click(Game.click);
-            $('#start_test').click(Game.startTest);
+            $('#start_test').click(Game.start);
+		},
+		
+		start: function () {
+			Game.startTest();
 		},
 		
 		startTest: function () {
-			Engine.startTurn(0);
+			Game._runCount ++;
+			Game.simulateGame();
 		},
 		
-		mouseMove: function(event) {
-
-            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
-            if (hex) {
-                var country = hex.country();
-                if (!country) {
-                    Game._canvas.style.cursor = 'default';
-                }
-
-                if (country != Game._mouseOverCountry) {
-                    var currentPlayer = Game.currentPlayer();
-                    var prevCountry = Game._mouseOverCountry;
-                    Game._mouseOverCountry = country;                    
-                    if (prevCountry) {
-                        Renderer.renderCountry(prevCountry);
-                    }
-                    if (country) {
-						if ((country.owner() == currentPlayer && country.numDice() > 1) || 
-                           (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country))) {
-							Game._canvas.style.cursor = 'pointer';
-                        	Renderer.renderCountry(Game._mouseOverCountry); 
-                    	} else {
-                        	Game._canvas.style.cursor = 'default';                        
-						}
-                    }
-                }
-            } else {
-                if (Game._mouseOverCountry) {
-                    var prevCountry = Engine._mouseOverCountry;
-                    Engine._mouseOverCountry = null;                   
-                    Renderer.renderCountry(prevCountry);
-                }
-                Game._canvas.style.cursor = 'default';
-            }
-        },
-
-        mouseLeave: function(event) {
-            if (Game._mouseOverCountry) {
-                var country = Game._mouseOverCountry;
-                Game._mouseOverCountry = null;
-                Renderer.renderCountry(country);
-            }
-        },
-
-
-		click: function(event) {
-            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
-            if (hex) {
-                var country = hex.country();
-                var currentPlayer = Game.currentPlayer(); 
-                if (country) {
-                    if (country.owner() == currentPlayer && country.numDice() > 1) {  
-                        // Select and deselect of countries owned by this user.                  
-                        if (Game._selectedCountry == country) {
-                            Game._selectedCountry = null;
-                            Renderer.renderCountry(country);
-                        } else {
-                            var oldCountry = Game._selectedCountry;
-                            Game._selectedCountry = country;
-                            if (oldCountry) {
-                                Renderer.renderCountry(oldCountry);
-                            }
-                            Renderer.renderCountry(country);
-                        }
-                    } else {
-                        // Attacks.
-						Engine.attack(Game._selectedCountry, country, function(result) {
-                            var prevCountry = Game._selectedCountry;
-                            Game._selectedCountry = null;
-                            Renderer.renderCountry(prevCountry);
-                            Renderer.renderCountry(country);
-                            $('#end_turn').prop('disabled', false);
-                        });
-                    }
-                }
-            }            
-        },
+		gameOver: function (winner) {
+			console.log("Player " + winner + " wins");
+			if (Game._runCount < 5) {
+				Game.startTest();
+			} else {
+				console.log("test over");
+			}
+		},
 		
+		simulateGame: function() {
+			var players = [AI.Aggressive, AI.Aggressive];
+			Engine.init(players, Game.gameOver);
+			Engine.setup();
+			Renderer.clearAll();
+			
+			Renderer.render();
+			
+			Engine.startTurn(0);
+		}
 		
 	};
 });

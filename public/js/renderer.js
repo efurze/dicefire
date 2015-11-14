@@ -7,16 +7,28 @@ $(function(){
 		_context: null,
 		
 		init: function(playerCount, canvas) {
-			this._canvas = canvas;
-			this._context = this._canvas.getContext('2d');
-			this._context.clearRect(0,0,2000,2000);
-            this._context.lineJoin = "straight";
-			this.setupRollDivs();
-			this.setupPlayerDivs(playerCount);
+			if (!Globals.suppress_ui) {
+				this._canvas = canvas;
+				this._context = this._canvas.getContext('2d');
+				this.clearAll();
+	            this._context.lineJoin = "straight";
+				this.setupRollDivs();
+				this.setupPlayerDivs(playerCount);
+			}			
+		},
+		
+		clearAll: function() {
+			if (Globals.suppress_ui) {
+				return;
+			}
 			
+			this._context.clearRect(0,0,2000,2000);
 		},
 		
 		render: function() {
+			if (Globals.suppress_ui) {
+				return;
+			}
 			this.renderMap();
 			this.renderPlayers();
 			this.renderControls();
@@ -33,6 +45,9 @@ $(function(){
 		},
 		
 		renderControls: function() {
+			if (Globals.suppress_ui) {
+				return;
+			}
 			
 			$('#back_btn').prop('disabled', true);
 			$('#forward_btn').prop('disabled', true);
@@ -64,6 +79,10 @@ $(function(){
 		},
 		
 		renderPlayers: function() {
+			if (Globals.suppress_ui) {
+				return;
+			}
+			
 			var self = this;
 			Player.array().forEach(function(player){
 				self.renderPlayer(player);
@@ -186,7 +205,10 @@ $(function(){
 		},
 		
 		renderHistoricalAttack: function(fromCountry, toCountry, fromRollArray, toRollArray) {
-			
+			if (Globals.suppress_ui) {
+				return;
+			}
+				
 			if (!fromCountry || !toCountry || !fromRollArray || !toRollArray) {
 				return;
 			}
@@ -225,6 +247,10 @@ $(function(){
 		},
 		
 		resetRollDivs: function(fromCountry, toCountry, fromRollArray, toRollArray) {
+			
+			if (Globals.suppress_ui) {
+				return;
+			}
 	
 			// clear previous attack info
 			$('#roll').css({
@@ -273,6 +299,10 @@ $(function(){
 		
 		
 		renderNumberBox: function (country) {
+			if (Globals.suppress_ui) {
+				return;
+			}
+			
 			var self = this;
 			
 			var ctr = country.center();
@@ -363,6 +393,10 @@ $(function(){
 		},
 
 		renderHex: function (hexToPaint) {
+			if (Globals.suppress_ui) {
+				return;
+			}
+			
 			var self = this;
 			var country = hexToPaint.country();
 			var upperLeft = hexToPaint.upperLeft();

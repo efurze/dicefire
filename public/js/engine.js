@@ -9,14 +9,21 @@ var Engine = {
 	_previousAttack: {},
 	_history: [],
 	_historyIndex: 0,
+	_callback: null,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 
-	init: function(playerCode) {
+	init: function(playerCode, callback) {
 		console.time("DICEFIRE");
 		
 		this._history = [];
-
+		this._currentPlayerId = 0;
+		this._gameOver = false;
+		this._attackInProgress = false;
+		this._previousAttack = false;
+		this._historyIndex = 0;
+		this._callback = callback;
+		
 		Engine._playerCode = playerCode;
 		var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
 		Engine._playerCode.forEach(function(elem, index) {
@@ -38,6 +45,7 @@ var Engine = {
 			Renderer.renderPlayer(player);
 		});
 		
+		Globals.debug("Map: " + Map.serializeHexes(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	},
 	
@@ -76,7 +84,7 @@ var Engine = {
 		return Engine._playerCode[playerId] == "human";
 	},
 
-	startTurn: function(playerId) {
+	startTurn: function(playerId, callback) {
 		Engine._currentPlayerId = playerId;
 		Engine._previousAttack = {};
 		Engine.pushHistory();
@@ -176,8 +184,8 @@ var Engine = {
 				// Redraw its info
 				Renderer.renderPlayer(oldOwner);
 
-				if (fromCountry.owner()._countries.length == Map._countryArray.length) {
-					Engine.gameOver();
+				if (fromCountry.owner()._countries.length == Map.countryCount()) {
+					Engine.gameOver(fromCountry.owner());
 				}
 			} else {
 				//Globals.debug("Attacker loses", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
@@ -194,14 +202,20 @@ var Engine = {
 	},
 
 	// Called when an attack ends the game.
-	gameOver: function() {
+	gameOver: function(winner) {
 		console.log("GAME OVER");
 		Engine._gameOver = true;
 		console.timeEnd("DICEFIRE");
 		
+		if (Engine._callback) {
+			Engine._callback(winner.id());
+		}
 	},
 
-
+	isGameOver: function() {
+		return Engine._gameOver;
+	},
+	
 	serialize: function() {
 		return this.getState().serialize();
 	},
