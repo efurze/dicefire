@@ -36,6 +36,10 @@
 		return new window.AI.Aggressive(playerId);
 	};
 
+	window.AI.Aggressive.getName = function() {
+		return "Aggressive";
+	};
+	
 	// Called each time the AI has a turn.
 	window.AI.Aggressive.prototype.startTurn = function(interface, depth) {
 		depth = depth || 0;

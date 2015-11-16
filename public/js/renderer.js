@@ -1,5 +1,9 @@
 "use strict"
 
+if (!$) {
+	var $ = function(){};
+}
+
 $(function(){
 	window.Renderer = {
 		

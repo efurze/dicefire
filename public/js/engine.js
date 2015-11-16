@@ -132,13 +132,20 @@ var Engine = {
 		var fromPlayer = fromCountry.owner();
 		var toPlayer = toCountry.owner();
 		
+		// make sure the 2 countries are next to each other
 		var neighbors = Map.adjacentCountries(fromCountry.id());
 		var ok = false;
 		for (var i=0; i < neighbors.length; i++) {
 			if (neighbors[i] == toCountry.id()) {
+				// countries aren't neighbors
 				ok = true;
 				break;
 			}
+		}
+		
+		// make sure attacker has at least 2
+		if (fromCountry.numDice() < 2) {
+			ok = false;
 		}
 
 		if (!ok) {
@@ -208,7 +215,7 @@ var Engine = {
 		console.timeEnd("DICEFIRE");
 		
 		if (Engine._callback) {
-			Engine._callback(winner.id());
+			Engine._callback(Engine._playerCode[winner.id()], winner.id());
 		}
 	},
 

@@ -2,7 +2,7 @@
 
 
 	// USAGE: odds[attackingDiceCount - 1, defendingDiceCount - 1] gives the odds that the attacker wins
-	var odds = [
+	var ODDS_ARRAY = [
 		[ 0.4098, 	0.0603, 0.0047, 0, 		0, 		0, 		0, 		0 ], 		// 1 dice attacking
 		[ 0.8643, 	0.4368, 0.1184, 0.0182, 0.0024, 0.0002, 0, 		0 ], 		// 2 dice attacking
 		[ 0.9874, 	0.8094, 0.4479, 0.1604, 0.0345, 0.007, 	0.0005, 0.0004 ], 	// 3 dice attacking
@@ -147,6 +147,9 @@
 		this._plyTracker = [];
 	};
 		
+	window.AI.Plyer.getName = function() {
+		return "Plyer";
+	};
 		
 	// Factory method. Called when the AI is first started. Tells the AI its player number
 	// and the list of other players, so it can know who is human and where
@@ -183,17 +186,17 @@
 	};
 	
 			
-	window.AI.Plyer.prototype.makeMoves = function(move, countriesNotCaptured) {
+	window.AI.Plyer.prototype.makeMoves = function(move) {
 		var self = this;
-		countriesNotCaptured = countriesNotCaptured || {};
+		var state = self._interface.getState();
 		
 		// pop first move off - skip over any nonmoves or 
 		// moves we can't make because we lost an earlier attack
 		var attack = new Attack();
 		while (move.hasMoreAttacks() && attack.isEmpty()) {
 			attack = move.pop();
-			if (countriesNotCaptured[attack.from()]) {
-				Globals.debug("Country " + attack.from() + " not captured, skipping move " + attack.toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			if (state.countryOwner(attack.from()) != self._myId) {
+				Globals.debug("Country " + attack.from() + " doesn't belong to us, skipping move " + attack.toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 				attack.clear();
 			}
 		}
@@ -209,12 +212,11 @@
 			self._interface.attack(attack.from(), attack.to(), function(result) {
 				if (!result) {
 					Globals.debug("ATTACK FAILED", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-					countriesNotCaptured[attack.to()] = 1;
 				} else {
 					Globals.debug("ATTACK SUCCEEDED", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 				}
 				// recurse
-				self.makeMoves(move, countriesNotCaptured);
+				self.makeMoves(move);
 			});
 		} 
 	};
@@ -429,7 +431,7 @@
 		Object.keys(playerCountries[state.currentPlayerId()]).forEach(function(cid) {
 			var countryId = Number(cid);
 
-			if (state.countryDice(countryId) == 1) {
+			if (state.countryDice(countryId) < 2) {
 				return;
 			}
 			// for each country, loop through all adjacent enemies
@@ -461,7 +463,8 @@
 			Globals.ASSERT(attack instanceof Attack);
 			var a = state.countryDice(attack.from());
 			var d = state.countryDice(attack.to());
-			var o = odds[a - 1][d - 1];
+			Globals.ASSERT(a > 0 && d > 0);
+			var o = ODDS_ARRAY[a - 1][d - 1];
 			//Globals.debug("Attack odds for " + a + " vs " + d + " = " + o, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return o;
 		} else {

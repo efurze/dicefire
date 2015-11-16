@@ -30,6 +30,9 @@
 		
 	};
 	
+	window.AI.Passive.getName = function() {
+		return "Passive";
+	};
 	
 	// Factory method. Called when the AI is first started. Tells the AI its player number
 	// and the list of other players, so it can know who is human and where

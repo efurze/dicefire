@@ -31,7 +31,7 @@ Country.prototype.getState = function() {
 	var state = {
 		id : this._id,
 		owner: this._owner.id(),
-		numDice: this._numDice
+		numDice: this.numDice()
 	};
 	
 	return state;
@@ -39,7 +39,7 @@ Country.prototype.getState = function() {
 
 Country.prototype.setState = function(gamestate, id) {
 	this._owner = Player.get(gamestate.countryOwner(id));
-	this._numDice = gamestate.countryDice(id);
+	this.setNumDice(gamestate.countryDice(id));
 };
 
 
@@ -64,7 +64,10 @@ Country.prototype.landGrab = function(starthex) {
 
 
 Country.prototype.setOwner = function(owner) { this._owner = owner;};
-Country.prototype.setNumDice = function(num) { this._numDice = num;};
+Country.prototype.setNumDice = function(num) { 
+	Globals.ASSERT(num > 0 && num <= 8);
+	this._numDice = num;
+};
 Country.prototype.setIsFighting = function(isFighting) { this._isFighting = isFighting;};
 Country.prototype.isFighting = function() {return this._isFighting;}
 
@@ -77,7 +80,9 @@ Country.prototype.numDice = function() { return this._numDice; };
 
 // Adds a die to the country.
 Country.prototype.addDie = function() {
-    this._numDice++;
+	if (this._numDice < 8) {
+    	this._numDice++;
+	}
 }
 
 

@@ -36,6 +36,8 @@
 		return new window.AI.DoNothing(playerId);
 	};
 
+	window.AI.DoNothing.getName = function() {return "DoNothing";};
+
 	// Called each time the AI has a turn.
 	window.AI.DoNothing.prototype.startTurn = function(interface) {
 		interface.endTurn();
