@@ -130,12 +130,12 @@ var Engine = {
 			if (cur >= Engine._playerCode.length) {
 				cur = 0;
 			}
-		} while (!Player.get(cur).hasLost() && cur !== Engine._currentPlayerId);
+		} while (Player.get(cur).hasLost() && cur !== Engine._currentPlayerId);
 
 		if (cur == Engine._currentPlayerId) {
 			Engine.gameOver(player);
 		} else {
-			Engine._currentPlayerId = curr;
+			Engine._currentPlayerId = cur;
 		}
 
 		if (Engine._gameOver) {
