@@ -119,19 +119,23 @@ var Engine = {
 	},
 
 	endTurn: function(event) {
+		var cur = Engine._currentPlayerId;
 		var player = Player.get(Engine._currentPlayerId);
 		Engine.addDiceToPlayer(player, player._numContiguousCountries);
 		Renderer.renderPlayer(player);
 		
-		Engine._currentPlayerId++;
-		if (Engine._currentPlayerId >= Engine._playerCode.length) {
-			Engine._currentPlayerId = 0;
-		}
-		
-		// If that player has lost, skip him.
-		if (Player.get(Engine._currentPlayerId).hasLost()) {
-			Engine.endTurn();
-			return;
+		// go to the next player that hasn't lost
+		do {
+			cur++;
+			if (cur >= Engine._playerCode.length) {
+				cur = 0;
+			}
+		} while (!Player.get(cur).hasLost() && cur !== Engine._currentPlayerId);
+
+		if (cur == Engine._currentPlayerId) {
+			Engine.gameOver(player);
+		} else {
+			Engine._currentPlayerId = curr;
 		}
 
 		if (Engine._gameOver) {
@@ -206,6 +210,10 @@ var Engine = {
 				fromPlayer.addCountry(toCountry);
 				oldOwner.updateStatus();
 				fromPlayer.updateStatus();
+				
+				if (oldOwner.hasLost()) {
+					Globals.debug("Player " + oldOwner.id() + " has lost and can no longer play", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+				}
 				
 				// this defeat may have knocked oldOwner out.
 				// Redraw its info
