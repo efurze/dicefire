@@ -62,7 +62,7 @@ var Map = {
 				if (!temp[hex.countryId()]) {
 					temp[hex.countryId()] = new Country(hex.countryId());
 				}
-				temp[hex.countryId()]._hexes.push(hex);
+				temp[hex.countryId()].hexes().push(hex.id());
 			}
 		});
 		
@@ -93,7 +93,7 @@ var Map = {
 		
 	generateMap: function() {
 		for (var i=0; i < this._countryArray.length; i++) {
-			this._countryArray[i]._hexes = [];
+			this._countryArray[i]._hexIds = [];
 			delete this._countryArray[i];
 		}
 		for (var i=0; i < this._hexArray.length; i++) {
@@ -176,7 +176,8 @@ var Map = {
 	        if (!country.isLake()) {
 	            return true;
 	        } else {
-	            country.hexes().forEach(function(hex) {
+	            country.hexes().forEach(function(hexId) {
+					var hex = Map.getHex(hexId);
 	                hex.setCountry(null);
 	                hex.setCountryEdgeDirections(null);
 	            });
@@ -215,7 +216,8 @@ var Map = {
 	    var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
 		this._adjacencyList[country.id()] = [];
 		
-	    country._hexes.forEach(function(hex) {
+	    country.hexes().forEach(function(hexId) {
+			var hex = Map.getHex(hexId);
 	        var countryEdges = [];
 	        for (var i = 0; i < Dir.array.length; i++) {
 	            var newHex = Dir.nextHex(hex, i);
@@ -240,7 +242,7 @@ var Map = {
 	        if (newHex && newHex.country() && !newHex.country().isLake()) {
 	            var newCountry = newHex.country();
 	            hex.setCountry(newCountry);
-	            newCountry._hexes.push(hex);                
+	            newCountry.hexes().push(hex.id());                
 	            return;
 	        }
 	    }

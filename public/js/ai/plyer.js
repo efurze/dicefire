@@ -170,7 +170,7 @@
 		Globals.ASSERT(self._myId == state.currentPlayerId());
 		
 		Globals.debug("I AM PLAYER " + self._myId, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		Globals.debug("Gamestate: ", JSON.stringify(state), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		Globals.debug("Gamestate: ", JSON.stringify(state), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		/*
 		Object.keys(state.playerCountries).forEach(function(pid) {
 			Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries[pid]).join(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
@@ -293,7 +293,7 @@
 		if (ply < self._MAX_PLIES) {
 			move = self.constructBestMove(state, ply, maxMoveLength);
 			if (ply == 0) {
-				Globals.debug("[PLY " + ply + "] Best move for position: " + move.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				Globals.debug("[PLY " + ply + "] Best move for position: " + move.toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 			}
 		}
 		

@@ -345,8 +345,8 @@ $(function(){
 			
 			var self = this;
 			
-	        country._hexes.forEach(function(elem) {
-	            self.renderHex(elem);
+	        country.hexes().forEach(function(hexId) {
+	            self.renderHex(Map.getHex(hexId));
 	        });
 
 	        var ctr = country.center();

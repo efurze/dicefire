@@ -2,7 +2,7 @@
 
 var Country = function(id) {
         this._id = id; 
-        this._hexes = [];
+        this._hexIds = [];
         this._ownerId = -1;
         
         this._numDice = 1;
@@ -22,8 +22,8 @@ Country.prototype.setId = function(id) {
 	if (Map.getCountry(id) != self) {
 		Globals.debug("Country id set to value which doesn't match Map array", this, Globals.LEVEL.WARN, Globals.CHANNEL.COUNTRY);
 	}
-	self._hexes.forEach(function(hex) {
-		hex.setCountry(self);
+	self._hexIds.forEach(function(hexId) {
+		Map.getHex(hexId).setCountry(self);
 	});
 }
 
@@ -44,18 +44,18 @@ Country.prototype.setState = function(gamestate, id) {
 
 
 Country.prototype.landGrab = function(starthex) {
-	this._hexes = [starthex];
+	this._hexIds = [starthex.id()];
     starthex.setCountry(this);
 	this._numHexes = Math.floor(Math.random() * (Country.MAX_HEXES - Country.MIN_HEXES + 1)) + 
         Country.MIN_HEXES;
 
 	this.growCountry();
-	if (this._numHexes != this._hexes.length) {
+	if (this._numHexes != this._hexIds.length) {
 		// Mark it as a lake still so we can make enough countries. If it's a small lake,
 		// let it get absorbed into another country. If it's a big lake, it will remain
 		// and be pruned (in actual gameplay, all isLake() countries are gone)
 		this._isLake = true;
-		if (this._hexes.length <= 5) {
+		if (this._hexIds.length <= 5) {
 			this.absorbLake();
 				return;
 			} 
@@ -76,7 +76,7 @@ Country.prototype.isFighting = function() {return this._isFighting;}
 
 Country.prototype.id = function() { return this._id; };
 Country.prototype.ownerId = function() { return this._ownerId; };
-Country.prototype.hexes = function() { return this._hexes; };
+Country.prototype.hexes = function() { return this._hexIds; };
 Country.prototype.isLake = function() { return this._isLake; };
 Country.prototype.numDice = function() { return this._numDice; };
 
@@ -95,14 +95,15 @@ Country.prototype.borderColor = function() {
 
 Country.prototype.center = function() {
     var center = [0, 0];
-    this._hexes.forEach(function(hex) {
+    this._hexIds.forEach(function(hexId) {
+		var hex = Map.getHex(hexId);
         var hexCenter = hex.center();
         center[0] += hexCenter[0];
         center[1] += hexCenter[1];            
     })
 
-    center[0] /= this._hexes.length;
-    center[1] /= this._hexes.length;
+    center[0] /= this._hexIds.length;
+    center[1] /= this._hexIds.length;
 
     return center;
 };
@@ -116,15 +117,15 @@ Country.prototype.findAdjacentHex = function() {
     var self = this;
 
     // Pick a starting hex randomly. Then iterate through until one is hopefully found.
-    // var startingHexPos = Math.floor(Math.random() * this._hexes.length);
-    for (var i = 0; i < this._hexes.length; i++) {
+    // var startingHexPos = Math.floor(Math.random() * this._hexIds.length);
+    for (var i = 0; i < this._hexIds.length; i++) {
         // Try to find a neighboring spot that works.
-        var hex = Math.floor(Math.random() * this._hexes.length);
+        var hex = Math.floor(Math.random() * this._hexIds.length);
 
         //Iterate over directions from the hex again randomly to see if one works.
         for ( var j = 0; j < Dir.array.length; j++) {
             var dir = Dir.array[Math.floor(Math.random() * Dir.array.length)];
-            var newHex = Dir.nextHex(this._hexes[hex], dir);
+            var newHex = Dir.nextHex(Map.getHex(this._hexIds[hex]), dir);
             if (newHex && !newHex.country()) {
                 return newHex;
             }
@@ -137,7 +138,7 @@ Country.prototype.findAdjacentHex = function() {
 };
 
 Country.prototype.growCountry = function() {
-    if (this._hexes.length >= this._numHexes) {
+    if (this._hexIds.length >= this._numHexes) {
         return;
     }
 
@@ -149,7 +150,7 @@ Country.prototype.growCountry = function() {
     }
 
     hex.setCountry(this);
-    this._hexes.push(hex);
+    this._hexIds.push(hex.id());
 
 	Globals.debug("growCountry", this, hex, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);        
 
@@ -163,10 +164,10 @@ Country.prototype.growCountry = function() {
 // Absorbs a lake into an adjacent country.
 Country.prototype.absorbLake = function() {
     var newCountry = null;
-    this._hexes.forEach(function(hex) {
-        Map.moveToAdjacentCountry(hex);
+    this._hexIds.forEach(function(hexId) {
+        Map.moveToAdjacentCountry(Map.getHex(hexId));
     })
-    this._hexes = [];
+    this._hexIds = [];
 };
 
 

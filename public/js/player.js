@@ -48,7 +48,7 @@ Player.setState = function(gamestate) {
 Player.array = function() { return Player._array; };
 Player.count = function() { return Player._array.length; };
 Player.get = function(id) { 
-	Globals.ASSERT(Player._array[id]);
+	//Globals.ASSERT(Player._array[id]);
 	return Player._array[id]; 
 };
 
