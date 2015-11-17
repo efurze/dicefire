@@ -9,54 +9,45 @@ $(function() {
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
 		_runCount: 0,
-		_MAX_RUNS: 1,
-		_results: [],
-		_firstMoveCount: [],
-		_players: [AI.Aggressive, AI.Aggressive],
+		_MAX_RUNS: 100,
+		_results: {},
+		_whoWentFirst: {},
+		_players: [AI.Aggressive, AI.Aggressive, AI.Aggressive],
 		_playerMapping : [],
-		_initialMap: null,
-		_initialState: null,
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
-			//Globals.suppress_ui = 1;
+			Globals.suppress_ui = 1;
 			Game._runCount = 0;
-			Renderer.init(players.length, Game._canvas);						
-            
-
-			$.get( "/testmaps/initialstate.json").done(function(data) {
-				Game.ajaxDone(data);
-			}).fail(function(err) {
-				Game.ajaxFail(err);
-			});
-		},
-		
-		ajaxDone: function (data){
-			//console.log("Got ajax data: " + JSON.stringify(data));
-			Game._initialState = JSON.stringify(data.state);
-			Game._initialMap = JSON.stringify(data.map);
-			
 			Engine.init(Game._players.map(function(p){return p;}));
-			Engine.setup(Game._initialMap, Game._initialState);
+			Renderer.init(Game._players.length, Game._canvas);	
+			
+			// initialize the result tracking data structures
+			Game._players.forEach(function(player) {
+				if (!Game._results[player.getName()]) {
+					var ary = [];
+					ary.length = Game._players.length;
+					ary.fill(0);
+					Game._results[player.getName()] = ary;
+				
+					ary = [];
+					ary.length = Game._players.length;
+					ary.fill(0);
+					Game._whoWentFirst[player.getName()] = ary;
+				}
+			});				
+          
 			Renderer.clearAll();
 			Renderer.render();
-			$('#start_test').click(Game.start);
+			$('#start_test').click(Game.start);  
 		},
 		
-		ajaxFail: function(err) {
-			console.log("Ajax error: ", err.error(), err);
-			$('#start_test').click(Game.start);
-		},
 		
 		start: function () {
 			Game._runCount = 0;
-			Game._firstMoveCount.length = Game._players.length;
-			Game._firstMoveCount.fill(0);
-			Game._results.length = Game._players.length;
-			Game._results.fill(0);
 			Game.startTest();
 		},
 		
@@ -69,15 +60,22 @@ $(function() {
 		},
 		
 		gameOver: function (winner, id) {
-			console.log("Player " + id + " wins: " + Game._players[Game._playerMapping[id]].getName());
-			Game._results[Game._playerMapping[id]] = Game._results[Game._playerMapping[id]] + 1 ;
+			var winner = Game._players[Game._playerMapping[id]];
+			var name = winner.getName();
+			
+			
+			console.log("Player " + id + " wins: " + name);
+			Game._results[name][id] += 1;
+			
 			if (Game._runCount < Game._MAX_RUNS) {
 				Game.startTest();
 			} else {
 				console.log("test over");
-				Game._players.forEach(function(player, index) {
-					console.log("Player " + player.getName() + " went first " + 100*Game._firstMoveCount[index]/Game._runCount +
-					"% of the time and won " + 100*Game._results[index]/Game._runCount + "% of the time");
+				Object.keys(Game._results).forEach(function(name) {
+					console.log(name + " : " + 
+						JSON.stringify(Game._results[name].map(function(won, idx) {
+							return won + "/" + Game._whoWentFirst[name][idx];
+						})));
 				});
 			}
 		},
@@ -100,10 +98,14 @@ $(function() {
 				temp[idx] = null;				
 			}
 			
-			console.log("Player " + players[0].getName() + " has first move");
-			Game._firstMoveCount[Game._playerMapping[0]] = Game._firstMoveCount[Game._playerMapping[0]] + 1;
+			Game._playerMapping.forEach(function(id, order) {
+				var playerName = Game._players[id].getName();
+				Game._whoWentFirst[playerName][order] += 1;
+			});
+			
+			
 			Engine.init(players, Game.gameOver);
-			Engine.setup(Game._initialMap, Game._initialState);
+			Engine.setup();
 			Renderer.clearAll();
 			
 			Renderer.render();

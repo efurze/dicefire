@@ -21,6 +21,9 @@ app.get('/test', function(req, res) {
     res.render("ai_tester", {layout: "ai_tester", title : "AI Test"});
 });
 
+app.get('/loader', function(req, res) { 
+    res.render("loader", {layout: "loader", title : "Replay Game"});
+});
 
 app.get('/simulator', function(req, res) {
 	res.render("simulator.hbs", {layout: "simulator", title : "Simulator"});

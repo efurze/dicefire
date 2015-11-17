@@ -28,7 +28,9 @@ var Engine = {
 		var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
 		Engine._playerCode.forEach(function(elem, index) {
 			if (elem != "human") {
+				Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 				Engine._playerCode[index] = elem.create(index, isHumanList);
+				Globals.debug(JSON.stringify(Engine._playerCode[index]), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 			}
 		});
 
