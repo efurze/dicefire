@@ -47,7 +47,7 @@ $(function() {
                         Renderer.renderCountry(prevCountry);
                     }
                     if (country) {
-						if ((country.owner() == currentPlayer && country.numDice() > 1) || 
+						if ((Player.get(country.ownerId()) == currentPlayer && country.numDice() > 1) || 
                            (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country))) {
 							Game._canvas.style.cursor = 'pointer';
                         	Renderer.renderCountry(Game._mouseOverCountry); 
@@ -90,7 +90,7 @@ $(function() {
                 var country = hex.country();
                 
                 if (country) {
-                    if (country.owner() == currentPlayer && country.numDice() > 1) {  
+                    if (Player.get(country.ownerId()) == currentPlayer && country.numDice() > 1) {  
                         // Select and deselect of countries owned by this user.                  
                         if (Game._selectedCountry == country) {
                             Game._selectedCountry = null;

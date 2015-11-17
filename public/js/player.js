@@ -2,7 +2,7 @@
 
 var Player = function(id) {
 	this._id = id;
-	this._countries = []; // array of country objects
+	this._countries = []; // array of countryIds
 	this._storedDice = 0;
 	this._numContiguousCountries = 0;		
 };
@@ -29,20 +29,28 @@ Player.setState = function(gamestate) {
 	
 	gamestate.playerIds().forEach(function(playerId) {
 		var player = new Player(playerId);
-		player._countries = gamestate.countryIds().map(function(countryId) {
+		player._countries = [];
+		gamestate.countryIds().forEach(function(countryId) {
 			// TODO: FIXME: _countries should be an array of Ids, not objects
-			return Map.getCountry(countryId);
+			var country = Map.getCountry(countryId);
+			if (country.ownerId() == playerId) {
+				player._countries.push(countryId);
+			}
 		});
 		player._storedDice = gamestate.storedDice(playerId);
 		player._numContiguousCountries = gamestate.numContiguous(playerId);
 		Player._array[playerId] = player;
+		Globals.debug("Deserialized player: " + JSON.stringify(player), Globals.LEVEL.INFO, Globals.CHANNEL.PLAYER);
 	});
 };
 
 
 Player.array = function() { return Player._array; };
 Player.count = function() { return Player._array.length; };
-Player.get = function(id) { return Player._array[id]; };
+Player.get = function(id) { 
+	Globals.ASSERT(Player._array[id]);
+	return Player._array[id]; 
+};
 
 Player.randomPlayer = function() {
 	return Player._array[Math.floor(Math.random() * Player._array.length)];
@@ -79,30 +87,38 @@ Player.prototype.id = function() { return this._id; };
 Player.prototype.color = function() { return Player.colors[this._id]; };
 Player.prototype.hasLost = function() { return this._countries.length == 0; };
 Player.prototype.storedDice = function() { return this._storedDice; };
+Player.prototype.countryCount = function() {return this._countries.length;};
 Player.prototype.numContiguousCountries = function() { return this._numContiguousCountries; };
 
 
 // Take ownership of a country.
-Player.prototype.takeCountry = function(country) {
-	var oldOwner = country.owner();
+Player.prototype.addCountry = function(country) {
+	var oldOwner = Player.get(country.ownerId());
 	if (oldOwner) {
  		oldOwner.loseCountry(country);
  	}
-	country.setOwner(this);
-	this._countries.push(country);
+	country.setOwner(this.id());
+	this._countries.push(country.id());
+	Globals.debug("Player " + this._id + " added country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
+	Globals.debug("New country count: " + this._countries.length, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
 };
 
 // Take away the country from this player.
 Player.prototype.loseCountry = function(country) {
+	var self = this;
 	this._countries = this._countries.filter(function(elem) {
-		return elem != country;
+		Globals.debug("Player " + self._id + " lost country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
+		Globals.debug("New country count: " + self._countries.length, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
+		return elem != country.id();
 	})
 };
 
 // Pick all the countries which have some space in them.
 Player.prototype.countriesWithSpace = function() {
-	return this._countries.filter(function(country) {
-		return country.numDice() < Globals.maxDice;
+	return this._countries.filter(function(countryId) {
+		return Map.getCountry(countryId).numDice() < Globals.maxDice;
+	}).map(function(countryId) {
+		return Map.getCountry(countryId);
 	});
 };
 
@@ -134,15 +150,15 @@ Player.prototype.updateStatus = function() {
 		return 1 + 
 				Map.adjacentCountries(country.id()).reduce(function(total, adjacentCountryId) {
 					var adjacentCountry = Map.getCountry(adjacentCountryId);
-					if (adjacentCountry.owner() == self) {
+					if (adjacentCountry.ownerId() == self.id()) {
 						total += traverse(adjacentCountry);
 					}
 					return total;
 				}, 0);
 	};
 
-	this._countries.forEach(function(country) {
-		var islandSize = traverse(country);
+	this._countries.forEach(function(countryId) {
+		var islandSize = traverse(Map.getCountry(countryId));
 
 		if (islandSize > maxIslandSize) {
 			maxIslandSize = islandSize;

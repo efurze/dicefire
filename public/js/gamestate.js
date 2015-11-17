@@ -24,7 +24,7 @@ var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 		countries.forEach(function(country) {
 			self._countries[country.id()] = {
 				id: country.id(),
-				owner: country.owner().id(),
+				owner: country.ownerId(),
 				numDice: country.numDice()
 			};
 			//self._playerCountries[country.owner().id()][country.id()] = country.id();

@@ -35,17 +35,33 @@ var Engine = {
 		Player.init(playerCode.length);		
 	},
 	
-	setup: function() {
-		Map.generateMap();
+	setup: function(initialMap, initialState) {
 		
-		// assign initial dice
+		if (initialMap) {
+			Globals.debug("Using provided map", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+			Map.deserializeHexes(initialMap);
+		} else {
+			Map.generateMap();
+			Globals.debug("Map: " + Map.serializeHexes(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+		}
+		
+		if (initialState) {
+			Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+			Engine.deserialize(initialState);
+			
+		} else {
+			// assign initial dice
+			Player.array().forEach(function(player) {
+				Engine.addDiceToPlayer(player, Globals.startingDice);
+			});
+			
+		}
+		
 		Player.array().forEach(function(player) {
-			Engine.addDiceToPlayer(player, Globals.startingDice);
 			player.updateStatus();
 			Renderer.renderPlayer(player);
 		});
 		
-		Globals.debug("Map: " + Map.serializeHexes(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	},
 	
@@ -85,6 +101,7 @@ var Engine = {
 	},
 
 	startTurn: function(playerId, callback) {
+		Globals.debug("Player " + playerId + " starting turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		Engine._currentPlayerId = playerId;
 		Engine._previousAttack = {};
 		Engine.pushHistory();
@@ -124,13 +141,13 @@ var Engine = {
 	
 
 	attack: function(fromCountry, toCountry, callback) {
-		//Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+		Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		var self = this;
 
 		self._attackInProgress = true;
 
-		var fromPlayer = fromCountry.owner();
-		var toPlayer = toCountry.owner();
+		var fromPlayer = Player.get(fromCountry.ownerId());
+		var toPlayer = Player.get(toCountry.ownerId());
 		
 		// make sure the 2 countries are next to each other
 		var neighbors = Map.adjacentCountries(fromCountry.id());
@@ -181,21 +198,22 @@ var Engine = {
 			fromCountry.setNumDice(1);
 
 			if (fromRoll > toRoll) {
-				//Globals.debug("Attacker wins", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-				var oldOwner = toCountry.owner();
+				Globals.debug("Attacker wins", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+				var oldOwner = Player.get(toCountry.ownerId());
 				toCountry.setNumDice(fromNumDice - 1);
-				fromPlayer.takeCountry(toCountry);
+				fromPlayer.addCountry(toCountry);
 				oldOwner.updateStatus();
+				fromPlayer.updateStatus();
 				
 				// this defeat may have knocked oldOwner out.
 				// Redraw its info
 				Renderer.renderPlayer(oldOwner);
 
-				if (fromCountry.owner()._countries.length == Map.countryCount()) {
-					Engine.gameOver(fromCountry.owner());
+				if (fromPlayer.countryCount() == Map.countryCount()) {
+					Engine.gameOver(fromPlayer);
 				}
 			} else {
-				//Globals.debug("Attacker loses", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+				Globals.debug("Attacker loses", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 			}
 			
 			// attack is done, save to history

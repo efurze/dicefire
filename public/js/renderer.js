@@ -98,7 +98,7 @@ $(function(){
 				return;
 			}
 			
-			if (player._countries.length == 0) {
+			if (player.countryCount() == 0) {
 				$('#player' + player._id).css({'display': 'none'});
 			} else {
 				
@@ -130,7 +130,7 @@ $(function(){
 			
 			Renderer.renderControls();
 			
-			var fromPlayer = fromCountry.owner();
+			var fromPlayer = Player.get(fromCountry.ownerId());
 			
 			// disable the 'end turn' button if the current attacking player is the human
 			if (Engine.isHuman(fromPlayer._id) && fromPlayer == Engine.currentPlayer()) {
@@ -180,11 +180,6 @@ $(function(){
 	                if (Globals.play_sounds) {
 	                    $.playSound('/sounds/clink_sound');
 	                }
-	        		var oldOwner = toCountry.owner();
-	        		toCountry.setNumDice(fromNumDice - 1);
-	        		fromPlayer.takeCountry(toCountry);
-	        		oldOwner.updateStatus();
-					Renderer.renderPlayer(oldOwner);
 	        	} else {
 					// defender wins
 	                if (Globals.play_sounds) {                
@@ -201,8 +196,8 @@ $(function(){
 				
 				Renderer.renderCountry(fromCountry);
 				Renderer.renderCountry(toCountry);
-				Renderer.renderPlayer(toCountry.owner());
-				Renderer.renderPlayer(fromCountry.owner());
+				Renderer.renderPlayer(Player.get(toCountry.ownerId()));
+				Renderer.renderPlayer(Player.get(fromCountry.ownerId()));
 				Renderer.renderControls();
 			}
 		
@@ -283,7 +278,7 @@ $(function(){
 			for (var i = 0; i < Globals.maxDice; i++) {
 				$('#leftdie' + i).css({
 					'display': (i < fromNumDice ? 'inline-block' : 'none'),
-					'background-color': fromCountry.owner().color()
+					'background-color': Player.get(fromCountry.ownerId()).color()
 				});
 
 				if (i < fromNumDice) {
@@ -292,7 +287,7 @@ $(function(){
 
 				$('#rightdie' + i).css({
 					'display': (i < toNumDice ? 'inline-block' : 'none'),
-					'background-color': toCountry.owner().color()				
+					'background-color': Player.get(toCountry.ownerId()).color()				
 				});
 
 				if (i < fromNumDice) {
@@ -514,7 +509,7 @@ $(function(){
 		        if (country == Game.selectedCountry()) {
 		            return "black";
 		        } else {
-		            return country._owner.color();
+		            return Player.get(country.ownerId()).color();
 		        }
 		    }
 		},

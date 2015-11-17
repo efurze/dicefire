@@ -3,7 +3,7 @@
 var Country = function(id) {
         this._id = id; 
         this._hexes = [];
-        this._owner = null;
+        this._ownerId = -1;
         
         this._numDice = 1;
         this._isFighting = false;
@@ -30,7 +30,7 @@ Country.prototype.setId = function(id) {
 Country.prototype.getState = function() {
 	var state = {
 		id : this._id,
-		owner: this._owner.id(),
+		owner: this._ownerId,
 		numDice: this.numDice()
 	};
 	
@@ -38,7 +38,7 @@ Country.prototype.getState = function() {
 };
 
 Country.prototype.setState = function(gamestate, id) {
-	this._owner = Player.get(gamestate.countryOwner(id));
+	this._ownerId = gamestate.countryOwner(id);
 	this.setNumDice(gamestate.countryDice(id));
 };
 
@@ -63,7 +63,10 @@ Country.prototype.landGrab = function(starthex) {
 };
 
 
-Country.prototype.setOwner = function(owner) { this._owner = owner;};
+Country.prototype.setOwner = function(ownerId) { 
+	Globals.ASSERT(typeof ownerId !== 'object');
+	this._ownerId = ownerId;
+};
 Country.prototype.setNumDice = function(num) { 
 	Globals.ASSERT(num > 0 && num <= 8);
 	this._numDice = num;
@@ -72,7 +75,7 @@ Country.prototype.setIsFighting = function(isFighting) { this._isFighting = isFi
 Country.prototype.isFighting = function() {return this._isFighting;}
 
 Country.prototype.id = function() { return this._id; };
-Country.prototype.owner = function() { return this._owner; };
+Country.prototype.ownerId = function() { return this._ownerId; };
 Country.prototype.hexes = function() { return this._hexes; };
 Country.prototype.isLake = function() { return this._isLake; };
 Country.prototype.numDice = function() { return this._numDice; };

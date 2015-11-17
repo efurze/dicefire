@@ -47,7 +47,33 @@ var Map = {
 	},
 	
 	deserializeHexes: function(json) {
-		this._hexArray = JSON.parse(json);
+		var self = this;
+		
+		self._countryArray = [];
+		self._hexArray = [];
+		
+		var temp = {};
+		var hexes = JSON.parse(json);
+		self._hexArray.length = hexes.length;
+		hexes.forEach(function(h) {
+			var hex = new Hex(h._id, h._x, h._y, h._countryId, h._countryEdgeDirections);
+			self._hexArray[hex.id()] = hex;
+			if (hex.countryId() >= 0) {
+				if (!temp[hex.countryId()]) {
+					temp[hex.countryId()] = new Country(hex.countryId());
+				}
+				temp[hex.countryId()]._hexes.push(hex);
+			}
+		});
+		
+		self._countryArray.length = Object.keys(temp).length;
+		Object.keys(temp).forEach(function(id) {
+			self._countryArray[id] = temp[id];
+		});
+		
+		self._countryArray.forEach(function(country) {
+			self.setupCountryEdges(country);
+		});
 	},
 	
 	getState: function() {
@@ -171,7 +197,7 @@ var Map = {
 		var shuffledCountries = Globals.shuffleArray(this._countryArray);
 		var currPlayer = 0;
 		shuffledCountries.forEach(function(country) {
-			Player.get(currPlayer).takeCountry(country);
+			Player.get(currPlayer).addCountry(country);
 			self.setupCountryEdges(country);
 			currPlayer++;
 			if (currPlayer >= Player.count()) {

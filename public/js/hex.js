@@ -1,11 +1,23 @@
 "use strict"
 
-var Hex = function(id) {    
+var Hex = function(id, x, y, countryId, edgeDirections) {    
 		this._id = id;
         this._x = this._id % Hex.NUM_WIDE;
         this._y = Math.floor(this._id / Hex.NUM_WIDE);
         this._countryId = -1;
         this._countryEdgeDirections = [];
+		if (typeof x !== 'undefined') {
+			this._x = x;
+		}
+		if (typeof y !== 'undefined') {
+			this._y = y;
+		}
+		if (typeof countryId !== 'undefined') {
+			this._countryId = countryId;
+		}
+		if (typeof edgeDirections !== 'undefined') {
+			this._countryEdgeDirections = edgeDirections;
+		}
 		Globals.debug("Constructed hex", this, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
     };
 
@@ -23,7 +35,6 @@ Hex.FUDGE = 0.5;
 
 
 
-
 Hex.prototype.id = function() { return this._id; };
 Hex.prototype.x = function() { return this._x; };
 Hex.prototype.y = function() { return this._y; };
@@ -36,6 +47,7 @@ Hex.prototype.setCountry = function(country) {
 	this._countryId = country ? country._id : -1;
 };
 
+Hex.prototype.countryId = function() {return this._countryId;};
 Hex.prototype.country = function() { 
 	return Map.getCountry(this._countryId); 
 };
