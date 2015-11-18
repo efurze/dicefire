@@ -9,6 +9,7 @@ $(function(){
 		
 		_canvas: null,
 		_context: null,
+		_initialized: false,
 		
 		init: function(playerCount, canvas) {
 			if (!Globals.suppress_ui) {
@@ -18,11 +19,12 @@ $(function(){
 	            this._context.lineJoin = "straight";
 				this.setupRollDivs();
 				this.setupPlayerDivs(playerCount);
+				this._initialized = true;
 			}			
 		},
 		
 		clearAll: function() {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
@@ -30,7 +32,7 @@ $(function(){
 		},
 		
 		render: function() {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			this.renderMap();
@@ -39,7 +41,7 @@ $(function(){
 		},
 		
 		renderMap: function() {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			var self = this;
@@ -49,7 +51,7 @@ $(function(){
 		},
 		
 		renderControls: function() {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
@@ -83,7 +85,7 @@ $(function(){
 		},
 		
 		renderPlayers: function() {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
@@ -94,7 +96,7 @@ $(function(){
 		},
 		
 		renderPlayer: function(player) {
-			if (Globals.suppress_ui || !player) {
+			if (Globals.suppress_ui || !this._initialized || !player) {
 				return;
 			}
 			
@@ -123,7 +125,7 @@ $(function(){
 		*/
 		renderAttack: function(fromCountry, toCountry, fromRollArray, toRollArray, callback) {
 		
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				callback();
 				return;
 			}
@@ -204,7 +206,7 @@ $(function(){
 		},
 		
 		renderHistoricalAttack: function(fromCountry, toCountry, fromRollArray, toRollArray) {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 				
@@ -247,7 +249,7 @@ $(function(){
 		
 		resetRollDivs: function(fromCountry, toCountry, fromRollArray, toRollArray) {
 			
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 	
@@ -298,7 +300,7 @@ $(function(){
 		
 		
 		renderNumberBox: function (country) {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
@@ -339,7 +341,7 @@ $(function(){
 		
 
 		renderCountry: function (country) {
-			if (Globals.suppress_ui || !country) {
+			if (Globals.suppress_ui || !this._initialized || !country) {
 	        	return;
 			}
 			
@@ -392,7 +394,7 @@ $(function(){
 		},
 
 		renderHex: function (hexToPaint) {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
@@ -515,7 +517,7 @@ $(function(){
 		},
 		
 		setupPlayerDivs: function(playerCount) {
-			if (Globals.suppress_ui) {
+			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			

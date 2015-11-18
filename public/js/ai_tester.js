@@ -1,5 +1,91 @@
 "use strict"
 
+var GameRepeater = function(players, runCount) {
+	this._currentRun = 0;
+	this._runCount = runCount;
+	this._players = players.map(function(p){return p;});
+	this._playerMapping = [];
+	this._whoWentFirst = {};
+	this._results = {};
+};
+
+GameRepeater.prototype.start = function() {
+	var self = this;
+	Renderer.init(self._players.length, Game._canvas);
+	self._currentRun = 0;
+	self._playerMapping = [];
+	self._whoWentFirst = {};
+	self._results = {};
+	self._players.forEach(function(player) {
+		self._whoWentFirst[player.getName()] = [];
+		self._whoWentFirst[player.getName()].length = self._players.length;
+		self._whoWentFirst[player.getName()].fill(0);
+		
+		self._results[player.getName()] = [];
+		self._results[player.getName()].length = self._players.length;
+		self._results[player.getName()].fill(0);
+	});
+	self.simulateGame();
+};
+
+GameRepeater.prototype.gameOver = function (winner, id) {
+	var self = this;
+	
+	var winner = self._players[self._playerMapping[id]];
+	var name = winner.getName();
+	
+	
+	console.log("Player " + id + " wins: " + name);
+	self._results[name][id] += 1;
+	
+	if (self._currentRun < self._runCount) {
+		self.simulateGame();
+	} else {
+		console.log("test over");
+		Object.keys(self._results).forEach(function(name) {
+			console.log(name + " : " + 
+				JSON.stringify(self._results[name].map(function(won, idx) {
+					return won + "/" + self._whoWentFirst[name][idx];
+				})));
+		});
+	}
+};
+
+GameRepeater.prototype.simulateGame = function() {
+	var self = this;
+	console.log("Beginning Trial " + self._currentRun + " out of " + self._runCount);
+	
+	var temp = self._players.map(function(p) {return p;});
+	var players = [];
+
+	// randomize the order
+	self._playerMapping = [];
+	while(players.length < self._players.length) {
+		do {
+			var idx = Math.round((temp.length-1) * Math.random());
+		} while (temp[idx] === null);
+		
+		self._playerMapping.push(idx);
+		players.push(temp[idx]);
+		temp[idx] = null;				
+	}
+	
+	self._playerMapping.forEach(function(id, order) {
+		var playerName = self._players[id].getName();
+		self._whoWentFirst[playerName][order] += 1;
+	});
+	
+	self._currentRun ++;
+	
+	Engine.init(players, self.gameOver, self);
+	Engine.setup();
+	Renderer.clearAll();
+	
+	Renderer.render();
+	
+	Engine.startTurn(0);
+};
+
 $(function() {
 
 	
@@ -8,12 +94,7 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
-		_runCount: 0,
-		_MAX_RUNS: 100,
-		_results: {},
-		_whoWentFirst: {},
-		_players: [AI.Aggressive, AI.Aggressive, AI.Aggressive],
-		_playerMapping : [],
+		_players: [AI.Aggressive, AI.Aggressive],
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
@@ -21,97 +102,13 @@ $(function() {
 		
 		init: function (playerCode) {
 			Globals.suppress_ui = 1;
-			Game._runCount = 0;
-			Engine.init(Game._players.map(function(p){return p;}));
-			Renderer.init(Game._players.length, Game._canvas);	
-			
-			// initialize the result tracking data structures
-			Game._players.forEach(function(player) {
-				if (!Game._results[player.getName()]) {
-					var ary = [];
-					ary.length = Game._players.length;
-					ary.fill(0);
-					Game._results[player.getName()] = ary;
-				
-					ary = [];
-					ary.length = Game._players.length;
-					ary.fill(0);
-					Game._whoWentFirst[player.getName()] = ary;
-				}
-			});				
-          
-			Renderer.clearAll();
-			Renderer.render();
 			$('#start_test').click(Game.start);  
 		},
 		
 		
 		start: function () {
-			Game._runCount = 0;
-			Game.startTest();
+			var runner = new GameRepeater(Game._players, 20);
+			runner.start();
 		},
-		
-		startTest: function () {
-			Game._runCount ++;
-			window.setTimeout(function() {
-				Game.simulateGame(Game._players);
-			}, 0);
-			
-		},
-		
-		gameOver: function (winner, id) {
-			var winner = Game._players[Game._playerMapping[id]];
-			var name = winner.getName();
-			
-			
-			console.log("Player " + id + " wins: " + name);
-			Game._results[name][id] += 1;
-			
-			if (Game._runCount < Game._MAX_RUNS) {
-				Game.startTest();
-			} else {
-				console.log("test over");
-				Object.keys(Game._results).forEach(function(name) {
-					console.log(name + " : " + 
-						JSON.stringify(Game._results[name].map(function(won, idx) {
-							return won + "/" + Game._whoWentFirst[name][idx];
-						})));
-				});
-			}
-		},
-		
-		simulateGame: function(player_list) {
-			console.log("Beginning Trial " + Game._runCount + " out of " + Game._MAX_RUNS);
-			
-			var temp = player_list.map(function(p) {return p;});
-			var players = [];
-
-			// randomize the order
-			Game._playerMapping = [];
-			while(players.length < player_list.length) {
-				do {
-					var idx = Math.round((temp.length-1) * Math.random());
-				} while (temp[idx] === null);
-				
-				Game._playerMapping.push(idx);
-				players.push(temp[idx]);
-				temp[idx] = null;				
-			}
-			
-			Game._playerMapping.forEach(function(id, order) {
-				var playerName = Game._players[id].getName();
-				Game._whoWentFirst[playerName][order] += 1;
-			});
-			
-			
-			Engine.init(players, Game.gameOver);
-			Engine.setup();
-			Renderer.clearAll();
-			
-			Renderer.render();
-			
-			Engine.startTurn(0);
-		}
-		
-	};
+	};		
 });
