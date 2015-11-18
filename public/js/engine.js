@@ -12,12 +12,17 @@ var Engine = {
 	_callback: null,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
+	
+	setCurrentPlayer: function(id) {
+		Globals.debug("Current player set to " + id, Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
+		this._currentPlayerId = id;
+	},
 
 	init: function(playerCode, callback) {
 		console.time("DICEFIRE");
 		
 		this._history = [];
-		this._currentPlayerId = 0;
+		Engine.setCurrentPlayer(0);
 		this._gameOver = false;
 		this._attackInProgress = false;
 		this._previousAttack = false;
@@ -44,7 +49,7 @@ var Engine = {
 			Map.deserializeHexes(initialMap);
 		} else {
 			Map.generateMap();
-			Globals.debug("Map: " + Map.serializeHexes(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+			//Globals.debug("Map: " + Map.serializeHexes(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		}
 		
 		if (initialState) {
@@ -64,7 +69,7 @@ var Engine = {
 			Renderer.renderPlayer(player);
 		});
 		
-		Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+		//Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	},
 	
 	pushHistory: function() {
@@ -104,13 +109,13 @@ var Engine = {
 
 	startTurn: function(playerId, callback) {
 		Globals.debug("Player " + playerId + " starting turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-		Engine._currentPlayerId = playerId;
+		Engine.setCurrentPlayer(playerId);
 		Engine._previousAttack = {};
 		Engine.pushHistory();
 
-		if (Engine._playerCode[playerId] != "human") {
+		if (Engine._playerCode[Engine._currentPlayerId] != "human") {
 			window.setTimeout(function() {
-					Engine._playerCode[playerId].startTurn(Engine.interface)
+					Engine._playerCode[Engine._currentPlayerId].startTurn(Engine.interface)
 				}, 0);
 		} 
 
@@ -119,6 +124,7 @@ var Engine = {
 	},
 
 	endTurn: function(event) {
+		Globals.debug("Player " + Engine._currentPlayerId + " ending turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		var cur = Engine._currentPlayerId;
 		var player = Player.get(Engine._currentPlayerId);
 		Engine.addDiceToPlayer(player, player._numContiguousCountries);
@@ -135,7 +141,7 @@ var Engine = {
 		if (cur == Engine._currentPlayerId) {
 			Engine.gameOver(player);
 		} else {
-			Engine._currentPlayerId = cur;
+			Engine.setCurrentPlayer(cur);
 		}
 
 		if (Engine._gameOver) {
@@ -280,7 +286,7 @@ var Engine = {
 		Map.setState(gamestate);
 		Player.setState(gamestate);
 		this._previousAttack = gamestate.previousAttack();
-		this._currentPlayerId = gamestate.currentPlayerId();
+		Engine.setCurrentPlayer(gamestate.currentPlayerId());
 	},
 	
 	// unittest accessors
