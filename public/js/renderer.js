@@ -14,6 +14,9 @@ $(function(){
 		init: function(playerCount, canvas) {
 			if (!Globals.suppress_ui) {
 				this._canvas = canvas;
+				if (!canvas) {
+					return;
+				}
 				this._context = this._canvas.getContext('2d');
 				this.clearAll();
 	            this._context.lineJoin = "straight";

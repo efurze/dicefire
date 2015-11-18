@@ -17,6 +17,10 @@ app.get('/', function(req, res) {
 });
 
 
+app.get('/unit', function(req, res) { 
+    res.sendFile(__dirname + "/views/unittest.html");
+});
+
 app.get('/test', function(req, res) { 
     res.render("ai_tester", {layout: "ai_tester", title : "AI Test"});
 });

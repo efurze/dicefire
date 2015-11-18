@@ -1,7 +1,6 @@
 "use strict"
 
 $(function() {
-
 	
 	window.Game = {
 		
@@ -16,8 +15,8 @@ $(function() {
 		selectedCountry: function() { return Game._selectedCountry; },
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
-		init: function (playerCode) {
-			Renderer.init(players.length, Game._canvas);						
+		init: function () {
+			Renderer.init(Game._players.length, Game._canvas);						
             
 
 			$.get( "/testmaps/initialstate.json").done(function(data) {
