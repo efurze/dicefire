@@ -152,7 +152,7 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
-		_players: [AI.Aggressive, AI.Aggressive],
+		_players: [AI.Plyer, AI.Aggressive],
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
@@ -163,10 +163,23 @@ $(function() {
 			$('#start_test').click(Game.start);  
 		},
 		
+		simulationDone: function(results, runTracker) {
+			var self = this;
+			
+			Game._players.forEach(function(player) {
+				var name = player.getName();
+				console.log(name + ": " + JSON.stringify(results[name].map(function(result, idx) {
+					return result + "/" + runTracker[name][idx];
+				})));
+			})
+		},
 		
 		start: function () {
-			var runner = new runAllPlayerCounts(AI.Aggressive, 100);
-			runner.start();
+			//var runner = new runAllPlayerCounts(AI.Aggressive, 500);
+			//runner.start();
+			
+			var runner = new GameRepeater(Game._players, 100);
+			runner.start(Game.simulationDone);
 		},
 	};		
 });
