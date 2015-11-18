@@ -13,7 +13,7 @@ var Engine = {
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 
-	init: function(playerCode, callback, callbackContext) {
+	init: function(playerCode, callback) {
 		console.time("DICEFIRE");
 		
 		this._history = [];
