@@ -1,5 +1,6 @@
 var express = require('express');
 var app = express();
+var fs = require('fs');
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -16,6 +17,17 @@ app.get('/', function(req, res) {
     res.render("index");
 });
 
+
+app.get('/data/*', function(req, res) { 
+	var filename = req.url.trim().split("/").slice(2).join("/");
+	fs.readFile(__dirname + "/public/" + filename + ".json", 'utf8', function (err, data) {
+		if (err) {
+			res.send({});
+		} else {
+	  		res.send("var MapData=" + data + ";");
+		}
+	});
+});
 
 app.get('/unit', function(req, res) { 
     res.sendFile(__dirname + "/views/unittest.html");
