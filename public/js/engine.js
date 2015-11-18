@@ -282,6 +282,19 @@ var Engine = {
 		this._previousAttack = gamestate.previousAttack();
 		this._currentPlayerId = gamestate.currentPlayerId();
 	},
+	
+	// unittest accessors
+	playerCount: function() {
+		return Player._array.length;
+	},
+	
+	playerCountryCount: function(id) {
+		return Player.get(id)._countries.length;
+	},
+	
+	totalCountryCount: function() {
+		return Map.countryCount();
+	},
 
 	// The interface passed to AIs so they can control the game.
 	interface: {
