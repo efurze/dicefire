@@ -10,7 +10,6 @@ var Engine = {
 	_history: [],
 	_historyIndex: 0,
 	_callback: null,
-	_callbackContext: null,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 
@@ -24,7 +23,6 @@ var Engine = {
 		this._previousAttack = false;
 		this._historyIndex = 0;
 		this._callback = callback;
-		this._callbackContext = callbackContext;
 		
 		Engine._playerCode = playerCode;
 		var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
@@ -246,7 +244,7 @@ var Engine = {
 			console.timeEnd("DICEFIRE");
 		
 			if (Engine._callback) {
-				Engine._callback.call(Engine._callbackContext, Engine._playerCode[winner.id()], winner.id());
+				Engine._callback(Engine._playerCode[winner.id()], winner.id());
 			}
 		}
 	},

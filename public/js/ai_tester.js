@@ -77,7 +77,7 @@ GameRepeater.prototype.simulateGame = function() {
 	
 	self._currentRun ++;
 	
-	Engine.init(players, self.gameOver, self);
+	Engine.init(players, self.gameOver.bind(self));
 	Engine.setup();
 	Renderer.clearAll();
 	
