@@ -7,11 +7,13 @@ var GameRepeater = function(players, runCount) {
 	this._playerMapping = [];
 	this._whoWentFirst = {};
 	this._results = {};
+	this._callback = null;
 };
 
-GameRepeater.prototype.start = function() {
+GameRepeater.prototype.start = function(callback) {
 	var self = this;
 	Renderer.init(self._players.length, Game._canvas);
+	self._callback = callback;
 	self._currentRun = 0;
 	self._playerMapping = [];
 	self._whoWentFirst = {};
@@ -42,12 +44,22 @@ GameRepeater.prototype.gameOver = function (winner, id) {
 		self.simulateGame();
 	} else {
 		console.log("test over");
-		Object.keys(self._results).forEach(function(name) {
-			console.log(name + " : " + 
-				JSON.stringify(self._results[name].map(function(won, idx) {
-					return won + "/" + self._whoWentFirst[name][idx];
-				})));
-		});
+		if (self._callback) {
+			var cb = self._callback;
+			var results = self._results;
+			var whoWentFirst = self._whoWentFirst;
+			self._whoWentFirst = null;
+			self._results = null;
+			self._callback = null;
+			cb(results, whoWentFirst);
+		} else {
+			Object.keys(self._results).forEach(function(name) {
+				console.log(name + " : " + 
+					JSON.stringify(self._results[name].map(function(won, idx) {
+						return won + "/" + self._whoWentFirst[name][idx];
+					})));
+			});
+		}
 	}
 };
 
@@ -86,6 +98,52 @@ GameRepeater.prototype.simulateGame = function() {
 	Engine.startTurn(0);
 };
 
+// the idea here is you give it an AI, and this will run all combinations of that AI.
+// You can see the how it does in 2 person games vs itself, 3 person games vs itself, etc
+var runAllPlayerCounts = function(player, runs_per) {
+	this._player = player;
+	this._runs_per = runs_per;
+	this._runner = null;
+	this._collatedResults = [];
+	this._collatedRunTrackers = [];
+	this._players = [];
+};
+
+runAllPlayerCounts.prototype.start = function() {
+	// start with 2-player game
+	this._players = [this._player, this._player];
+	this.doMatchup();
+};
+
+runAllPlayerCounts.prototype.doMatchup = function() {
+	this._runner = new GameRepeater(this._players, this._runs_per);
+	this._runner.start(this.matchupDone.bind(this));
+}
+
+runAllPlayerCounts.prototype.matchupDone = function(results, runTracker) {
+	var self = this;
+	
+	// save results
+	self._collatedResults.push(results);
+	self._collatedRunTrackers.push(runTracker);
+	
+	if (self._players.length < 8) {
+		// add another player and do it again
+		self._players.push(self._player);
+		self.doMatchup();
+	} else {
+		
+		self._collatedResults.forEach(function(result, run) {
+			Object.keys(result).forEach(function(name) {
+				console.log(name + " : " + 
+					JSON.stringify(result[name].map(function(won, idx) {
+						return won + "/" + self._collatedRunTrackers[run][name][idx];
+					})));
+			});
+		});
+	}
+};
+
 $(function() {
 
 	
@@ -107,7 +165,7 @@ $(function() {
 		
 		
 		start: function () {
-			var runner = new GameRepeater(Game._players, 20);
+			var runner = new runAllPlayerCounts(AI.Aggressive, 100);
 			runner.start();
 		},
 	};		
