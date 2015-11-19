@@ -15,7 +15,7 @@ var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 				id: player.id(),
 				hasLost: player.hasLost(),
 				storedDice: player.storedDice(),
-				numContiguousCountries: player.numContiguousCountries
+				numContiguousCountries: player.numContiguousCountries()
 			};
 			self._playerCountries[player.id()] = {};
 		});
