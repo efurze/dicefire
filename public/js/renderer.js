@@ -26,7 +26,13 @@ var stateHash = {
 	
 	hasCountryChanged: function(countryId, isFighting, hash) {
 		if (isFighting) {
-			hash += 1
+			hash += 1;
+		}
+		if (countryId == Renderer._mouseOverCountry) {
+			hash += 2;
+		}
+		if (countryId == Renderer._selectedCountry) {
+			hash += 4;
 		}
 		if (this._countries[countryId] === hash) {
 			return false;
@@ -43,6 +49,8 @@ $(function(){
 		_canvas: null,
 		_context: null,
 		_initialized: false,
+		_mouseOverCountry: -1,
+		_selectedCountry: -1,
 		
 		init: function(playerCount, canvas) {
 			if (!Globals.suppress_ui) {
@@ -69,6 +77,14 @@ $(function(){
 			stateHash.reset();
 		},
 		
+		setMouseOverCountry: function(id) {
+			Renderer._mouseOverCountry = id;
+		},
+		
+		setSelectedCountry: function(id) {
+			Renderer._selectedCountry = id;
+		},
+		
 		render: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
@@ -76,12 +92,12 @@ $(function(){
 			Globals.debug("render()", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
 			
-			this.renderMap(state);
-			this.renderPlayers(state);
+			this._renderMap(state);
+			this._renderPlayers(state);
 			this.renderControls();
 		},
 		
-		renderMap: function(state) {
+		_renderMap: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
@@ -90,7 +106,7 @@ $(function(){
 			var self = this;
 			
 			state.countryIds().forEach(function(countryId) {
-				self.renderCountry(countryId, state)
+				self._renderCountry(countryId, state)
 			});
 		},
 		
@@ -129,7 +145,7 @@ $(function(){
 			}
 		},
 		
-		renderPlayers: function(state) {
+		_renderPlayers: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
@@ -138,11 +154,11 @@ $(function(){
 			
 			var self = this;
 			state.playerIds().forEach(function(playerId){
-				self.renderPlayer(playerId, state);
+				self._renderPlayer(playerId, state);
 			});
 		},
 		
-		renderPlayer: function(playerId, state) {
+		_renderPlayer: function(playerId, state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
@@ -170,7 +186,7 @@ $(function(){
 			}
 		},
 		
-		renderCountry: function (countryId, state, isFighting) {
+		_renderCountry: function (countryId, state, isFighting) {
 			if (Globals.suppress_ui || !this._initialized) {
 	        	return;
 			}
@@ -185,7 +201,7 @@ $(function(){
 			isFighting = isFighting || false;
 			
 	        Map.countryHexes(countryId).forEach(function(hexId) {
-	            self.renderHex(Map.getHex(hexId), isFighting);
+	            self._renderHex(Map.getHex(hexId), isFighting);
 	        });
 
 	        var ctr = Map.countryCenter(countryId);
@@ -262,7 +278,7 @@ $(function(){
 	
 			// roll attacker
 			Globals.debug("render attacker", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-			self.renderCountry(fromCountry.id(), state, true);
+			self._renderCountry(fromCountry.id(), state, true);
 	        
 			if (Globals.play_sounds) {
 	            $.playSound('/sounds/2_dice_throw_on_table');
@@ -278,7 +294,7 @@ $(function(){
 	                "display": "inline-block"
 	            });
 
-				self.renderCountry(toCountry.id(), state, true);
+				self._renderCountry(toCountry.id(), state, true);
 	            window.setTimeout(renderDefendRoll, Globals.timeout);
 			}
 			
@@ -313,10 +329,10 @@ $(function(){
 				callback();
 				
 				var state = Engine.getState();
-				Renderer.renderCountry(fromCountry.id(), state);
-				Renderer.renderCountry(toCountry.id(), state);
-				Renderer.renderPlayer(toCountry.ownerId(), state);
-				Renderer.renderPlayer(fromCountry.ownerId(), state);
+				Renderer._renderCountry(fromCountry.id(), state);
+				Renderer._renderCountry(toCountry.id(), state);
+				Renderer._renderPlayer(toCountry.ownerId(), state);
+				Renderer._renderPlayer(fromCountry.ownerId(), state);
 				Renderer.renderControls();
 			}
 		
@@ -353,9 +369,9 @@ $(function(){
 			
 			
 			// draw countries as attacking
-			this.renderMap(state);
-			this.renderCountry(fromCountry.id(), state, true);
-			this.renderCountry(toCountry.id(), state, true);
+			this._renderMap(state);
+			this._renderCountry(fromCountry.id(), state, true);
+			this._renderCountry(toCountry.id(), state, true);
 		},
 		
 		resetRollDivs: function(fromCountry, toCountry, fromRollArray, toRollArray) {
@@ -451,7 +467,7 @@ $(function(){
 		
 
 
-		renderHex: function (hexToPaint, isFighting) {
+		_renderHex: function (hexToPaint, isFighting) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}

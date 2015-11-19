@@ -12,6 +12,7 @@ var Engine = {
 	_callback: null,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
+	currentPlayerId: function() { return Engine._currentPlayerId; },
 	
 	setCurrentPlayer: function(id) {
 		Globals.debug("Current player set to " + id, Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
@@ -66,7 +67,6 @@ var Engine = {
 		
 		Player.array().forEach(function(player) {
 			player.updateStatus();
-			//Renderer.renderPlayer(player.id(), Engine.getState());
 		});
 		
 		Renderer.render(Engine.getState());
@@ -100,7 +100,6 @@ var Engine = {
 	 		}
 	 		var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
 			country.addDie();
-			//Renderer.renderCountry(country.id(), Engine.getState());
 			Renderer.render(Engine.getState());
 		}
 	},
@@ -121,8 +120,6 @@ var Engine = {
 				}, 0);
 		} 
 
-		//Renderer.renderPlayers(Engine.getState());
-		//Renderer.renderControls();
 		Renderer.render(Engine.getState());
 	},
 
@@ -131,7 +128,6 @@ var Engine = {
 		var cur = Engine._currentPlayerId;
 		var player = Player.get(Engine._currentPlayerId);
 		Engine.addDiceToPlayer(player, player._numContiguousCountries);
-		//Renderer.renderPlayer(player.id(), Engine.getState());
 		Renderer.render(Engine.getState());
 		
 		// go to the next player that hasn't lost
@@ -232,7 +228,6 @@ var Engine = {
 				
 				// this defeat may have knocked oldOwner out.
 				// Redraw its info
-				//Renderer.renderPlayer(oldOwner.id(), Engine.getState());
 				Renderer.render(Engine.getState());
 
 				if (fromPlayer.countryCount() == Map.countryCount()) {
@@ -245,7 +240,6 @@ var Engine = {
 			// attack is done, save to history
 			Engine.pushHistory();
 			
-			//Renderer.renderControls();
 			Renderer.render(Engine.getState());
 
 			callback(fromRoll > toRoll);
