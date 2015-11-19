@@ -119,7 +119,7 @@ Gamestate.prototype.previousAttack = function() {
 
 Gamestate.prototype.playerHash = function(playerId) {
 	if (this._players && this._players[playerId]) {
-		return SHA1.hex(this._players[playerId]);
+		return JSON.stringify(SHA1.hex(JSON.stringify(this._players[playerId])));
 	} else {
 		return -1;
 	}
@@ -128,7 +128,7 @@ Gamestate.prototype.playerHash = function(playerId) {
 
 Gamestate.prototype.countryHash = function(countryId) {
 	if (this._countries[countryId]) {
-		return SHA1.hex(JSON.stringify(this._countries[countryId]));
+		return JSON.stringify(SHA1.hex(JSON.stringify(this._countries[countryId])));
 	} else {
 		return -1;
 	}
