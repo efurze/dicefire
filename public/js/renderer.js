@@ -61,8 +61,8 @@ $(function(){
 				this._context = this._canvas.getContext('2d');
 				this.clearAll();
 	            this._context.lineJoin = "straight";
-				this.setupRollDivs();
-				this.setupPlayerDivs(playerCount);
+				this._setupRollDivs();
+				this._setupPlayerDivs(playerCount);
 				this._initialized = true;
 			}			
 		},
@@ -97,156 +97,6 @@ $(function(){
 			this.renderControls();
 		},
 		
-		_renderMap: function(state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			Globals.debug("renderMap", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			Globals.ASSERT(state instanceof Gamestate);
-			var self = this;
-			
-			state.countryIds().forEach(function(countryId) {
-				self._renderCountry(countryId, state)
-			});
-		},
-		
-		renderControls: function() {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			Globals.debug("renderControls", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			
-			$('#back_btn').prop('disabled', true);
-			$('#forward_btn').prop('disabled', true);
-			
-			var history_count = Engine._history.length;
-			var current = Engine._historyIndex + 1;
-			
-			if (Engine.isHuman(Engine._currentPlayerId) || current != history_count) {	
-				if (current == history_count) {
-					$('#end_turn').prop('disabled', false);
-				} else {
-					// don't let player end their turn while they're looking at history
-					$('#end_turn').prop('disabled', true);
-				}
-				
-				$('#history').html(current + ' / ' + history_count);
-				
-				if (current < history_count) {
-					$('#forward_btn').prop('disabled', false);
-				}
-				
-				if (current > 1) {
-					$('#back_btn').prop('disabled', false);
-				}
-				
-			} else {
-				$('#end_turn').prop('disabled', true);
-			}
-		},
-		
-		_renderPlayers: function(state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			Globals.debug("renderPlayers", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			Globals.ASSERT(state instanceof Gamestate);
-			
-			var self = this;
-			state.playerIds().forEach(function(playerId){
-				self._renderPlayer(playerId, state);
-			});
-		},
-		
-		_renderPlayer: function(playerId, state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			Globals.debug("renderPlayer " + playerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-			Globals.ASSERT(state instanceof Gamestate);
-			
-			var player = Player.get(playerId);
-			
-			if (player.countryCount() == 0) {
-				$('#player' + player._id).css({'display': 'none'});
-			} else {
-				
-				$('#player' + player._id).css({'display': 'inline-block'});
-				
-				// Highlight the player's status box
-				if (player == Game.currentPlayer()) {
-					$('#player' + player._id).css({'border': '3px double'});
-				} else {
-					$('#player' + player._id).css({'border': '1px solid'});
-				}
-				
-				// update stats
-				$('#dice' + player._id).html(player._numContiguousCountries);
-		    	$('#stored' + player._id).html(player._storedDice);
-			}
-		},
-		
-		_renderCountry: function (countryId, state, isFighting) {
-			if (Globals.suppress_ui || !this._initialized) {
-	        	return;
-			}
-			
-			if (!stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
-				return;
-			}
-			
-			Globals.debug("renderCountry " + countryId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-			
-			var self = this;
-			isFighting = isFighting || false;
-			
-	        Map.countryHexes(countryId).forEach(function(hexId) {
-	            self._renderHex(Map.getHex(hexId), isFighting);
-	        });
-
-	        var ctr = Map.countryCenter(countryId);
-
-	        self.renderNumberBox(countryId, state);
-
-	        if (Globals.markCountryCenters) {
-	            var path = new Path2D();
-	            path.moveTo(ctr[0] - 4, ctr[1] - 4);
-	            path.lineTo(ctr[0] + 4, ctr[1] + 4);
-	            path.closePath();
-	            self._context.strokeStyle = "black";
-	            self._context.lineWidth = 2;
-	            self._context.stroke(path);
-
-	            path = new Path2D();
-	            path.moveTo(ctr[0] - 4, ctr[1] + 4);
-	            path.lineTo(ctr[0] + 4, ctr[1] - 4);
-	            path.closePath();
-	            self._context.strokeStyle = "black";
-	            self._context.lineWidth = 2;
-	            self._context.stroke(path);
-	        }
-
-	        if (Globals.drawCountryConnections) {
-	            Map.adjacentCountries(countryId).forEach(function(country) {
-	                var otherCenter = Map.countryCenter(country.id());
-	                var path = new Path2D();
-	                path.moveTo(ctr[0], ctr[1]);
-	                path.lineTo(otherCenter[0], otherCenter[1]);
-	                path.closePath();
-	                self._context.strokeStyle = "black";
-	                self._context.lineWidth = 1;
-	                self._context.stroke(path);
-	            });
-	        }
-	
-			// number boxes can overlap between adjacent countries. Redraw
-			// them for all our neighbors
-			Map.adjacentCountries(countryId).forEach(function(neighborId) {
-				self.renderNumberBox(neighborId, state);
-			});
-		},
-		
-		
 		/*
 			@callback: function done(){}
 		*/
@@ -274,7 +124,7 @@ $(function(){
 			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
 	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 			
-			self.resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
+			self._resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
 	
 			// roll attacker
 			Globals.debug("render attacker", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
@@ -347,7 +197,7 @@ $(function(){
 				return;
 			}
 			
-			this.resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
+			this._resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
 			
 			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
 	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
@@ -374,7 +224,159 @@ $(function(){
 			this._renderCountry(toCountry.id(), state, true);
 		},
 		
-		resetRollDivs: function(fromCountry, toCountry, fromRollArray, toRollArray) {
+		renderControls: function() {
+			if (Globals.suppress_ui || !this._initialized) {
+				return;
+			}
+			Globals.debug("renderControls", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+			
+			$('#back_btn').prop('disabled', true);
+			$('#forward_btn').prop('disabled', true);
+			
+			var history_count = Engine._history.length;
+			var current = Engine._historyIndex + 1;
+			
+			if (Engine.isHuman(Engine._currentPlayerId) || current != history_count) {	
+				if (current == history_count) {
+					$('#end_turn').prop('disabled', false);
+				} else {
+					// don't let player end their turn while they're looking at history
+					$('#end_turn').prop('disabled', true);
+				}
+				
+				$('#history').html(current + ' / ' + history_count);
+				
+				if (current < history_count) {
+					$('#forward_btn').prop('disabled', false);
+				}
+				
+				if (current > 1) {
+					$('#back_btn').prop('disabled', false);
+				}
+				
+			} else {
+				$('#end_turn').prop('disabled', true);
+			}
+		},
+		
+		_renderMap: function(state) {
+			if (Globals.suppress_ui || !this._initialized) {
+				return;
+			}
+			Globals.debug("renderMap", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+			Globals.ASSERT(state instanceof Gamestate);
+			var self = this;
+			
+			state.countryIds().forEach(function(countryId) {
+				self._renderCountry(countryId, state)
+			});
+		},
+		
+		_renderPlayers: function(state) {
+			if (Globals.suppress_ui || !this._initialized) {
+				return;
+			}
+			Globals.debug("renderPlayers", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+			Globals.ASSERT(state instanceof Gamestate);
+			
+			var self = this;
+			state.playerIds().forEach(function(playerId){
+				self._renderPlayer(playerId, state);
+			});
+		},
+		
+		_renderPlayer: function(playerId, state) {
+			if (Globals.suppress_ui || !this._initialized) {
+				return;
+			}
+			Globals.debug("renderPlayer " + playerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			Globals.ASSERT(state instanceof Gamestate);
+			
+			var player = Player.get(playerId);
+			
+			if (player.countryCount() == 0) {
+				$('#player' + player._id).css({'display': 'none'});
+			} else {
+				
+				$('#player' + player._id).css({'display': 'inline-block'});
+				
+				// Highlight the player's status box
+				if (player == Game.currentPlayer()) {
+					$('#player' + player._id).css({'border': '3px double'});
+				} else {
+					$('#player' + player._id).css({'border': '1px solid'});
+				}
+				
+				// update stats
+				$('#dice' + player._id).html(player._numContiguousCountries);
+		    	$('#stored' + player._id).html(player._storedDice);
+			}
+		},
+		
+		_renderCountry: function (countryId, state, isFighting) {
+			if (Globals.suppress_ui || !this._initialized) {
+	        	return;
+			}
+			
+			if (!stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
+				return;
+			}
+			
+			Globals.debug("renderCountry " + countryId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			
+			var self = this;
+			isFighting = isFighting || false;
+			
+	        Map.countryHexes(countryId).forEach(function(hexId) {
+	            self._renderHex(Map.getHex(hexId), isFighting);
+	        });
+
+	        var ctr = Map.countryCenter(countryId);
+
+	        self._renderNumberBox(countryId, state);
+
+	        if (Globals.markCountryCenters) {
+	            var path = new Path2D();
+	            path.moveTo(ctr[0] - 4, ctr[1] - 4);
+	            path.lineTo(ctr[0] + 4, ctr[1] + 4);
+	            path.closePath();
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 2;
+	            self._context.stroke(path);
+
+	            path = new Path2D();
+	            path.moveTo(ctr[0] - 4, ctr[1] + 4);
+	            path.lineTo(ctr[0] + 4, ctr[1] - 4);
+	            path.closePath();
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 2;
+	            self._context.stroke(path);
+	        }
+
+	        if (Globals.drawCountryConnections) {
+	            Map.adjacentCountries(countryId).forEach(function(country) {
+	                var otherCenter = Map.countryCenter(country.id());
+	                var path = new Path2D();
+	                path.moveTo(ctr[0], ctr[1]);
+	                path.lineTo(otherCenter[0], otherCenter[1]);
+	                path.closePath();
+	                self._context.strokeStyle = "black";
+	                self._context.lineWidth = 1;
+	                self._context.stroke(path);
+	            });
+	        }
+	
+			// number boxes can overlap between adjacent countries. Redraw
+			// them for all our neighbors
+			Map.adjacentCountries(countryId).forEach(function(neighborId) {
+				self._renderNumberBox(neighborId, state);
+			});
+		},
+		
+		
+		
+		
+		_resetRollDivs: function(fromCountry, toCountry, fromRollArray, toRollArray) {
 			
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
@@ -426,7 +428,7 @@ $(function(){
 		},
 		
 		
-		renderNumberBox: function (countryId, state) {
+		_renderNumberBox: function (countryId, state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
@@ -488,7 +490,7 @@ $(function(){
 	        path.closePath();
 
 
-	        self._context.fillStyle = country ? Renderer.countryDrawColor(country, isFighting) : "white";
+	        self._context.fillStyle = country ? Renderer._countryDrawColor(country, isFighting) : "white";
 	        if (hexToPaint._color) {
 	            self._context.fillStyle = hexToPaint._color;
 	        }
@@ -572,7 +574,7 @@ $(function(){
 			
 		},
 		
-		countryDrawColor: function(country, isFighting) {
+		_countryDrawColor: function(country, isFighting) {
 			if (isFighting) {
 				return "black";
 			} else if (country == Game.mouseOverCountry()) {
@@ -590,7 +592,7 @@ $(function(){
 		    }
 		},
 		
-		setupPlayerDivs: function(playerCount) {
+		_setupPlayerDivs: function(playerCount) {
 			if (Globals.suppress_ui) {
 				return;
 			}
@@ -652,7 +654,7 @@ $(function(){
 			
 		},
 		
-		setupRollDivs: function() {
+		_setupRollDivs: function() {
 
             $('#roll').css({
                 "display": "none",

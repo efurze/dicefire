@@ -39,7 +39,7 @@ var Globals = {
 		},
 		
 	    showNumbers: false,
-		showCountryIds: true,
+		showCountryIds: false,
 	    markHexCenters: false,
 	    markCountryCenters: false,
 	    drawCountryConnections: false,
