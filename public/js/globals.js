@@ -21,9 +21,9 @@ var Globals = {
 					var msg = ""
 					var args = arguments;
 					Object.keys(arguments).forEach(function(key) {
-						console.log(args[key]);
+						msg += args[key] + " ";
 					});
-
+					console.log(msg);
 				}
 				
 			} else {
@@ -39,7 +39,7 @@ var Globals = {
 		},
 		
 	    showNumbers: false,
-		showCountryIds: false,
+		showCountryIds: true,
 	    markHexCenters: false,
 	    markCountryCenters: false,
 	    drawCountryConnections: false,
@@ -61,24 +61,26 @@ Globals.LEVEL = {
 	"TRACE" : 5 
 }
 
-// The order in CHANNEL and channels must match
+// The order in CHANNEL and channels must match. DON'T CHANGE THESE NUMBERS. To change the loglevel, see Globals.channels below
 Globals.CHANNEL = {
 	"ENGINE" : 0,
 	"MAP" : 1,
 	"HEX" : 2,
 	"COUNTRY" : 3,
 	"PLAYER" : 4,
-	"PLYER" : 5
+	"PLYER" : 5,
+	"RENDERER" : 6
 };
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
 Globals.channels = [
-	3, //"ENGINE",
-	3, //"MAP",
-	3, //"HEX",
-	3, //"COUNTRY",
-	3, //"PLAYER"
-	4 //"AI.PLYER"
+	0, //"ENGINE",
+	0, //"MAP",
+	0, //"HEX",
+	0, //"COUNTRY",
+	0, //"PLAYER"
+	0, //"AI.PLYER"
+	0, //"RENDERER"
 ];
 
 

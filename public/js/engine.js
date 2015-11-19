@@ -66,7 +66,7 @@ var Engine = {
 		
 		Player.array().forEach(function(player) {
 			player.updateStatus();
-			Renderer.renderPlayer(player);
+			Renderer.renderPlayer(player.id(), Engine.getState());
 		});
 		
 		//Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
@@ -99,7 +99,7 @@ var Engine = {
 	 		}
 	 		var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
 			country.addDie();
-			Renderer.renderCountry(country);
+			Renderer.renderCountry(country.id(), Engine.getState());
 		}
 	},
 
@@ -119,7 +119,7 @@ var Engine = {
 				}, 0);
 		} 
 
-		Renderer.renderPlayers(Player._array);
+		Renderer.renderPlayers(Engine.getState());
 		Renderer.renderControls();
 	},
 
@@ -128,7 +128,7 @@ var Engine = {
 		var cur = Engine._currentPlayerId;
 		var player = Player.get(Engine._currentPlayerId);
 		Engine.addDiceToPlayer(player, player._numContiguousCountries);
-		Renderer.renderPlayer(player);
+		Renderer.renderPlayer(player.id(), Engine.getState());
 		
 		// go to the next player that hasn't lost
 		do {
@@ -202,9 +202,6 @@ var Engine = {
 
 			self._attackInProgress = false;
 
-			fromCountry.setIsFighting(false);
-			toCountry.setIsFighting(false);
-
 			// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
 			// goes down to 1 die.
 			fromCountry.setNumDice(1);
@@ -223,7 +220,7 @@ var Engine = {
 				
 				// this defeat may have knocked oldOwner out.
 				// Redraw its info
-				Renderer.renderPlayer(oldOwner);
+				Renderer.renderPlayer(oldOwner.id(), Engine.getState());
 
 				if (fromPlayer.countryCount() == Map.countryCount()) {
 					Engine.gameOver(fromPlayer);

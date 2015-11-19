@@ -18,6 +18,15 @@ var Map = {
 		return this._hexArray[id];
 	},
 	
+	countryHexes: function(countryId) {
+		var country = this.getCountry(countryId);
+		if (country) {
+			return country.hexes();
+		} else {
+			return [];
+		}
+	},
+	
 	getCountry: function(id) {
 		if (id < 0 || id >= this._countryArray.length) {
 			return null;
@@ -247,6 +256,22 @@ var Map = {
 	        }
 	    }
 	    Globals.debug("Can't find an adjacent country", Globals.LEVEL.ERROR, Globals.CHANNEL.MAP);
+	},
+	
+	countryCenter: function(countryId) {
+	    var center = [0, 0];
+		var hexIds = this.countryHexes(countryId);
+	    hexIds.forEach(function(hexId) {
+			var hex = Map.getHex(hexId);
+	        var hexCenter = hex.center();
+	        center[0] += hexCenter[0];
+	        center[1] += hexCenter[1];            
+	    })
+
+	    center[0] /= hexIds.length;
+	    center[1] /= hexIds.length;
+
+	    return center;
 	},
 	
 	fromMousePos: function(x, y) {

@@ -6,7 +6,6 @@ var Country = function(id) {
         this._ownerId = -1;
         
         this._numDice = 1;
-        this._isFighting = false;
 
 		Globals.debug("Constructed country", this, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
     };
@@ -71,8 +70,6 @@ Country.prototype.setNumDice = function(num) {
 	Globals.ASSERT(num > 0 && num <= 8);
 	this._numDice = num;
 };
-Country.prototype.setIsFighting = function(isFighting) { this._isFighting = isFighting;};
-Country.prototype.isFighting = function() {return this._isFighting;}
 
 Country.prototype.id = function() { return this._id; };
 Country.prototype.ownerId = function() { return this._ownerId; };
@@ -88,25 +85,6 @@ Country.prototype.addDie = function() {
 	}
 }
 
-
-Country.prototype.borderColor = function() {
-    return this._isFighting ? "red" : "black";
-};
-
-Country.prototype.center = function() {
-    var center = [0, 0];
-    this._hexIds.forEach(function(hexId) {
-		var hex = Map.getHex(hexId);
-        var hexCenter = hex.center();
-        center[0] += hexCenter[0];
-        center[1] += hexCenter[1];            
-    })
-
-    center[0] /= this._hexIds.length;
-    center[1] /= this._hexIds.length;
-
-    return center;
-};
 
 
 

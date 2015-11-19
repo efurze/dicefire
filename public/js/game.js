@@ -44,13 +44,13 @@ $(function() {
                     var prevCountry = Game._mouseOverCountry;
                     Game._mouseOverCountry = country;                    
                     if (prevCountry) {
-                        Renderer.renderCountry(prevCountry);
+                        Renderer.renderCountry(prevCountry.id(), Engine.getState());
                     }
                     if (country) {
 						if ((Player.get(country.ownerId()) == currentPlayer && country.numDice() > 1) || 
                            (Game._selectedCountry != null && currentPlayer.canAttack(Game._selectedCountry, country))) {
 							Game._canvas.style.cursor = 'pointer';
-                        	Renderer.renderCountry(Game._mouseOverCountry); 
+                        	Renderer.renderCountry(Game._mouseOverCountry.id(), Engine.getState()); 
                     	} else {
                         	Game._canvas.style.cursor = 'default';                        
 						}
@@ -60,7 +60,7 @@ $(function() {
                 if (Game._mouseOverCountry) {
                     var prevCountry = Engine._mouseOverCountry;
                     Engine._mouseOverCountry = null;                   
-                    Renderer.renderCountry(prevCountry);
+                    Renderer.renderCountry(prevCountry.id(), Engine.getState());
                 }
                 Game._canvas.style.cursor = 'default';
             }
@@ -70,7 +70,7 @@ $(function() {
             if (Game._mouseOverCountry) {
                 var country = Game._mouseOverCountry;
                 Game._mouseOverCountry = null;
-                Renderer.renderCountry(country);
+                Renderer.renderCountry(country.id(), Engine.getState());
             }
         },
 
@@ -81,7 +81,7 @@ $(function() {
 				if (Game._selectedCountry) {
 					var prevCountry = Game._selectedCountry;
 					Game._selectedCountry = null;
-					Renderer.renderCountry(prevCountry);
+					Renderer.renderCountry(prevCountry.id(), Engine.getState());
 				}
 				return;
 			}
@@ -94,14 +94,14 @@ $(function() {
                         // Select and deselect of countries owned by this user.                  
                         if (Game._selectedCountry == country) {
                             Game._selectedCountry = null;
-                            Renderer.renderCountry(country);
+                            Renderer.renderCountry(country.id(), Engine.getState());
                         } else {
                             var oldCountry = Game._selectedCountry;
                             Game._selectedCountry = country;
                             if (oldCountry) {
-                                Renderer.renderCountry(oldCountry);
+                                Renderer.renderCountry(oldCountry.id(), Engine.getState());
                             }
-                            Renderer.renderCountry(country);
+                            Renderer.renderCountry(country.id(), Engine.getState());
                         }
                     } else {
                         // Attacks.
@@ -128,7 +128,8 @@ $(function() {
 					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),
 						Map.getCountry(Engine._previousAttack.toCountryId),
 						Engine._previousAttack.fromRollArray,
-						Engine._previousAttack.toRollArray);
+						Engine._previousAttack.toRollArray,
+						Engine.getState());
 						Renderer.renderControls();
 				}
 			}
@@ -144,7 +145,8 @@ $(function() {
 					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),
 						Map.getCountry(Engine._previousAttack.toCountryId),
 						Engine._previousAttack.fromRollArray,
-						Engine._previousAttack.toRollArray);				
+						Engine._previousAttack.toRollArray,
+						Engine.getState());				
 						Renderer.renderControls();
 				}
 			}

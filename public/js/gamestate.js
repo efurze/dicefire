@@ -1,6 +1,6 @@
 "use strict"
 
-
+var SHA1 = new Hashes.SHA1();
 
 var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 	var self = this;
@@ -115,4 +115,21 @@ Gamestate.prototype.previousAttack = function() {
 		};
 	} 
 	return JSON.parse(JSON.stringify(this._previousAttack));
+};
+
+Gamestate.prototype.playerHash = function(playerId) {
+	if (this._players && this._players[playerId]) {
+		return SHA1.hex(this._players[playerId]);
+	} else {
+		return -1;
+	}
+};
+
+
+Gamestate.prototype.countryHash = function(countryId) {
+	if (this._countries[countyId]) {
+		return SHA1.hex(_countries[countyId]);
+	} else {
+		return -1;
+	}
 };
