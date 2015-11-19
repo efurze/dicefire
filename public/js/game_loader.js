@@ -34,7 +34,7 @@ $(function() {
 			Engine.init(Game._players.map(function(p){return p;}));
 			Engine.setup(Game._initialMap, Game._initialState);
 			Renderer.clearAll();
-			Renderer.render();
+			Renderer.render(Engine.getState());
 			$('#start_test').click(Game.start);
 		},
 		

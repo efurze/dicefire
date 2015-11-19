@@ -66,9 +66,10 @@ var Engine = {
 		
 		Player.array().forEach(function(player) {
 			player.updateStatus();
-			Renderer.renderPlayer(player.id(), Engine.getState());
+			//Renderer.renderPlayer(player.id(), Engine.getState());
 		});
 		
+		Renderer.render(Engine.getState());
 		//Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	},
 	
@@ -99,7 +100,8 @@ var Engine = {
 	 		}
 	 		var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
 			country.addDie();
-			Renderer.renderCountry(country.id(), Engine.getState());
+			//Renderer.renderCountry(country.id(), Engine.getState());
+			Renderer.render(Engine.getState());
 		}
 	},
 
@@ -119,8 +121,9 @@ var Engine = {
 				}, 0);
 		} 
 
-		Renderer.renderPlayers(Engine.getState());
-		Renderer.renderControls();
+		//Renderer.renderPlayers(Engine.getState());
+		//Renderer.renderControls();
+		Renderer.render(Engine.getState());
 	},
 
 	endTurn: function(event) {
@@ -128,7 +131,8 @@ var Engine = {
 		var cur = Engine._currentPlayerId;
 		var player = Player.get(Engine._currentPlayerId);
 		Engine.addDiceToPlayer(player, player._numContiguousCountries);
-		Renderer.renderPlayer(player.id(), Engine.getState());
+		//Renderer.renderPlayer(player.id(), Engine.getState());
+		Renderer.render(Engine.getState());
 		
 		// go to the next player that hasn't lost
 		do {
@@ -176,6 +180,14 @@ var Engine = {
 		if (fromCountry.numDice() < 2) {
 			ok = false;
 		}
+		
+		if (fromCountry.ownerId() == toCountry.ownerId()) {
+			ok = false;
+		}
+		
+		if (fromCountry.id() == toCountry.id()) {
+			ok = false;
+		}
 
 		if (!ok) {
 			Globals.ASSERT(false);
@@ -198,7 +210,7 @@ var Engine = {
 			toRollArray: toRollArray
 		}
 
-		Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, function done() {
+		Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, Engine.getState(), function done() {
 
 			self._attackInProgress = false;
 
@@ -220,7 +232,8 @@ var Engine = {
 				
 				// this defeat may have knocked oldOwner out.
 				// Redraw its info
-				Renderer.renderPlayer(oldOwner.id(), Engine.getState());
+				//Renderer.renderPlayer(oldOwner.id(), Engine.getState());
+				Renderer.render(Engine.getState());
 
 				if (fromPlayer.countryCount() == Map.countryCount()) {
 					Engine.gameOver(fromPlayer);
@@ -232,7 +245,8 @@ var Engine = {
 			// attack is done, save to history
 			Engine.pushHistory();
 			
-			Renderer.renderControls();
+			//Renderer.renderControls();
+			Renderer.render(Engine.getState());
 
 			callback(fromRoll > toRoll);
 		});

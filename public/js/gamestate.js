@@ -127,8 +127,8 @@ Gamestate.prototype.playerHash = function(playerId) {
 
 
 Gamestate.prototype.countryHash = function(countryId) {
-	if (this._countries[countyId]) {
-		return SHA1.hex(_countries[countyId]);
+	if (this._countries[countryId]) {
+		return SHA1.hex(JSON.stringify(this._countries[countryId]));
 	} else {
 		return -1;
 	}

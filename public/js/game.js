@@ -18,7 +18,7 @@ $(function() {
 			
 			Engine.setup();
 			
-			Renderer.render();
+			Renderer.render(Engine.getState());
 			
 			$(Game._canvas).mousemove(Game.mouseMove);
             $(Game._canvas).mouseleave(Game.mouseLeave);
@@ -42,7 +42,7 @@ $(function() {
 
                 if (country != Game._mouseOverCountry) {
                     var prevCountry = Game._mouseOverCountry;
-                    Game._mouseOverCountry = country;                    
+                    Game._mouseOverCountry = country;
                     if (prevCountry) {
                         Renderer.renderCountry(prevCountry.id(), Engine.getState());
                     }
@@ -122,7 +122,7 @@ $(function() {
 			
 			if (Engine._historyIndex > 0) {
 				Engine.setHistoryIndex(Engine._historyIndex - 1);
-				Renderer.render();
+				Renderer.render(Engine.getState());
 				
 				if (!Engine.isHistoryCurrent()) {
 					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),
@@ -139,7 +139,7 @@ $(function() {
 			if (Engine._historyIndex < Engine._history.length - 1) {
 				
 				Engine.setHistoryIndex(Engine._historyIndex + 1);
-				Renderer.render();
+				Renderer.render(Engine.getState());
 				
 				if (!Engine.isHistoryCurrent()) {	
 					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),

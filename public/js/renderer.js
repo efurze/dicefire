@@ -10,6 +10,11 @@ var stateHash = {
 	_players: {},
 	_countries: {},
 	
+	reset: function() {
+		this._players = {};
+		this._countries = {};
+	},
+	
 	hasPlayerChanged: function(playerId, hash) {
 		if (this._players[playerId] === hash) {
 			return false;
@@ -19,7 +24,10 @@ var stateHash = {
 		}
 	},
 	
-	hasCountryChanged: function(countryId, hash) {
+	hasCountryChanged: function(countryId, isFighting, hash) {
+		if (isFighting) {
+			hash += 1
+		}
 		if (this._countries[countryId] === hash) {
 			return false;
 		} else {
@@ -56,20 +64,21 @@ $(function(){
 				return;
 			}
 			
+			Globals.debug("clearAll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 			this._context.clearRect(0,0,2000,2000);
+			stateHash.reset();
 		},
 		
-		render: function() {
+		render: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			Globals.debug("render()", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			var state = Engine.getState();
+			Globals.ASSERT(state instanceof Gamestate);
 			
 			this.renderMap(state);
 			this.renderPlayers(state);
 			this.renderControls();
-			this._lastRenderedState = state.clone();
 		},
 		
 		renderMap: function(state) {
@@ -161,18 +170,79 @@ $(function(){
 			}
 		},
 		
+		renderCountry: function (countryId, state, isFighting) {
+			if (Globals.suppress_ui || !this._initialized) {
+	        	return;
+			}
+			
+			if (!stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
+				return;
+			}
+			
+			Globals.debug("renderCountry " + countryId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			
+			var self = this;
+			isFighting = isFighting || false;
+			
+	        Map.countryHexes(countryId).forEach(function(hexId) {
+	            self.renderHex(Map.getHex(hexId), isFighting);
+	        });
+
+	        var ctr = Map.countryCenter(countryId);
+
+	        self.renderNumberBox(countryId, state);
+
+	        if (Globals.markCountryCenters) {
+	            var path = new Path2D();
+	            path.moveTo(ctr[0] - 4, ctr[1] - 4);
+	            path.lineTo(ctr[0] + 4, ctr[1] + 4);
+	            path.closePath();
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 2;
+	            self._context.stroke(path);
+
+	            path = new Path2D();
+	            path.moveTo(ctr[0] - 4, ctr[1] + 4);
+	            path.lineTo(ctr[0] + 4, ctr[1] - 4);
+	            path.closePath();
+	            self._context.strokeStyle = "black";
+	            self._context.lineWidth = 2;
+	            self._context.stroke(path);
+	        }
+
+	        if (Globals.drawCountryConnections) {
+	            Map.adjacentCountries(countryId).forEach(function(country) {
+	                var otherCenter = Map.countryCenter(country.id());
+	                var path = new Path2D();
+	                path.moveTo(ctr[0], ctr[1]);
+	                path.lineTo(otherCenter[0], otherCenter[1]);
+	                path.closePath();
+	                self._context.strokeStyle = "black";
+	                self._context.lineWidth = 1;
+	                self._context.stroke(path);
+	            });
+	        }
+	
+			// number boxes can overlap between adjacent countries. Redraw
+			// them for all our neighbors
+			Map.adjacentCountries(countryId).forEach(function(neighborId) {
+				self.renderNumberBox(neighborId, state);
+			});
+		},
+		
 		
 		/*
 			@callback: function done(){}
 		*/
-		renderAttack: function(fromCountry, toCountry, fromRollArray, toRollArray, callback) {
+		renderAttack: function(fromCountry, toCountry, fromRollArray, toRollArray, state, callback) {
 		
-			if (Globals.suppress_ui || !this._initialized) {
+			if (Globals.suppress_ui || !this._initialized || !state) {
 				callback();
 				return;
 			}
+			Globals.debug("renderAttack", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			
 			var self = this;
-			var state = Engine.getState();
 			Renderer.renderControls();
 			
 			var fromPlayer = Player.get(fromCountry.ownerId());
@@ -191,6 +261,7 @@ $(function(){
 			self.resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
 	
 			// roll attacker
+			Globals.debug("render attacker", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			self.renderCountry(fromCountry.id(), state, true);
 	        
 			if (Globals.play_sounds) {
@@ -212,6 +283,7 @@ $(function(){
 			}
 			
 			function renderDefendRoll() {
+				Globals.debug("render defender", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 				$('#righttotal').html(toRoll);
 	            $('#rightroll').css({
 	                "display": "inline-block"
@@ -220,7 +292,7 @@ $(function(){
 			}
 			
 			function renderVerdict() {
-				
+				Globals.debug("render verdict", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 	        	if (fromRoll > toRoll) {
 					// attacker wins
 	                if (Globals.play_sounds) {
@@ -378,61 +450,6 @@ $(function(){
 		},
 		
 
-		renderCountry: function (countryId, state, isFighting) {
-			if (Globals.suppress_ui || !this._initialized) {
-	        	return;
-			}
-			Globals.debug("renderCountry " + countryId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-			Globals.ASSERT(state instanceof Gamestate);
-			
-			var self = this;
-			isFighting = isFighting || false;
-			
-	        Map.countryHexes(countryId).forEach(function(hexId) {
-	            self.renderHex(Map.getHex(hexId), isFighting);
-	        });
-
-	        var ctr = Map.countryCenter(countryId);
-
-	        self.renderNumberBox(countryId, state);
-
-	        if (Globals.markCountryCenters) {
-	            var path = new Path2D();
-	            path.moveTo(ctr[0] - 4, ctr[1] - 4);
-	            path.lineTo(ctr[0] + 4, ctr[1] + 4);
-	            path.closePath();
-	            self._context.strokeStyle = "black";
-	            self._context.lineWidth = 2;
-	            self._context.stroke(path);
-
-	            path = new Path2D();
-	            path.moveTo(ctr[0] - 4, ctr[1] + 4);
-	            path.lineTo(ctr[0] + 4, ctr[1] - 4);
-	            path.closePath();
-	            self._context.strokeStyle = "black";
-	            self._context.lineWidth = 2;
-	            self._context.stroke(path);
-	        }
-
-	        if (Globals.drawCountryConnections) {
-	            Map.adjacentCountries(countryId).forEach(function(country) {
-	                var otherCenter = Map.countryCenter(country.id());
-	                var path = new Path2D();
-	                path.moveTo(ctr[0], ctr[1]);
-	                path.lineTo(otherCenter[0], otherCenter[1]);
-	                path.closePath();
-	                self._context.strokeStyle = "black";
-	                self._context.lineWidth = 1;
-	                self._context.stroke(path);
-	            });
-	        }
-	
-			// number boxes can overlap between adjacent countries. Redraw
-			// them for all our neighbors
-			Map.adjacentCountries(countryId).forEach(function(neighborId) {
-				self.renderNumberBox(neighborId, state);
-			});
-		},
 
 		renderHex: function (hexToPaint, isFighting) {
 			if (Globals.suppress_ui || !this._initialized) {
@@ -558,7 +575,7 @@ $(function(){
 		},
 		
 		setupPlayerDivs: function(playerCount) {
-			if (Globals.suppress_ui || !this._initialized) {
+			if (Globals.suppress_ui) {
 				return;
 			}
 			
