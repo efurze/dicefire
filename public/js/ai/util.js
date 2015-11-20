@@ -10,6 +10,10 @@ var Attack = function(fromId, toId) {
 	}
 };
 
+Attack.prototype.clone = function() {
+	return new Attack(this._from, this._to);
+};
+
 Attack.prototype.clear = function() {
 	this._from = -1;
 	this._to = -1;
@@ -51,7 +55,14 @@ var Move = function(attack) {
 		this._attacks.push(attack);
 	}
 };
-	
+
+Move.prototype.clone = function() {
+	var copy = new Move();
+	for(var i=0; i < this._attacks.length; i++) {
+		copy.push(this._attacks[i].clone());
+	}
+	return copy;
+}	
 
 Move.prototype.length = function() {return this._attacks.length;}
 
@@ -113,7 +124,7 @@ window.AI.Util =  {
 		var state = state.clone();
 		
 		// add 1 die to each country for currentPlayer
-		Object.keys(state.playerCountries()[state.currentPlayerId()]).forEach(function(id) {
+		Object.keys(state.playerCountries(state.currentPlayerId())).forEach(function(id) {
 			id = Number(id);
 			var numDice = state.countryDice(id) + 1;
 			state.setCountryDice(id, Math.min(numDice, 8));
@@ -128,24 +139,7 @@ window.AI.Util =  {
 		state.setCurrentPlayerId(current);
 		return state;
 	},
-	
-	countriesForPlayers: function(state) {
-		Globals.ASSERT(state && state instanceof Gamestate);
-		var playerCountries = {};
-		var playerIds = state.playerIds();
-		playerIds.forEach(function(playerId) {
-			var countryIds = state.countryIds();
-			countryIds.forEach(function(id){
-				if (!playerCountries[state.countryOwner(id)]) {
-					playerCountries[state.countryOwner(id)] = {};
-				}
-				playerCountries[state.countryOwner(id)][id] = Number(id);
-			});
-		});
 		
-		return playerCountries;
-	},
-	
 	// returns odds of success
 	// @attack is an Attack object
 	attackOdds: function(state, attack) {
@@ -207,15 +201,9 @@ window.AI.Util =  {
 		Globals.ASSERT(fromPlayer != toPlayer);
 		Globals.ASSERT(fromPlayer == state.currentPlayerId());
 		
-		var playerCountries = state.playerCountries();
-		
+
 		if (success) {
-			
 			state.setCountryDice(attack.to(), state.countryDice(attack.from()) - 1);
-			// country transfers ownership
-			state.setCountryOwner(attack.to(), fromPlayer);
-			playerCountries[fromPlayer][attack.to()] = attack.to();
-			delete playerCountries[toPlayer][attack.to()];
 			
 			// update contiguous country count
 			state.setNumContiguous(toPlayer, self.maxIslandSize(toPlayer, state));
@@ -248,8 +236,8 @@ window.AI.Util =  {
 					}, 0);
 		};
 
-		var playerCountries = state.playerCountries();
-		Object.keys(playerCountries[playerId]).forEach(function(countryId) {
+		var playerCountries = state.playerCountries(playerId);
+		Object.keys(playerCountries).forEach(function(countryId) {
 			countryId = Number(countryId);
 			var islandSize = traverse(countryId);
 

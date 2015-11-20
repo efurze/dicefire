@@ -7,7 +7,6 @@ var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 	self._currentPlayerId = typeof currentPlayerId === 'undefined' ? -1 : currentPlayerId;
 	self._players = {};
 	self._countries = {};
-	self._playerCountries = {};
 	self._previousAttack = {};
 	if (players) {
 		players.forEach(function(player) {
@@ -17,7 +16,6 @@ var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 				storedDice: player.storedDice(),
 				numContiguousCountries: player.numContiguousCountries()
 			};
-			self._playerCountries[player.id()] = {};
 		});
 	}
 	if (countries) {
@@ -27,7 +25,6 @@ var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 				owner: country.ownerId(),
 				numDice: country.numDice()
 			};
-			//self._playerCountries[country.owner().id()][country.id()] = country.id();
 		});
 	}
 	if (previousAttack) {
@@ -50,7 +47,6 @@ Gamestate.prototype.clone = function() {
 	copy._currentPlayerId = this._currentPlayerId;
 	copy._players = JSON.parse(JSON.stringify(this._players));
 	copy._countries = JSON.parse(JSON.stringify(this._countries));
-	copy._playerCountries = JSON.parse(JSON.stringify(this._playerCountries));
 	copy._previousAttack = JSON.parse(JSON.stringify(this._previousAttack));
 	return copy;
 };
@@ -61,10 +57,20 @@ Gamestate.prototype.toString = function() {
 
 
 
-Gamestate.prototype.playerCountries = function() {
-	return this._playerCountries;
+Gamestate.prototype.playerCountries = function(playerId) {
+	var self = this;
+	var ret = {};
+	var last = -1;
+	Object.keys(self._countries).forEach(function(countryId) {
+		countryId = Number(countryId);
+		Globals.ASSERT(last < countryId);
+		last = countryId;
+		if (self._countries[countryId].owner == playerId) {
+			ret[countryId] = countryId;
+		};
+	});
+	return ret;
 };
-Gamestate.prototype.setPlayerCountries = function(playerCountries) {this._playerCountries = playerCountries;};
 
 Gamestate.prototype.playerIds = function() {return Object.keys(this._players);};
 Gamestate.prototype.players = function() {return this._players;};
@@ -119,7 +125,7 @@ Gamestate.prototype.previousAttack = function() {
 
 Gamestate.prototype.playerHash = function(playerId) {
 	if (this._players && this._players[playerId]) {
-		return JSON.stringify(SHA1.hex(JSON.stringify(this._players[playerId])));
+		return SHA1.hex(JSON.stringify(this._players[playerId]));
 	} else {
 		return -1;
 	}
@@ -128,8 +134,12 @@ Gamestate.prototype.playerHash = function(playerId) {
 
 Gamestate.prototype.countryHash = function(countryId) {
 	if (this._countries[countryId]) {
-		return JSON.stringify(SHA1.hex(JSON.stringify(this._countries[countryId])));
+		return SHA1.hex(JSON.stringify(this._countries[countryId]));
 	} else {
 		return -1;
 	}
+};
+
+Gamestate.prototype.countriesHash = function() {
+	return SHA1.hex(JSON.stringify(this._countries));
 };

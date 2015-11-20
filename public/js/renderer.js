@@ -1,8 +1,5 @@
 "use strict"
 
-if (!$) {
-	var $ = function(){};
-}
 
 
 var stateHash = {

@@ -93,7 +93,7 @@ GameRepeater.prototype.simulateGame = function() {
 	Engine.setup();
 	Renderer.clearAll();
 	
-	Renderer.render();
+	Renderer.render(Engine.getState());
 	
 	Engine.startTurn(0);
 };
@@ -159,7 +159,7 @@ $(function() {
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
-			Globals.suppress_ui = 1;
+			Globals.suppress_ui = 0;
 			$('#start_test').click(Game.start);  
 		},
 		
@@ -178,7 +178,7 @@ $(function() {
 			//var runner = new runAllPlayerCounts(AI.Aggressive, 500);
 			//runner.start();
 			
-			var runner = new GameRepeater(Game._players, 100);
+			var runner = new GameRepeater(Game._players, 10);
 			runner.start(Game.simulationDone);
 		},
 	};		
