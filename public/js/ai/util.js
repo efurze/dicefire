@@ -157,6 +157,46 @@ window.AI.Util =  {
 		}
 	},
 	
+	/*
+	 Loops through all countries owned by @state.currentPlayerId.
+	 returns a list of all attacks that have at least a @threshold chance of success:
+		@return = array of Attack objects
+	*/
+	findAllAttacks: function(state, threshold) {
+		Globals.ASSERT(state);
+		//Globals.debug("Find attacks for player " + state.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		var threshold = threshold || 0.44;
+		var attacks = [];
+		
+		// loop over all possible attacks, filter out the ones that are too improbable
+		Object.keys(state.playerCountries(state.currentPlayerId())).forEach(function(cid) {
+			var countryId = Number(cid);
+			Globals.ASSERT(state.countryOwner(countryId) == state.currentPlayerId());
+
+			if (state.countryDice(countryId) < 2) {
+				return;
+			}
+			// for each country, loop through all adjacent enemies
+			var neighbors = Map.adjacentCountries(countryId).filter(function(neighbor) {
+				return (state.countryOwner(neighbor) != state.currentPlayerId())
+			});
+			//Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			neighbors.forEach(function (neighbor) {
+				Globals.ASSERT (state.countryOwner(neighbor) != state.currentPlayerId());
+				
+				var attack = new Attack(countryId, neighbor);
+				if (util.attackOdds(state, attack) >= threshold) {
+					//Globals.debug("possible attack found", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					attacks.push(attack);
+				} else {
+					//Globals.debug("attack too improbable", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				}
+			});	
+		});
+		//Globals.debug("returning attacks ", Attack.arrayString(attacks), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		return attacks;
+	},
+	
 	applyMove: function(next, state) {
 		Globals.ASSERT(next instanceof Move || next instanceof Attack);
 		Globals.ASSERT(state && state instanceof Gamestate);

@@ -38,11 +38,9 @@
 	window.AI.Plyer =  function (id) {
 		
 		this._myId = id;
-		this._plyDepth = 0; // 0 = 1-ply
 		this._MAX_PLIES = 1;
 		this._interface = null;
 		this._plyTracker = [];
-		this._stateHash = {};
 	};
 		
 	window.AI.Plyer.getName = function() {
@@ -61,7 +59,6 @@
 		Globals.debug("**STARTING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		var self = this;
 		self._interface = iface;
-		self._memoHash = {};
 		var state = iface.getState();
 		
 		Globals.ASSERT(self._myId == state.currentPlayerId());
@@ -70,10 +67,9 @@
 		Globals.debug("Gamestate: ", JSON.stringify(state), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		self.logEval(state);
 		
-		this._stateHash = {};
 		self._plyTracker = [];
 		self._plyTracker.length = self._MAX_PLIES;
-		var moveSequence = self.bestMove(state);//self.bestMoveFromState(state);
+		var moveSequence = self.bestMove(state);
 		//Globals.debug("Positions evaluated at each ply: ", self._plyTracker, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		self.makeMoves(moveSequence);
 	};
@@ -94,7 +90,7 @@
 		// pop first move off - skip over any nonmoves or 
 		// moves we can't make because we lost an earlier attack
 		var attack = new Attack();
-		while (move.hasMoreAttacks() && attack.isEmpty()) {
+		while (move && move.hasMoreAttacks() && attack.isEmpty()) {
 			attack = move.pop();
 			if (state.countryOwner(attack.from()) != self._myId) {
 				Globals.debug("Country " + attack.from() + " doesn't belong to us, skipping move " + attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
@@ -103,7 +99,7 @@
 		}
 		
 		// TODO: I think this is wrong
-		if (!move.hasMoreAttacks() && attack.isEmpty()) {
+		if (!move || (!move.hasMoreAttacks() && attack.isEmpty())) {
 			self.finishTurn();
 			return;
 		}			
@@ -140,27 +136,10 @@
 	
 	window.AI.Plyer.prototype.bestMove = function(state) {
 		var self = this;
-		self._stateHash = {};
-		self._duplicates = 0;
-		var moves = self.findAllMoves(state, 4);
+
+		var moves = self.findAllGreedyMoves(state, 10);
 		Globals.debug("Found " + moves.length + " moves", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		Globals.debug(self._duplicates + " ignored duplicates", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		
-		/*
-		var finalState;
-		var redundancyCount = 0;
-		for(var i=0; i < moves.length; i++) {
-			finalState = util.applyMove(moves[i], state);
-			var hash = finalState.countriesHash();
-			if (self._stateHash.hasOwnProperty(hash)) {
-				redundancyCount++;
-			} else {
-				self._stateHash[hash] = true;
-			}
-		}
-		Globals.debug(redundancyCount + " of those moves are duplicates", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		*/
-		
+		Globals.debug(moves, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		
 		
 		var maxIndex = 0;
@@ -186,17 +165,9 @@
 		length = length || 1;
 		var self = this;
 		var moves_ary = [];
-		
-		var hash = SHA1.hex(JSON.stringify(state.playerCountries(state.currentPlayerId())));
-		if (self._stateHash.hasOwnProperty(hash)) {
-			self._duplicates++;
-			//return [];
-		} else {
-			self._stateHash[hash] = true;
-		}
-		
+
 		var attacks = this.findAllAttacks(state);
-		
+
 		attacks.forEach(function(attack) {
 			moves_ary.push(new Move(attack));
 			if (length > 1) {
@@ -208,51 +179,44 @@
 				});
 			}
 		});
-		
+
 		return moves_ary;
 	};
+
 	
-	/*
-	 Loops through all countries owned by @state.currentPlayerId.
-	 returns a list of all attacks that have at least a 45% chance of success:
-		@return = array of Attack objects
-	*/
-	window.AI.Plyer.prototype.findAllAttacks = function(state) {
-		Globals.ASSERT(state);
-		//Globals.debug("Find attacks for player " + state.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+	// return array of Move objects
+	window.AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
+		length = length || 1;
 		var self = this;
-		var threshold = 0.45;
-		var attacks = [];
+		var moves_ary = [];
 		
-		// loop over all possible attacks, filter out the ones that are too improbable
-		Object.keys(state.playerCountries(state.currentPlayerId())).forEach(function(cid) {
-			var countryId = Number(cid);
-			Globals.ASSERT(state.countryOwner(countryId) == state.currentPlayerId());
-
-			if (state.countryDice(countryId) < 2) {
-				return;
+		var attacks = util.findAllAttacks(state);
+		if (!attacks || !attacks.length) {
+			return moves_ary;
+		}
+		
+		var max = -1000;
+		var idx = 0;
+		for (var i=0; i < attacks.length; i++) {
+			var score = self.evalMove(new Move(attacks[i]), state);
+			Globals.debug("Score for attack " + attacks[i].toString() + " = " + score, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			if (score > max) {
+				max = score;
+				idx = i;
 			}
-			// for each country, loop through all adjacent enemies
-			var neighbors = self._interface.adjacentCountries(countryId).filter(function(neighbor) {
-				return (state.countryOwner(neighbor) != state.currentPlayerId())
+		}
+		//Globals.debug("Hi score is " + max + " for attack " + attacks[idx].toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		moves_ary.push(new Move(attacks[idx]));
+		if (length > 1) {
+			self.findAllGreedyMoves(util.applyAttack(attacks[idx], state, true), length-1).forEach(function(nextMove) {
+				var move = new Move(attacks[idx]);
+				move.push(nextMove);
+				moves_ary.push(move);
 			});
-			//Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-			neighbors.forEach(function (neighbor) {
-				Globals.ASSERT (state.countryOwner(neighbor) != state.currentPlayerId());
-				
-				var attack = new Attack(countryId, neighbor);
-				if (util.attackOdds(state, attack) >= threshold) {
-					//Globals.debug("possible attack found", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-					attacks.push(attack);
-				} else {
-					//Globals.debug("attack too improbable", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-				}
-			});	
-		});
-		//Globals.debug("returning attacks ", Attack.arrayString(attacks), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		return attacks;
-	};
+		}
 
+		return moves_ary;
+	};
 	
 
 	window.AI.Plyer.prototype.evalMove = function(move, state) {
@@ -302,21 +266,14 @@
 
 	window.AI.Plyer.prototype.evalPlayer = function(state, playerId) {
 		var self = this;
-		
 		if (state.playerHasLost(playerId)) {
 			return 0;
 		}
 		
 		var myCountryCount = util.totalCountries(playerId, state);
 		var myContiguous = state.numContiguous(playerId);
-		var myDice = util.totalDice(playerId, state) + state.storedDice(playerId);
+		var myDice = util.totalDice(playerId, state);
 		
-		return myContiguous;
-		
-		//return ((2*myContiguous) - myCountryCount + myDice);
-		//return myDice;
-		
-		//Globals.debug("Total dice for PlayerId", playerId, "=", myDice, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		
 		if (state.currentPlayerId() == playerId) {
 			// for current player, count on them getting their end-of-turn dice injection
@@ -325,17 +282,7 @@
 			myDice += state.storedDice(playerId);
 		}
 		
-		//return ((3*myContiguous) - myCountryCount);
-		
-		var myAvg = myDice/myCountryCount;
-		
-		var score = 0;
-		score = myAvg * myContiguous + myContiguous;
-		
-		Globals.debug("PlayerId", playerId, "countries", myCountryCount, "contiguous", myContiguous,
-		 				"diceDensity", myAvg, "SCORE", score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-
-		return score;
+		return ((2*myContiguous) - myCountryCount + myDice);		
 	};
 	
 	

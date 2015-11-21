@@ -7,7 +7,7 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
-		_players: [AI.Aggressive, AI.Aggressive],
+		_players: ["human", AI.Plyer],
 		_initialMap: null,
 		_initialState: null,
 		
@@ -36,6 +36,7 @@ $(function() {
 			Renderer.clearAll();
 			Renderer.render(Engine.getState());
 			$('#start_test').click(Game.start);
+			$('#end_turn').click(Engine.endTurn);
 		},
 		
 		ajaxFail: function(err) {
