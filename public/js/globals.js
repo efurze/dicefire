@@ -35,6 +35,7 @@ var Globals = {
 			if (!condition) {
 				console.log("ASSERTION FAILURE");
 				debugger;
+				throw new Error("Assertion Failure");
 			}
 		},
 		

@@ -40,7 +40,6 @@
 		this._myId = id;
 		this._MAX_PLIES = 1;
 		this._interface = null;
-		this._plyTracker = [];
 	};
 		
 	window.AI.Plyer.getName = function() {
@@ -67,10 +66,7 @@
 		Globals.debug("Gamestate: ", JSON.stringify(state), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		self.logEval(state);
 		
-		self._plyTracker = [];
-		self._plyTracker.length = self._MAX_PLIES;
-		var moveSequence = self.bestMove(state);
-		//Globals.debug("Positions evaluated at each ply: ", self._plyTracker, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		var moveSequence = self.bestMove(state, self._MAX_PLIES);
 		self.makeMoves(moveSequence);
 	};
 	
@@ -134,40 +130,65 @@
 	};
 	
 	
-	window.AI.Plyer.prototype.bestMove = function(state) {
+	window.AI.Plyer.prototype.bestMove = function(state, ply) {
 		var self = this;
 
 		var moves = self.findAllGreedyMoves(state, 10);
 		Globals.debug("Found " + moves.length + " moves", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		Globals.debug(moves, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		
-		// find best responses to each move
-		var responses = moves.map(function(move) {
-			return self.findBestResponse(move, state);
+		if (ply <= 1) {
+			// base case: just evaluate each move and return the best
+			return self.pickBest(moves, state);
+		} else {
+			// find best responses to each move.
+			var responseStates = moves.map(function(move) {
+				var allPlayerResponses = []; // array of moves
+				var nextState = util.applyMove(move, state);
+				while((nextState=util.doEndOfTurn(nextState)).currentPlayerId() != state.currentPlayerId()) {
+					var response = self.bestMove(nextState, ply-1);
+					allPlayerResponses.push(response);
+					nextState = util.applyMove(response, nextState);
+				}
+				// allPlayerResponses now has a move for each other player
+				
+				// return the state that will exist after every other player goes
+				return nextState;
+			});
+			
+			var idx = util.indexOfMax(responseStates.map(function(endState) {
+				return util.evalPosition(endState, util.evalPlayer);
+			}));
+			
+			return moves[idx];
+		}		
+
+	};
+
+	
+	// return a Move object
+	window.AI.Plyer.prototype.findBestGreedyMove = function(state, length) {
+		var self = this;
+		self.findAllGreedyMoves(state, length);
+		//Globals.ASSERT(self.foobar && self.foobar.length);
+		
+		var moves = self.findAllGreedyMoves(state, length);
+		Globals.ASSERT(moves.length);
+		return self.pickBest(moves, state);
+		
+	},
+	
+	// @moves: array of Move
+	window.AI.Plyer.prototype.pickBest = function(moves, state) {
+		if(!moves.length) {
+			return new Move();
+		}
+		var scores = moves.map(function(move) {
+			return util.evalMove(move, state, util.evalPlayer);
 		});
-		
-		var maxIndex = 0;
-		var scores = moves.reduce(function(best, move, idx) {
-			var score = util.evalMove(move, state, util.evalPlayer);
-			if (score > best) {
-				maxIndex = idx;
-				return score;
-			} else {
-				return best;
-			}
-		}, -1000);
-		
+		var maxIndex = util.indexOfMax(scores);;
 		return moves[maxIndex];
-	};
-	
-	
-	window.AI.Plyer.prototype.findBestResponse = function(move, state) {
-		
-	};
-
-	
-	
-
+	},
 	
 	// return array of Move objects
 	window.AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
@@ -181,17 +202,10 @@
 			return moves_ary;
 		}
 		
-		var max = -1000;
-		var idx = 0;
-		for (var i=0; i < moves.length; i++) {
-			var score = util.evalMove(moves[i], state, util.evalPlayer);
-			Globals.debug("Score for move " + moves[i].toString() + " = " + score, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-			if (score > max) {
-				max = score;
-				idx = i;
-			}
-		}
-		//Globals.debug("Hi score is " + max + " for attack " + attacks[idx].toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		var idx = util.indexOfMax(moves.map(function(move) {
+			return util.evalMove(move, state, util.evalPlayer);
+		}));
+
 		moves_ary.push(moves[idx]);
 		if (length > 1) {
 			self.findAllGreedyMoves(util.applyMove(moves[idx], state, true), length-lookahead).forEach(function(nextMove) {
@@ -202,102 +216,9 @@
 			});
 		}
 
+		Globals.ASSERT(moves_ary.length);
 		return moves_ary;
 	};
 	
-
-	
-
-	
-	
-	/* 
-	Pass in a state, and this will find the best move, within @ply gametree levels
-	@returns {move: [[1,2], [2,3]...],
-				 score: 34.8}
-	*/
-	window.AI.Plyer.prototype.bestMoveFromState = function(state, ply, maxMoveLength) {
-		var self = this;
-		ply = ply || 0;
-		maxMoveLength = maxMoveLength || 5;
-		var move = new Move();
-		var playerId = state.currentPlayerId();
-		
-		
-		if (ply < self._MAX_PLIES) {
-			move = self.constructBestMove(state, ply, maxMoveLength);
-			if (ply == 0) {
-				Globals.debug("[PLY " + ply + "] Best move for position: " + move.toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-			}
-		}
-		
-		return move;
-	};
-	
-	window.AI.Plyer.prototype.constructBestMove = function(state, ply, maxMoveLength) {
-		//Globals.debug("[PLY " + ply + "] constructBestMove", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		var self = this;
-		var bestMove = new Move();
-		
-		// find all 1-step moves from this position
-		var nextMoves = util.findAllMoves(state, 1);
-		
-		// always consider doing nothing
-		nextMoves.push(new Move(new Attack()));
-		//Globals.debug("Considering these attacks: " + Attack.arrayString(nextMoves), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		if (ply == 0) {
-			Globals.debug("[PLY " + ply + "] Considering " + nextMoves.length + " attacks", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		}
-
-		//var nextMoves = self.BestNMoves(nextMoves, 10);
-		
-		// score each attack option by looking at all responses (ply deep)
-		var attackScores = nextMoves.map(function(move) {
-			//Globals.debug("Considering counterattacks to move " + move.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			Globals.ASSERT(move instanceof Move);
-			
-			// Assume move ends after this move. 
-			// do all of the other players' counterattacks and evaluate the position
-			var nextState = util.applyMove(move, state);
-			while ((nextState=util.doEndOfTurn(nextState)).currentPlayerId() != state.currentPlayerId()) {
-				//Globals.debug("Calculating best reply for player " + nextState.currentPlayerId, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-				var bestResponse = self.bestMoveFromState(nextState, ply+1, 1);
-				//Globals.debug("Best response: " + bestResponse.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-				nextState = util.applyMove(bestResponse, nextState);
-			}
-			
-			self._plyTracker[ply] = self._plyTracker[ply] ? self._plyTracker[ply] + 1 : 1;
-			var score = util.evalPosition(nextState, util.evalPlayer);
-			//Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for move " + move.toString() + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			return score;
-		});
-		
-		// find best score
-		var maxIndex = 0;
-		var max = attackScores[0];
-		for (var i=0; i < attackScores.length; i++) {
-			if (attackScores[i] > max) {
-				max = attackScores[i];
-				maxIndex = i;
-			}
-		}
-		var bestAttack = nextMoves[maxIndex];
-		
-		
-		if (bestAttack.isEmpty()) {
-			// best move was to do nothing
-			Globals.debug("Best attack is to do nothing", Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			return bestMove;
-		} else {
-			//Globals.debug("Adding attack to bestMove: " + bestAttack.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			bestMove.push(bestAttack);
-			var nextState = util.applyMove(bestAttack, state, true);
-			var nextMove = self.constructBestMove(nextState, ply, maxMoveLength);
-			if (nextMove.hasMoreAttacks()) {
-				bestMove.push(nextMove);
-			}
-			//Globals.debug("returning best move: " + bestMove.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-			return bestMove;
-		}
-	};
 	
 	

@@ -405,4 +405,16 @@ window.AI.Util =  {
 		
 		return ((2*myContiguous) - myCountryCount + myDice);		
 	},
+	
+	indexOfMax: function(ary) {
+		var max = ary[0];
+		var idx = 0;
+		for (var i=1; i < ary.length; i++) {
+			if (ary[i] > max) {
+				idx = i;
+				max = ary[i];
+			}
+		}
+		return idx;
+	},
 };

@@ -132,17 +132,9 @@
 		Globals.debug("Found " + moves.length + " moves", Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 		Globals.debug(moves, Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 		
-
-		var maxIndex = 0;
-		var scores = moves.reduce(function(best, move, idx) {
-			var score = util.evalMove(move, state, util.evalPlayer);
-			if (score > best) {
-				maxIndex = idx;
-				return score;
-			} else {
-				return best;
-			}
-		}, -1);
+		var maxIndex = util.indexOfMax(moves.map(function(move) {
+			return util.evalMove(move, state, util.evalPlayer);
+		}));
 		
 		return moves[maxIndex];
 	};
@@ -152,28 +144,23 @@
 	window.AI.Greedy.prototype.findAllMovesGreedy = function(state, length) {
 		length = length || 1;
 		var self = this;
+		var lookahead = 1;
 		var moves_ary = [];
 		
-		var attacks = util.findAllAttacks(state);
-		if (!attacks || !attacks.length) {
+		var moves = util.findAllMoves(state, lookahead)
+		if (!moves || !moves.length) {
 			return moves_ary;
 		}
 		
-		var max = -1000;
-		var idx = 0;
-		for (var i=0; i < attacks.length; i++) {
-			var score = util.evalMove(new Move(attacks[i]), state, util.evalPlayer);
-			Globals.debug("Score for attack " + attacks[i].toString() + " = " + score, Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-			if (score > max) {
-				max = score;
-				idx = i;
-			}
-		}
-		//Globals.debug("Hi score is " + max + " for attack " + attacks[idx].toString(), Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-		moves_ary.push(new Move(attacks[idx]));
+		var idx = util.indexOfMax(moves.map(function(move) {
+			return util.evalMove(move, state, util.evalPlayer);
+		}));
+
+		moves_ary.push(moves[idx]);
 		if (length > 1) {
-			self.findAllMovesGreedy(util.applyAttack(attacks[idx], state, true), length-1).forEach(function(nextMove) {
-				var move = new Move(attacks[idx]);
+			self.findAllMovesGreedy(util.applyMove(moves[idx], state, true), length-lookahead).forEach(function(nextMove) {
+				var move = new Move();
+				move.push(moves[idx]);
 				move.push(nextMove);
 				moves_ary.push(move);
 			});
