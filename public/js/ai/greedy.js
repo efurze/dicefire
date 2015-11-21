@@ -29,12 +29,8 @@
 	*/
 
 	window.AI = window.AI || {};
-	window.AI.Greedy =  function (id) {
-		
-		this._myId = id;
-		this._interface = null;
 
-	};
+	window.AI.Greedy = function(){};
 		
 	window.AI.Greedy.getName = function() {
 		return "Greedy";
@@ -44,131 +40,10 @@
 	// and the list of other players, so it can know who is human and where
 	// in the turn order this AI shows up.
 	window.AI.Greedy.create = function(playerId, isHumanList) {
-		return new window.AI.Greedy(playerId);
+		return new window.AI.Plyer(playerId, 1);
 	};
 
-	// Called each time the AI has a turn.
-	window.AI.Greedy.prototype.startTurn = function(iface) {
-		Globals.debug("**STARTING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-		var self = this;
-		self._interface = iface;
-		var state = iface.getState();
-		
-		Globals.ASSERT(self._myId == state.currentPlayerId());
-		
-		Globals.debug("I AM PLAYER " + self._myId, Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-		Globals.debug("Gamestate: ", JSON.stringify(state), Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
-		self.logEval(state);
 
-		var moveSequence = self.bestMove(state);
-		self.makeMoves(moveSequence);
-	};
-	
-	window.AI.Greedy.prototype.logEval = function(state) {
-		var self = this;
-		var scores = state.playerIds().map(function(playerId){
-			return util.evalPlayer(state, playerId);
-		});
-		
-		Globals.debug("Player Scores: ", JSON.stringify(scores), Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-	};
-			
-	window.AI.Greedy.prototype.makeMoves = function(move) {
-		var self = this;
-		var state = self._interface.getState();
-		
-		// pop first move off - skip over any nonmoves or 
-		// moves we can't make because we lost an earlier attack
-		var attack = new Attack();
-		while (move && move.hasMoreAttacks() && attack.isEmpty()) {
-			attack = move.pop();
-			if (state.countryOwner(attack.from()) != self._myId) {
-				Globals.debug("Country " + attack.from() + " doesn't belong to us, skipping move " + attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
-				attack.clear();
-			}
-		}
-		
-		// TODO: I think this is wrong
-		if (!move || (!move.hasMoreAttacks() && attack.isEmpty())) {
-			self.finishTurn();
-			return;
-		}			
-		
-		if (!attack.isEmpty()) {
-			Globals.debug("Country " + attack.from() + " ATTACKING country " + attack.to(), Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
-			self._interface.attack(attack.from(), attack.to(), function(result) {
-				if (!result) {
-					Globals.debug("ATTACK FAILED", Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
-				} else {
-					Globals.debug("ATTACK SUCCEEDED", Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
-				}
-				// recurse
-				self.makeMoves(move);
-			});
-		} 
-	};
-	
-	window.AI.Greedy.prototype.finishTurn = function() {
-		var self = this;
-		var state = self._interface.getState();
-		
-		Object.keys(state.playerIds()).forEach(function(pid) {
-			Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries(pid)).join(), Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-		})
-
-		Globals.debug("**ENDING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-		self.logEval(state);
-		self._interface.endTurn();
-		
-		return;
-	};
-	
-	
-	window.AI.Greedy.prototype.bestMove = function(state) {
-		var self = this;
-		self._stateHash = {};
-		self._duplicates = 0;
-		var moves = self.findAllMovesGreedy(state, 10);
-		Globals.debug("Found " + moves.length + " moves", Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-		Globals.debug(moves, Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
-		
-		var maxIndex = util.indexOfMax(moves.map(function(move) {
-			return util.evalMove(move, state, util.evalPlayer);
-		}));
-		
-		return moves[maxIndex];
-	};
-	
-	
-	// return array of Move objects
-	window.AI.Greedy.prototype.findAllMovesGreedy = function(state, length) {
-		length = length || 1;
-		var self = this;
-		var lookahead = 1;
-		var moves_ary = [];
-		
-		var moves = util.findAllMoves(state, lookahead)
-		if (!moves || !moves.length) {
-			return moves_ary;
-		}
-		
-		var idx = util.indexOfMax(moves.map(function(move) {
-			return util.evalMove(move, state, util.evalPlayer);
-		}));
-
-		moves_ary.push(moves[idx]);
-		if (length > 1) {
-			self.findAllMovesGreedy(util.applyMove(moves[idx], state, true), length-lookahead).forEach(function(nextMove) {
-				var move = new Move();
-				move.push(moves[idx]);
-				move.push(nextMove);
-				moves_ary.push(move);
-			});
-		}
-
-		return moves_ary;
-	};
-	
 
 	
 	
