@@ -35,10 +35,10 @@
 	*/
 
 	window.AI = window.AI || {};
-	window.AI.Plyer =  function (id) {
+	window.AI.Plyer =  function (id, ply_depth) {
 		
 		this._myId = id;
-		this._MAX_PLIES = 1;
+		this._MAX_PLIES = ply_depth || 1;
 		this._interface = null;
 	};
 		
@@ -50,7 +50,7 @@
 	// and the list of other players, so it can know who is human and where
 	// in the turn order this AI shows up.
 	window.AI.Plyer.create = function(playerId, isHumanList) {
-		return new window.AI.Plyer(playerId);
+		return new window.AI.Plyer(playerId, 2);
 	};
 
 	// Called each time the AI has a turn.
