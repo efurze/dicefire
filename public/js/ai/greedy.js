@@ -2,12 +2,6 @@
 
 	var util = window.AI.Util;
 	
-	var SHA1 = new Hashes.SHA1();
-	var hashState = function(state) {
-		return SHA1.hex(JSON.stringify(state));
-	};
-
-	
 	
 	/*
 		Here is what the interface contains:
@@ -55,15 +49,15 @@
 
 	// Called each time the AI has a turn.
 	window.AI.Greedy.prototype.startTurn = function(iface) {
-		Globals.debug("**STARTING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		Globals.debug("**STARTING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 		var self = this;
 		self._interface = iface;
 		var state = iface.getState();
 		
 		Globals.ASSERT(self._myId == state.currentPlayerId());
 		
-		Globals.debug("I AM PLAYER " + self._myId, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		Globals.debug("Gamestate: ", JSON.stringify(state), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		Globals.debug("I AM PLAYER " + self._myId, Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
+		Globals.debug("Gamestate: ", JSON.stringify(state), Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
 		self.logEval(state);
 
 		var moveSequence = self.bestMove(state);
@@ -76,7 +70,7 @@
 			return util.evalPlayer(state, playerId);
 		});
 		
-		Globals.debug("Player Scores: ", JSON.stringify(scores), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		Globals.debug("Player Scores: ", JSON.stringify(scores), Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 	};
 			
 	window.AI.Greedy.prototype.makeMoves = function(move) {
@@ -89,7 +83,7 @@
 		while (move && move.hasMoreAttacks() && attack.isEmpty()) {
 			attack = move.pop();
 			if (state.countryOwner(attack.from()) != self._myId) {
-				Globals.debug("Country " + attack.from() + " doesn't belong to us, skipping move " + attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				Globals.debug("Country " + attack.from() + " doesn't belong to us, skipping move " + attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
 				attack.clear();
 			}
 		}
@@ -101,12 +95,12 @@
 		}			
 		
 		if (!attack.isEmpty()) {
-			Globals.debug("Country " + attack.from() + " ATTACKING country " + attack.to(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("Country " + attack.from() + " ATTACKING country " + attack.to(), Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
 			self._interface.attack(attack.from(), attack.to(), function(result) {
 				if (!result) {
-					Globals.debug("ATTACK FAILED", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					Globals.debug("ATTACK FAILED", Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
 				} else {
-					Globals.debug("ATTACK SUCCEEDED", Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					Globals.debug("ATTACK SUCCEEDED", Globals.LEVEL.DEBUG, Globals.CHANNEL.GREEDY);
 				}
 				// recurse
 				self.makeMoves(move);
@@ -119,10 +113,10 @@
 		var state = self._interface.getState();
 		
 		Object.keys(state.playerIds()).forEach(function(pid) {
-			Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries(pid)).join(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries(pid)).join(), Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 		})
 
-		Globals.debug("**ENDING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		Globals.debug("**ENDING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 		self.logEval(state);
 		self._interface.endTurn();
 		
@@ -135,8 +129,8 @@
 		self._stateHash = {};
 		self._duplicates = 0;
 		var moves = self.findAllMovesGreedy(state, 10);
-		Globals.debug("Found " + moves.length + " moves", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		Globals.debug(moves, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		Globals.debug("Found " + moves.length + " moves", Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
+		Globals.debug(moves, Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 		
 
 		var maxIndex = 0;
@@ -169,13 +163,13 @@
 		var idx = 0;
 		for (var i=0; i < attacks.length; i++) {
 			var score = util.evalMove(new Move(attacks[i]), state, util.evalPlayer);
-			Globals.debug("Score for attack " + attacks[i].toString() + " = " + score, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+			Globals.debug("Score for attack " + attacks[i].toString() + " = " + score, Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 			if (score > max) {
 				max = score;
 				idx = i;
 			}
 		}
-		//Globals.debug("Hi score is " + max + " for attack " + attacks[idx].toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		//Globals.debug("Hi score is " + max + " for attack " + attacks[idx].toString(), Globals.LEVEL.INFO, Globals.CHANNEL.GREEDY);
 		moves_ary.push(new Move(attacks[idx]));
 		if (length > 1) {
 			self.findAllMovesGreedy(util.applyAttack(attacks[idx], state, true), length-1).forEach(function(nextMove) {
