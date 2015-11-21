@@ -77,7 +77,7 @@
 	window.AI.Plyer.prototype.logEval = function(state) {
 		var self = this;
 		var scores = state.playerIds().map(function(playerId){
-			return self.evalPlayer(state, playerId);
+			return util.evalPlayer(state, playerId);
 		});
 		
 		Globals.debug("Player Scores: ", JSON.stringify(scores), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
@@ -141,75 +141,62 @@
 		Globals.debug("Found " + moves.length + " moves", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		Globals.debug(moves, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		
+		// find best responses to each move
+		var responses = moves.map(function(move) {
+			return self.findBestResponse(move, state);
+		});
 		
 		var maxIndex = 0;
 		var scores = moves.reduce(function(best, move, idx) {
-			var score = self.evalMove(move, state);
+			var score = util.evalMove(move, state, util.evalPlayer);
 			if (score > best) {
 				maxIndex = idx;
 				return score;
 			} else {
 				return best;
 			}
-		}, -1);
+		}, -1000);
 		
 		return moves[maxIndex];
 	};
 	
 	
-
+	window.AI.Plyer.prototype.findBestResponse = function(move, state) {
+		
+	};
 
 	
-	// return array of Move objects
-	window.AI.Plyer.prototype.findAllMoves = function(state, length) {
-		length = length || 1;
-		var self = this;
-		var moves_ary = [];
-
-		var attacks = this.findAllAttacks(state);
-
-		attacks.forEach(function(attack) {
-			moves_ary.push(new Move(attack));
-			if (length > 1) {
-				// recurse
-				self.findAllMoves(util.applyAttack(attack, state, true), length-1).forEach(function(nextMove) {
-					var move = new Move(attack);
-					move.push(nextMove);
-					moves_ary.push(move);
-				});
-			}
-		});
-
-		return moves_ary;
-	};
+	
 
 	
 	// return array of Move objects
 	window.AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
 		length = length || 1;
 		var self = this;
+		var lookahead = 1;
 		var moves_ary = [];
 		
-		var attacks = util.findAllAttacks(state);
-		if (!attacks || !attacks.length) {
+		var moves = util.findAllMoves(state, lookahead)
+		if (!moves || !moves.length) {
 			return moves_ary;
 		}
 		
 		var max = -1000;
 		var idx = 0;
-		for (var i=0; i < attacks.length; i++) {
-			var score = self.evalMove(new Move(attacks[i]), state);
-			Globals.debug("Score for attack " + attacks[i].toString() + " = " + score, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
+		for (var i=0; i < moves.length; i++) {
+			var score = util.evalMove(moves[i], state, util.evalPlayer);
+			Globals.debug("Score for move " + moves[i].toString() + " = " + score, Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 			if (score > max) {
 				max = score;
 				idx = i;
 			}
 		}
 		//Globals.debug("Hi score is " + max + " for attack " + attacks[idx].toString(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		moves_ary.push(new Move(attacks[idx]));
+		moves_ary.push(moves[idx]);
 		if (length > 1) {
-			self.findAllGreedyMoves(util.applyAttack(attacks[idx], state, true), length-1).forEach(function(nextMove) {
-				var move = new Move(attacks[idx]);
+			self.findAllGreedyMoves(util.applyMove(moves[idx], state, true), length-lookahead).forEach(function(nextMove) {
+				var move = new Move();
+				move.push(moves[idx]);
 				move.push(nextMove);
 				moves_ary.push(move);
 			});
@@ -219,71 +206,8 @@
 	};
 	
 
-	window.AI.Plyer.prototype.evalMove = function(move, state) {
-		Globals.ASSERT(move instanceof Move);
-		Globals.debug("evalMove: ", move.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
-		var self = this;
-		var score = 0;
-		if (!move.hasMoreAttacks()) {
-			score = self.evalPosition(state);
-		} else {
-			// deep-copy move
-			move = move.clone();
-			var attack = move.pop();
-			var winState = util.applyAttack(attack, state, true);
-			var loseState = util.applyAttack(attack, state, false);
-			var winOdds = util.attackOdds(state, attack);
-			// recurse
-			score = ((1 - winOdds) * self.evalPosition(loseState)) + (winOdds * self.evalMove(move, winState));
-		}
-		
-		return score;
-	};
+	
 
-	window.AI.Plyer.prototype.evalPosition = function(state) {
-		Globals.ASSERT(state);
-		var self = this;
-		
-		var scores = [];
-		
-		scores.length = Object.keys(state.playerIds()).length;
-		Object.keys(state.playerIds()).forEach(function(playerId){
-			scores[playerId] = self.evalPlayer(state, playerId);
-		});
-		
-		var myScore = scores[state.currentPlayerId()];
-		
-		var others=0;
-		for(var i=0; i < scores.length; i++) {
-			if (i != state.currentPlayerId()) {
-				others += Math.pow(scores[i], 2);
-			}
-		}
-		others = Math.sqrt(others);
-		
-		return scores[state.currentPlayerId()] - others;
-	};
-
-	window.AI.Plyer.prototype.evalPlayer = function(state, playerId) {
-		var self = this;
-		if (state.playerHasLost(playerId)) {
-			return 0;
-		}
-		
-		var myCountryCount = util.totalCountries(playerId, state);
-		var myContiguous = state.numContiguous(playerId);
-		var myDice = util.totalDice(playerId, state);
-		
-		
-		if (state.currentPlayerId() == playerId) {
-			// for current player, count on them getting their end-of-turn dice injection
-			myDice += Math.min(state.storedDice(playerId) + myContiguous, 64);
-		} else {
-			myDice += state.storedDice(playerId);
-		}
-		
-		return ((2*myContiguous) - myCountryCount + myDice);		
-	};
 	
 	
 	/* 
@@ -315,7 +239,7 @@
 		var bestMove = new Move();
 		
 		// find all 1-step moves from this position
-		var nextMoves = self.findAllMoves(state, 1);
+		var nextMoves = util.findAllMoves(state, 1);
 		
 		// always consider doing nothing
 		nextMoves.push(new Move(new Attack()));
@@ -342,7 +266,7 @@
 			}
 			
 			self._plyTracker[ply] = self._plyTracker[ply] ? self._plyTracker[ply] + 1 : 1;
-			var score = self.evalPosition(nextState);
+			var score = util.evalPosition(nextState, util.evalPlayer);
 			//Globals.debug((self._MAX_PLIES-ply-1) + "-Ply score for move " + move.toString() + " = " + score, Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			return score;
 		});

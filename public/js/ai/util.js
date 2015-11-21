@@ -157,6 +157,29 @@ window.AI.Util =  {
 		}
 	},
 	
+	// return array of Move objects
+	findAllMoves: function(state, length) {
+		length = length || 1;
+		var self = this;
+		var moves_ary = [];
+
+		var attacks = util.findAllAttacks(state);
+
+		attacks.forEach(function(attack) {
+			moves_ary.push(new Move(attack));
+			if (length > 1) {
+				// recurse
+				self.findAllMoves(util.applyAttack(attack, state, true), length-1).forEach(function(nextMove) {
+					var move = new Move(attack);
+					move.push(nextMove);
+					moves_ary.push(move);
+				});
+			}
+		});
+
+		return moves_ary;
+	},
+	
 	/*
 	 Loops through all countries owned by @state.currentPlayerId.
 	 returns a list of all attacks that have at least a @threshold chance of success:
@@ -315,5 +338,71 @@ window.AI.Util =  {
 			}
 		});
 		return total;
+	},
+	
+	evalMove: function(move, state, evalfxn) {
+		Globals.ASSERT(move instanceof Move);
+		Globals.debug("evalMove: ", move.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
+		var self = this;
+		var score = 0;
+		if (!move.hasMoreAttacks()) {
+			score = self.evalPosition(state, evalfxn);
+		} else {
+			// deep-copy move
+			move = move.clone();
+			var attack = move.pop();
+			var winState = util.applyAttack(attack, state, true);
+			var loseState = util.applyAttack(attack, state, false);
+			var winOdds = util.attackOdds(state, attack);
+			// recurse
+			score = ((1 - winOdds) * self.evalPosition(loseState, evalfxn)) + (winOdds * self.evalMove(move, winState, evalfxn));
+		}
+		
+		return score;
+	},
+
+	evalPosition: function(state, evalfxn) {
+		Globals.ASSERT(state);
+		var self = this;
+		
+		var scores = [];
+		
+		scores.length = Object.keys(state.playerIds()).length;
+		Object.keys(state.playerIds()).forEach(function(playerId){
+			scores[playerId] = evalfxn(state, playerId);
+		});
+		
+		var myScore = scores[state.currentPlayerId()];
+		
+		var others=0;
+		for(var i=0; i < scores.length; i++) {
+			if (i != state.currentPlayerId()) {
+				others += Math.pow(scores[i], 2);
+			}
+		}
+		others = Math.sqrt(others);
+		
+		return scores[state.currentPlayerId()] - others;
+	},
+	
+	evalPlayer: function(state, playerId) {
+		Globals.ASSERT(state && state instanceof Gamestate); 
+		var self = this;
+		if (state.playerHasLost(playerId)) {
+			return 0;
+		}
+		
+		var myCountryCount = util.totalCountries(playerId, state);
+		var myContiguous = state.numContiguous(playerId);
+		var myDice = util.totalDice(playerId, state);
+		
+		if (state.currentPlayerId() == playerId) {
+			// for current player, count on them getting their end-of-turn dice injection
+			myDice += Math.min(state.storedDice(playerId) + myContiguous, 64);
+		} else {
+			myDice += state.storedDice(playerId);
+		}
+		
+		return ((2*myContiguous) - myCountryCount + myDice);		
 	},
 };
