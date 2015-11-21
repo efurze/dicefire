@@ -205,6 +205,9 @@ window.AI.Util =  {
 		if (success) {
 			state.setCountryDice(attack.to(), state.countryDice(attack.from()) - 1);
 			
+			// update country owner
+			state.setCountryOwner(attack.to(), fromPlayer);
+			
 			// update contiguous country count
 			state.setNumContiguous(toPlayer, self.maxIslandSize(toPlayer, state));
 			state.setNumContiguous(fromPlayer, self.maxIslandSize(fromPlayer, state));
