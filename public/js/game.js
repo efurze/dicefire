@@ -21,8 +21,14 @@ $(function() {
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
-			Engine.init(playerCode);
-			Renderer.init(playerCode.length, Game._canvas);
+			Engine.init(playerCode.map(function(pc){return pc;}));
+			Renderer.init(playerCode.length, Game._canvas, playerCode.map(function(pc) {
+				if (pc == "human") {
+					return "human";
+				} else {
+					return pc.getName();
+				}
+			}));
 			
 			Engine.setup();
 			

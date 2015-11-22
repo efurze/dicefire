@@ -48,8 +48,9 @@ $(function(){
 		_initialized: false,
 		_mouseOverCountry: -1,
 		_selectedCountry: -1,
+		_names: [],
 		
-		init: function(playerCount, canvas) {
+		init: function(playerCount, canvas, playerNames) {
 			if (!Globals.suppress_ui) {
 				this._canvas = canvas;
 				if (!canvas) {
@@ -58,6 +59,8 @@ $(function(){
 				this._context = this._canvas.getContext('2d');
 				this.clearAll();
 	            this._context.lineJoin = "straight";
+				this._names = playerNames || [];
+				
 				this._setupRollDivs();
 				this._setupPlayerDivs(playerCount);
 				this._initialized = true;
@@ -600,9 +603,10 @@ $(function(){
 			for (var id=0; id < playerCount; ++id) {
 				
 				$('#players').append(
-		    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>" + 
-		    		"<div id='dice" + id + "'>1</div>" +
-		    		"<div id='stored" + id + "'>0</div></div>"
+		    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>"
+					+ ((this._names && this._names[id]) ? ("<div id='name" + id + "'>" + this._names[id] + "</div>") : "")
+		    		+ "<div id='dice" + id + "'>1</div>"
+		    		+ "<div id='stored" + id + "'>0</div></div>"
 		    	);
 
 		    	$('#player' + id).css(
@@ -611,7 +615,7 @@ $(function(){
 		    			'display': 'inline-block',
 		    			'margin': '10px',
 		    			'padding': '10px',
-		    			'width': '80px',
+		    			'width': '120px',
 		    			'height': '20px',
 		    			'border': '1px solid black'
 
@@ -636,11 +640,22 @@ $(function(){
 						'text-align': 'center'
 			    	}
 		    	);
+		
+				$('#name' + id).css(
+			    	{
+						'display': 'inline-block',
+						'margin-left': '10px',
+						'margin-top': '2px',
+						'font-size': '8pt',
+						'vertical-align': 'top',
+						'text-align': 'center'
+			    	}
+		    	);
 
 				$('#stored' + id).css(
 			    	{
 						'display': 'inline-block',
-						'margin-left': '12px',
+						'margin-left': '5px',
 						'margin-top': '2px',
 						'vertical-align': 'top',
 						'text-align': 'center',
