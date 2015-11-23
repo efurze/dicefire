@@ -9,10 +9,6 @@ var Player = function(id) {
 
 Player.init = function(count) {
 
-	if (count > Player.colors.length) {
-		count = Player.colors.length;
-	}
-
 	Player._array = [];
 	for (var i = 0; i < count; i++) {
 		Player._array.push(new Player(i));
@@ -69,22 +65,8 @@ Player.rollDice = function(num) {
 }
 
 
-//             var colorsel = ["red", "blue", "lightgreen", "forestgreen", "purple", "pink", "orange", "yellow"];
-
-Player.colors = [
-	"red",
-	"blue",
-	"green",
-	"yellow",
-	"orange",
-	"purple",
-	"brown",
-	"tan"
-];
-
 
 Player.prototype.id = function() { return this._id; };
-Player.prototype.color = function() { return Player.colors[this._id]; };
 Player.prototype.hasLost = function() { return this._countries.length == 0; };
 Player.prototype.storedDice = function() { return this._storedDice; };
 Player.prototype.countryCount = function() {return this._countries.length;};

@@ -49,6 +49,16 @@ $(function(){
 		_mouseOverCountry: -1,
 		_selectedCountry: -1,
 		_names: [],
+		_playerColors: [
+			"red",
+			"blue",
+			"green",
+			"yellow",
+			"orange",
+			"purple",
+			"brown",
+			"tan"
+		],
 		
 		init: function(playerCount, canvas, playerNames) {
 			if (!Globals.suppress_ui) {
@@ -111,10 +121,10 @@ $(function(){
 			var self = this;
 			Renderer.renderControls();
 			
-			var fromPlayer = Player.get(fromCountry.ownerId());
+			var fromPlayerId = fromCountry.ownerId();
 			
 			// disable the 'end turn' button if the current attacking player is the human
-			if (Engine.isHuman(fromPlayer._id) && fromPlayer == Engine.currentPlayer()) {
+			if (Engine.isHuman(fromPlayerId) && fromPlayerId == state.currentPlayerId()) {
 				$('#end_turn').prop('disabled', true);
 			}
 			
@@ -172,7 +182,7 @@ $(function(){
 	            }
 	
 				// re-enable the 'end turn' button
-				if (Engine.isHuman(fromPlayer._id) && fromPlayer == Engine.currentPlayer()) {
+				if (Engine.isHuman(fromPlayerId) && fromPlayerId == state.currentPlayerId()) {
 					$('#end_turn').prop('disabled', false);
 				}
 				
@@ -292,24 +302,22 @@ $(function(){
 			Globals.debug("renderPlayer " + playerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
 			
-			var player = Player.get(playerId);
-			
-			if (player.countryCount() == 0) {
-				$('#player' + player._id).css({'display': 'none'});
+			if (state.playerHasLost(playerId)) {
+				$('#player' + playerId).css({'display': 'none'});
 			} else {
 				
-				$('#player' + player._id).css({'display': 'inline-block'});
+				$('#player' + playerId).css({'display': 'inline-block'});
 				
 				// Highlight the player's status box
-				if (player == Game.currentPlayer()) {
-					$('#player' + player._id).css({'border': '3px double'});
+				if (playerId == state.currentPlayerId()) {
+					$('#player' + playerId).css({'border': '3px double'});
 				} else {
-					$('#player' + player._id).css({'border': '1px solid'});
+					$('#player' + playerId).css({'border': '1px solid'});
 				}
 				
 				// update stats
-				$('#dice' + player._id).html(player._numContiguousCountries);
-		    	$('#stored' + player._id).html(player._storedDice);
+				$('#dice' + playerId).html(state.numContiguous(playerId));
+		    	$('#stored' + playerId).html(state.storedDice(playerId));
 			}
 		},
 		
@@ -381,6 +389,8 @@ $(function(){
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
+			
+			var self = this
 	
 			// clear previous attack info
 			$('#roll').css({
@@ -409,7 +419,7 @@ $(function(){
 			for (var i = 0; i < Globals.maxDice; i++) {
 				$('#leftdie' + i).css({
 					'display': (i < fromNumDice ? 'inline-block' : 'none'),
-					'background-color': Player.get(fromCountry.ownerId()).color()
+					'background-color': self._playerColors[fromCountry.ownerId()]
 				});
 
 				if (i < fromNumDice) {
@@ -418,7 +428,7 @@ $(function(){
 
 				$('#rightdie' + i).css({
 					'display': (i < toNumDice ? 'inline-block' : 'none'),
-					'background-color': Player.get(toCountry.ownerId()).color()				
+					'background-color': self._playerColors[toCountry.ownerId()]
 				});
 
 				if (i < fromNumDice) {
@@ -575,6 +585,7 @@ $(function(){
 		},
 		
 		_countryDrawColor: function(country, isFighting) {
+			var self = this;
 			if (isFighting) {
 				return "black";
 			} else if (country == Game.mouseOverCountry()) {
@@ -587,7 +598,7 @@ $(function(){
 		        if (country == Game.selectedCountry()) {
 		            return "black";
 		        } else {
-		            return Player.get(country.ownerId()).color();
+		            return self._playerColors[country.ownerId()];
 		        }
 		    }
 		},
@@ -596,6 +607,8 @@ $(function(){
 			if (Globals.suppress_ui) {
 				return;
 			}
+			
+			var self = this;
 			
 			$('#players').html('');
 			
@@ -627,7 +640,7 @@ $(function(){
 			    		'display': 'inline-block',
 			    		'width': '20px',
 			    		'height': '20px',
-			    		'background-color': Player.colors[id]
+			    		'background-color': self._playerColors[id]
 			    	}
 		    	);
 
@@ -659,7 +672,7 @@ $(function(){
 						'margin-top': '2px',
 						'vertical-align': 'top',
 						'text-align': 'center',
-						'color': Player.colors[id]
+						'color': self._playerColors[id]
 			    	}
 		    	);
 			}

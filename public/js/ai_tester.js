@@ -89,7 +89,7 @@ GameRepeater.prototype.simulateGame = function() {
 	
 	self._currentRun ++;
 	
-	Engine.init(players, self.gameOver.bind(self));
+	Engine.init(players.map(function(p){return p;}), self.gameOver.bind(self));
 	Engine.setup();
 	Renderer.clearAll();
 	
@@ -152,14 +152,14 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
-		_players: [AI.Plyer, AI.Aggressive],
+		_players: [AI.Plyer, AI.Plyer, AI.Greedy, AI.Greedy],
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
-			Globals.suppress_ui = 0;
+			Globals.suppress_ui = 1;
 			$('#start_test').click(Game.start);  
 		},
 		
@@ -169,16 +169,16 @@ $(function() {
 			Game._players.forEach(function(player) {
 				var name = player.getName();
 				console.log(name + ": " + JSON.stringify(results[name].map(function(result, idx) {
-					return result + "/" + runTracker[name][idx];
+					return result + "/" + runTracker[name][idx] + "(%" + (100*result/runTracker[name][idx]).toPrecision(3) + ")";
 				})));
 			})
 		},
 		
 		start: function () {
-			//var runner = new runAllPlayerCounts(AI.Aggressive, 500);
+			//var runner = new runAllPlayerCounts(AI.Plyer, 100);
 			//runner.start();
 			
-			var runner = new GameRepeater(Game._players, 10);
+			var runner = new GameRepeater(Game._players, 200);
 			runner.start(Game.simulationDone);
 		},
 	};		
