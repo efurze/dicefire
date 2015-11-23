@@ -143,9 +143,9 @@ $(function(){
 			if (Globals.play_sounds) {
 	            $.playSound('/sounds/2_dice_throw_on_table');
 	        }
-	        window.setTimeout(renderAttackRoll, Globals.timeout);
+	        window.setTimeout(function(){renderAttackRoll(state);}, Globals.timeout);
 	
-			function renderAttackRoll() {
+			function renderAttackRoll(state) {
 				$('#lefttotal').html(fromRoll);
 	            $('#roll').css({
 	                "display": "inline-block"
@@ -155,19 +155,19 @@ $(function(){
 	            });
 
 				self._renderCountry(toCountry.id(), state, true);
-	            window.setTimeout(renderDefendRoll, Globals.timeout);
+	            window.setTimeout(function(){renderDefendRoll(state);}, Globals.timeout);
 			}
 			
-			function renderDefendRoll() {
+			function renderDefendRoll(state) {
 				Globals.debug("render defender", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 				$('#righttotal').html(toRoll);
 	            $('#rightroll').css({
 	                "display": "inline-block"
 	            });              
-	            window.setTimeout(renderVerdict, Globals.timeout);
+	            window.setTimeout(function(){renderVerdict(state);}, Globals.timeout);
 			}
 			
-			function renderVerdict() {
+			function renderVerdict(state) {
 				Globals.debug("render verdict", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 	        	if (fromRoll > toRoll) {
 					// attacker wins
