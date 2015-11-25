@@ -15,8 +15,12 @@ $(function(){
 	window.Setupcontroller = {
 		
 	_ai: [AI.Plyer, AI.Greedy, AI.Aggressive],
+	_callback: null,
 		
-	init: function() {
+	init: function(callback, numberOfPlayers) {
+		
+		Setupcontroller._callback = callback;
+		numberOfPlayers = numberOfPlayers || Globals.maxPlayers;
 		
 		var options = "<option value='human'>human</option>";
 		Setupcontroller._ai.forEach(function(ai) {
@@ -25,7 +29,7 @@ $(function(){
 		
 		options += "<option value='none'>none</option>";
 		
-		for (var id=0; id < Globals.maxPlayers; id++) {
+		for (var id=0; id < numberOfPlayers; id++) {
 			$('#player_select').append(
 	    		  "<div style='margin-left:10px; margin-top:10px; margin-bottom: 20px;'>"
 				+		"<select class='player_selector' id='player_" + id + "'>"
@@ -45,11 +49,6 @@ $(function(){
 		$('#player_7').val("none");
 		
 		$('.player_selector').change(Setupcontroller.update);
-		$('#start_game').click(Setupcontroller.startGame);
-	},
-
-	update: function() {
-		
 	},
 
 
@@ -73,9 +72,9 @@ $(function(){
 			}
 		}
 		
-		$('#setup').css('display', 'none');
-		$('#game').css('display', 'block');
-		Game.init(players);
+		if (Setupcontroller._callback) {
+			Setupcontroller._callback(players);
+		}
 	},
 	
 	};

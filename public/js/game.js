@@ -14,6 +14,18 @@ $(function() {
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (playerCode) {
+			$('#setup').css('display', 'block');
+			$('#game').css('display', 'none');
+			
+			$('#start_game').click(Setupcontroller.startGame);
+			Setupcontroller.init(Game.start);
+		},
+		
+		start: function(playerCode) {
+			
+			$('#setup').css('display', 'none');
+			$('#game').css('display', 'block');
+			
 			Engine.init(playerCode.map(function(pc){return pc;}));
 			Renderer.init(playerCode.length, Game._canvas, playerCode.map(function(pc) {
 				if (pc == "human") {

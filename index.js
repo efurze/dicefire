@@ -38,7 +38,7 @@ app.get('/test', function(req, res) {
 });
 
 app.get('/loader', function(req, res) { 
-    res.render("loader", {layout: "loader", title : "Replay Game"});
+    res.render("loader", {title : "Replay Game"});
 });
 
 app.get('/simulator', function(req, res) {

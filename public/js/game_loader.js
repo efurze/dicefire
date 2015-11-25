@@ -2,64 +2,81 @@
 
 $(function() {
 	
-	window.Game = {
+	window.GameLoader = {
 		
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
-		_players: [AI.Greedy, AI.Plyer],
 		_initialMap: null,
 		_initialState: null,
 		_controller: null,
+		_mapController: null,
 		
-		mouseOverCountry: function() { return Game._mouseOverCountry; },
-		selectedCountry: function() { return Game._selectedCountry; },
+		mouseOverCountry: function() { return GameLoader._mouseOverCountry; },
+		selectedCountry: function() { return GameLoader._selectedCountry; },
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function () {
-			Renderer.init(Game._players.length, Game._canvas);						
-            
+			
+            $('#setup').css('display', 'block');
+			$('#game').css('display', 'none');
 
 			$.get( "/testmaps/initialstate.json").done(function(data) {
-				Game.ajaxDone(data);
+				GameLoader.ajaxDone(data);
 			}).fail(function(err) {
-				Game.ajaxFail(err);
+				GameLoader.ajaxFail(err);
 			});
 		},
 		
-		ajaxDone: function (data){
+		ajaxDone: function(data) {
 			//console.log("Got ajax data: " + JSON.stringify(data));
-			Game._initialState = JSON.stringify(data.state);
-			Game._initialMap = JSON.stringify(data.map);
+			GameLoader._initialState = JSON.stringify(data.state);
+			GameLoader._initialMap = JSON.stringify(data.map);
 			
-			Engine.init(Game._players.map(function(p){return p;}));
-			Engine.setup(Game._initialMap, Game._initialState);
-			Engine.registerRenderingCallback(Game.update);
+			$('#start_game').click(Setupcontroller.startGame);
+			Setupcontroller.init(GameLoader.start, Object.keys(data.state._players).length);
+		},
+		
+		start: function(players) {
+			$('#setup').css('display', 'none');
+			$('#game').css('display', 'block');
+			
+			Engine.init(players.map(function(p){return p;}));
+			Renderer.init(players.length, GameLoader._canvas, players.map(function(pc) {
+				if (pc == "human") {
+					return "human";
+				} else {
+					return pc.getName();
+				}
+			}));						
+			
+			Engine.setup(GameLoader._initialMap, GameLoader._initialState);
+			Engine.registerRenderingCallback(GameLoader.update);
 			Renderer.clearAll();
 			
-			Game._controller = new Gamecontroller();
-			Game.update();
+			GameLoader._mapController = new Mapcontroller(GameLoader.update);
 			
-			$('#start_test').click(Game.start);
-			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
-			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
-			$('#forward_btn').click(Game._controller.historyForward.bind(Game._controller));
+			GameLoader._controller = new Gamecontroller();
+			GameLoader.update();
+			
+			
+			$('#end_turn').click(GameLoader._controller.endTurn.bind(GameLoader._controller));
+			$('#back_btn').click(GameLoader._controller.historyBack.bind(GameLoader._controller));
+			$('#forward_btn').click(GameLoader._controller.historyForward.bind(GameLoader._controller));
+			
+			Engine.startTurn(0);
 		},
 		
 		ajaxFail: function(err) {
 			console.log("Ajax error: ", err.error(), err);
 			//$('#start_test').click(Game.start);
 		},
-		
-		start: function () {
-			Engine.startTurn(0);
-		},
-		
+
 		update: function(gamestate) {
 			gamestate = gamestate || Engine.getState();
 			Renderer.render(gamestate);
-			if (Game._controller) {
-				Game._controller.update();
+			if (GameLoader._controller) {
+				GameLoader._controller.update();
 			}
 		},
 		
