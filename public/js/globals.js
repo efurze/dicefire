@@ -44,6 +44,7 @@ var Globals = {
 	    markHexCenters: false,
 	    markCountryCenters: false,
 	    drawCountryConnections: false,
+		maxPlayers: 8,
 	    maxDice: 8,
 	    maxStoredDice: 64,
 	    startingDice: 10,
