@@ -12,6 +12,7 @@ var Engine = {
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 	currentPlayerId: function() { return Engine._currentPlayerId; },
+	isAttacking: function() {return Engine._attackInProgress;},
 	
 	setCurrentPlayer: function(id) {
 		Globals.debug("Current player set to " + id, Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
@@ -168,6 +169,7 @@ var Engine = {
 		var self = this;
 
 		self._attackInProgress = true;
+		Engine._redraw();
 
 		var fromPlayer = Player.get(fromCountry.ownerId());
 		var toPlayer = Player.get(toCountry.ownerId());

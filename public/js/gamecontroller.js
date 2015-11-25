@@ -30,6 +30,9 @@ Gamecontroller.prototype.update = function() {
 		if (self._viewingHistory()) {
 			// don't let player end their turn while they're looking at history
 			$('#end_turn').prop('disabled', true);
+		} else if (Engine.isAttacking()) {
+			// can't end turn during an attack
+			$('#end_turn').prop('disabled', true);
 		} else {
 			$('#end_turn').prop('disabled', false);
 		} 

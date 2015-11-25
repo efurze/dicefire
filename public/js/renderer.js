@@ -121,11 +121,6 @@ $(function(){
 			
 			var fromPlayerId = fromCountry.ownerId();
 			
-			// disable the 'end turn' button if the current attacking player is the human
-			if (Engine.isHuman(fromPlayerId) && fromPlayerId == state.currentPlayerId()) {
-				$('#end_turn').prop('disabled', true);
-			}
-			
 			var fromNumDice = fromRollArray.length;
 			var toNumDice = toRollArray.length;
 			
@@ -178,12 +173,7 @@ $(function(){
 	                    $.playSound('/sounds/wood_hit_brick_1');               
 	                }
 	            }
-	
-				// re-enable the 'end turn' button
-				if (Engine.isHuman(fromPlayerId) && fromPlayerId == state.currentPlayerId()) {
-					$('#end_turn').prop('disabled', false);
-				}
-				
+					
 				callback();
 			}
 		
