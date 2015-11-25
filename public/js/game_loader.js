@@ -4,17 +4,12 @@ $(function() {
 	
 	window.GameLoader = {
 		
-		_mouseOverCountry: null,
-	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
 		_initialMap: null,
 		_initialState: null,
 		_controller: null,
 		_mapController: null,
 		
-		mouseOverCountry: function() { return GameLoader._mouseOverCountry; },
-		selectedCountry: function() { return GameLoader._selectedCountry; },
-		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function () {
 			

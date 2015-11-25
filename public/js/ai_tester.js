@@ -12,7 +12,7 @@ var GameRepeater = function(players, runCount) {
 
 GameRepeater.prototype.start = function(callback) {
 	var self = this;
-	Renderer.init(self._players.length, Game._canvas);
+	Renderer.init(self._players.length, AI_Tester._canvas);
 	self._callback = callback;
 	self._currentRun = 0;
 	self._playerMapping = [];
@@ -42,6 +42,9 @@ GameRepeater.prototype.gameOver = function (winner, id) {
 	
 	if (self._currentRun < self._runCount) {
 		self.simulateGame();
+		if (self._callback) {
+			self._callback(self._results, self._whoWentFirst);
+		}
 	} else {
 		console.log("test over");
 		if (self._callback) {
@@ -61,6 +64,8 @@ GameRepeater.prototype.gameOver = function (winner, id) {
 			});
 		}
 	}
+	
+	
 };
 
 GameRepeater.prototype.simulateGame = function() {
@@ -147,39 +152,110 @@ runAllPlayerCounts.prototype.matchupDone = function(results, runTracker) {
 $(function() {
 
 	
-	window.Game = {
+	window.AI_Tester = {
 		
-		_mouseOverCountry: null,
-	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
-		_players: [AI.Plyer, AI.Plyer, AI.Greedy, AI.Greedy],
-		
-		mouseOverCountry: function() { return Game._mouseOverCountry; },
-		selectedCountry: function() { return Game._selectedCountry; },
-		currentPlayer: function() { return Engine.currentPlayer(); },
-		
+		_players: [],
+		_runner: null,
+				
 		init: function (playerCode) {
-			Globals.suppress_ui = 1;
-			$('#start_test').click(Game.start);  
+			$('#setup').css('display', 'block');
+			$('#results_div').css('display', 'none');
+			$('#game').css('display', 'none');
+			
+			Globals.suppress_ui = true;
+			
+			$('#start_game').click(Testercontroller.startGame);
+			Testercontroller.init(AI_Tester.start);
 		},
 		
+		
+		/*
+			results = {
+				"Plyer" : [2, 54, 345]  // wins by position
+			}
+			
+			runTracker = {
+				"Plyer" : [23, 23, 43] // # of times playing in that position
+			}
+		*/
 		simulationDone: function(results, runTracker) {
 			var self = this;
 			
-			Game._players.forEach(function(player) {
-				var name = player.getName();
-				console.log(name + ": " + JSON.stringify(results[name].map(function(result, idx) {
-					return result + "/" + runTracker[name][idx] + "(%" + (100*result/runTracker[name][idx]).toPrecision(3) + ")";
-				})));
-			})
+			$('#counter').html(AI_Tester._runner._currentRun + "/" + AI_Tester._runner._runCount);
+			
+			Object.keys(results).forEach(function(name, row) {
+				var playerResults = results[name];
+				
+				playerResults.forEach(function(result, col) {
+					var percentage = "% " + ((runTracker[name][col]) ? (100*result/runTracker[name][col]).toPrecision(3) : "--");
+					$('#results #' + (row+1) + (col+1)).html(percentage);
+				});
+			});
 		},
 		
-		start: function () {
+		makeTable: function (table, data) {
+		    $.each(data, function(rowIndex, r) {
+		        var row = $("<tr/>");
+		        $.each(r, function(colIndex, c) { 
+					if (rowIndex == 0) {
+						row.append($("<th/>").text(c));
+					} else {
+						row.append($("<td id='" + (rowIndex) + (colIndex) + "'/>").text(c));
+					}
+		            
+		        });
+		        table.append(row);
+		    });
+			return table;
+		},
+		
+		start: function (players, runCount) {
+			$('#setup').css('display', 'none');
+			
+			AI_Tester._players = players.map(function(p){return p;});
+			runCount = runCount || 5;
+			
+			// make the results table
+			var uniquePlayers = {}; // so we don't have 2 entries for 2 copies of the same AI
+			var data = [];
+			var topRow = ["Start Position"];
+			players.forEach(function(player, idx) {
+				topRow.push(idx+1);
+				
+				if (uniquePlayers[player.getName()]) {
+					return;
+				} else {
+					uniquePlayers[player.getName()] = true;
+				}
+				
+				var row = [];
+				row.length = players.length+1;
+				row.fill(0);
+				if (player == "human") {
+					row[0] = "human";
+				} else {
+					row[0] = player.getName();
+				}
+				data.push(row);
+			});
+			data.unshift(topRow);
+			
+			var table = AI_Tester.makeTable($('#results'), data);
+			$('#results_div').append(table);
+			
+			$('#results').css('width', '75%');
+			$('#results').css('text-align', 'left');
+			$('#results').css('table-layout', 'fixed');
+			$('#results_div').css('display', 'block');
+			
 			//var runner = new runAllPlayerCounts(AI.Plyer, 100);
 			//runner.start();
 			
-			var runner = new GameRepeater(Game._players, 200);
-			runner.start(Game.simulationDone);
+			AI_Tester._runner = new GameRepeater(players, runCount);
+			AI_Tester._runner.start(AI_Tester.simulationDone);
 		},
+		
+		
 	};		
 });

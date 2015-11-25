@@ -186,21 +186,25 @@ var Engine = {
 		
 		// make sure attacker has at least 2
 		if (fromCountry.numDice() < 2) {
+			Globals.debug("Attacking country has too few dice", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 			ok = false;
 		}
 		
 		if (fromCountry.ownerId() == toCountry.ownerId()) {
+			Globals.debug("Player attacking itself", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 			ok = false;
 		}
 		
 		if (fromCountry.id() == toCountry.id()) {
+			Globals.debug("Country attacking itself", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 			ok = false;
 		}
 
 		if (!ok) {
-			Globals.ASSERT(false);
+			//Globals.ASSERT(false);
 			Globals.debug("Illegal attack", fromCountry, toCountry, Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
-			return null;    		
+			callback(false);
+			return;    		
 		}
 
 		var fromNumDice = fromCountry.numDice();

@@ -1,27 +1,35 @@
-<canvas id="c" width="980px" height="580px">
-
-</canvas>
-
-<div id="players" style="margin-top:10px; margin-bottom:10px"></div>
-
-<div style="margin-left:10px">
-	<button id="start_test" style="width:100px;height:30px;">Start</button>
-	<div id="roll"><div id="leftroll"></div><div id="rightroll"></div></div>
+<div id="setup">
+	<form style="margin-top:10px; margin-bottom:10px">
+	  Number of Games: <input type="text" id="runCount">
+	</form>
+	
+	{{>setupcontroller}}
 </div>
 
+<div id="results_div">
+	<div style="display: inline">Run Counter:  </div><div id="counter" style="display:inline; margin-top:30px; margin-bottom:30px"> 0/0 </div>
+	<table id="results" style="margin-top:30px; margin-bottom:30px">
+	</table>
+</div
 
-<p>
-<!--
-<textarea id="info" rows=7 cols=120>
-</textarea>
--->
+<div id="game" style="display: none">
+	<canvas id="c" width="980px" height="580px">
+	</canvas>
+
+	<div style="display: block; height: 20px; margin-left:10px">
+		<div id="roll"><div id="leftroll"></div><div id="rightroll"></div></div>
+	</div>
+
+	<div id="players" style="margin-top:10px; margin-bottom:10px"></div>
+
+	{{>gamecontroller}}
+	
+</div> <!-- game --!>
+
 
 <script>
 	$(function() {
-		Game.init([
-			AI.Aggressive,
-			AI.Aggressive,
-		]);
+		AI_Tester.init();
 	});
 </script>
 
