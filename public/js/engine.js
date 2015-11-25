@@ -8,8 +8,8 @@ var Engine = {
 	_attackInProgress: false,
 	_previousAttack: {},
 	_history: [],
-	_historyIndex: 0,
 	_callback: null,
+	_renderCallback: null,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 	currentPlayerId: function() { return Engine._currentPlayerId; },
@@ -27,8 +27,8 @@ var Engine = {
 		this._gameOver = false;
 		this._attackInProgress = false;
 		this._previousAttack = false;
-		this._historyIndex = 0;
 		this._callback = callback;
+		this._renderCallback = null;
 		
 		Engine._playerCode = playerCode;
 		var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
@@ -41,6 +41,10 @@ var Engine = {
 		});
 
 		Player.init(playerCode.length);		
+	},
+	
+	registerRenderingCallback: function(cb) {
+		this._renderCallback = cb;
 	},
 	
 	setup: function(initialMap, initialState) {
@@ -69,13 +73,13 @@ var Engine = {
 			player.updateStatus();
 		});
 		
-		Renderer.render(Engine.getState());
+		Engine._redraw();
 		//Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	},
 	
 	pushHistory: function() {
-		Engine._history.push(this.serialize());
-		Engine._historyIndex = this._history.length - 1;
+		Globals.debug("Push history", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
+		Engine._history.push(this.getState());
 	},
 	
 	
@@ -100,7 +104,7 @@ var Engine = {
 	 		}
 	 		var country = countriesWithSpace[Math.floor(Math.random() * countriesWithSpace.length)];
 			country.addDie();
-			Renderer.render(Engine.getState());
+			Engine._redraw();
 		}
 	},
 
@@ -120,7 +124,7 @@ var Engine = {
 				}, 0);
 		} 
 
-		Renderer.render(Engine.getState());
+		Engine._redraw();
 	},
 
 	endTurn: function(event) {
@@ -128,7 +132,7 @@ var Engine = {
 		var cur = Engine._currentPlayerId;
 		var player = Player.get(Engine._currentPlayerId);
 		Engine.addDiceToPlayer(player, player._numContiguousCountries);
-		Renderer.render(Engine.getState());
+		Engine._redraw();
 		
 		// go to the next player that hasn't lost
 		do {
@@ -228,7 +232,7 @@ var Engine = {
 				
 				// this defeat may have knocked oldOwner out.
 				// Redraw its info
-				Renderer.render(Engine.getState());
+				Engine._redraw();
 
 				if (fromPlayer.countryCount() == Map.countryCount()) {
 					Engine.gameOver(fromPlayer);
@@ -240,7 +244,7 @@ var Engine = {
 			// attack is done, save to history
 			Engine.pushHistory();
 			
-			Renderer.render(Engine.getState());
+			Engine._redraw();
 
 			callback(fromRoll > toRoll);
 		});
@@ -274,15 +278,18 @@ var Engine = {
 		this.setState(gamestate);
 	},
 	
-	setHistoryIndex: function(index) {
-		this._historyIndex = index;
-		this.deserialize(this._history[index]);
+	historyLength: function() {
+		return this._history.length;
 	},
 	
-	isHistoryCurrent: function() {
-		return this._historyIndex == (this._history.length - 1);
+	getHistory: function(index) {
+		if (index >= 0 && index < this._history.length) {
+			return this._history[index];
+		} else {
+			return new Gamestate();
+		}
 	},
-
+		
 	getState: function() {
 		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId, Engine._previousAttack);
 	},
@@ -307,6 +314,12 @@ var Engine = {
 		return Map.countryCount();
 	},
 
+	_redraw: function() {
+		if (Engine._renderCallback) {
+			Engine._renderCallback();
+		}
+	},
+	
 	// The interface passed to AIs so they can control the game.
 	interface: {
 		adjacentCountries: function(countryId) { return Map.adjacentCountries(countryId);},

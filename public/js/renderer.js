@@ -104,7 +104,6 @@ $(function(){
 			
 			this._renderMap(state);
 			this._renderPlayers(state);
-			this.renderControls();
 		},
 		
 		/*
@@ -119,7 +118,6 @@ $(function(){
 			Globals.debug("renderAttack", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			
 			var self = this;
-			Renderer.renderControls();
 			
 			var fromPlayerId = fromCountry.ownerId();
 			
@@ -187,13 +185,6 @@ $(function(){
 				}
 				
 				callback();
-				
-				var state = Engine.getState();
-				Renderer._renderCountry(fromCountry.id(), state);
-				Renderer._renderCountry(toCountry.id(), state);
-				Renderer._renderPlayer(toCountry.ownerId(), state);
-				Renderer._renderPlayer(fromCountry.ownerId(), state);
-				Renderer.renderControls();
 			}
 		
 		},
@@ -234,40 +225,6 @@ $(function(){
 			this._renderCountry(toCountry.id(), state, true);
 		},
 		
-		renderControls: function() {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			Globals.debug("renderControls", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			
-			$('#back_btn').prop('disabled', true);
-			$('#forward_btn').prop('disabled', true);
-			
-			var history_count = Engine._history.length;
-			var current = Engine._historyIndex + 1;
-			
-			if (Engine.isHuman(Engine._currentPlayerId) || current != history_count) {	
-				if (current == history_count) {
-					$('#end_turn').prop('disabled', false);
-				} else {
-					// don't let player end their turn while they're looking at history
-					$('#end_turn').prop('disabled', true);
-				}
-				
-				$('#history').html(current + ' / ' + history_count);
-				
-				if (current < history_count) {
-					$('#forward_btn').prop('disabled', false);
-				}
-				
-				if (current > 1) {
-					$('#back_btn').prop('disabled', false);
-				}
-				
-			} else {
-				$('#end_turn').prop('disabled', true);
-			}
-		},
 		
 		_renderMap: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {

@@ -7,6 +7,7 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
+		_controller: null,
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		setMouseOverCountry: function(country) {
@@ -31,15 +32,17 @@ $(function() {
 			}));
 			
 			Engine.setup();
-			
-			Renderer.render(Engine.getState());
+			Engine.registerRenderingCallback(Game.update);
+			Game._controller = new Gamecontroller();
+
+			Game.update();
 			
 			$(Game._canvas).mousemove(Game.mouseMove);
             $(Game._canvas).mouseleave(Game.mouseLeave);
             $(Game._canvas).click(Game.click);
-			$('#end_turn').click(Engine.endTurn);
-			$('#back_btn').click(Game.historyBack);
-			$('#forward_btn').click(Game.historyForward);
+			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
+			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
+			$('#forward_btn').click(Game._controller.historyForward.bind(Game._controller));
 			
 			Engine.startTurn(0);
 		},
@@ -137,42 +140,13 @@ $(function() {
             }            
         },
 
-		historyBack: function (event) {
-			if (Engine._historyIndex < 0) {
-				Engine._historyIndex = Engine._history.length - 1;
-			}
-			
-			if (Engine._historyIndex > 0) {
-				Engine.setHistoryIndex(Engine._historyIndex - 1);
-				Renderer.render(Engine.getState());
-				
-				if (!Engine.isHistoryCurrent()) {
-					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),
-						Map.getCountry(Engine._previousAttack.toCountryId),
-						Engine._previousAttack.fromRollArray,
-						Engine._previousAttack.toRollArray,
-						Engine.getState());
-						Renderer.renderControls();
-				}
+		update: function(gamestate) {
+			gamestate = gamestate || Engine.getState();
+			Renderer.render(gamestate);
+			if (Game._controller) {
+				Game._controller.update();
 			}
 		},
-		
-		historyForward: function (event) {
-			if (Engine._historyIndex < Engine._history.length - 1) {
-				
-				Engine.setHistoryIndex(Engine._historyIndex + 1);
-				Renderer.render(Engine.getState());
-				
-				if (!Engine.isHistoryCurrent()) {	
-					Renderer.renderHistoricalAttack(Map.getCountry(Engine._previousAttack.fromCountryId),
-						Map.getCountry(Engine._previousAttack.toCountryId),
-						Engine._previousAttack.fromRollArray,
-						Engine._previousAttack.toRollArray,
-						Engine.getState());				
-						Renderer.renderControls();
-				}
-			}
-		}
 		
 	};
 });
