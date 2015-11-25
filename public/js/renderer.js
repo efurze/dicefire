@@ -535,14 +535,14 @@ $(function(){
 			var self = this;
 			if (isFighting) {
 				return "black";
-			} else if (country == Game.mouseOverCountry()) {
-		        if (country == Game.selectedCountry()) {
+			} else if (country.id() == self._mouseOverCountry) {
+		        if (country.id() == self._selectedCountry) {
 		            return "gray";
 		        } else {
 		            return "lightgray";
 		        }
 		    } else {
-		        if (country == Game.selectedCountry()) {
+		        if (country.id() == self._selectedCountry) {
 		            return "black";
 		        } else {
 		            return self._playerColors[country.ownerId()];
