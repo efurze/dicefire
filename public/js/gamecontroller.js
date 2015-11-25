@@ -80,10 +80,10 @@ Gamecontroller.prototype.historyForward = function (event) {
 Gamecontroller.prototype.renderHistory = function (state) {
 	var self = this;
 	Renderer.render(state);
-	Renderer.renderHistoricalAttack(Map.getCountry(state.previousAttack().fromCountryId),
-		Map.getCountry(state.previousAttack().toCountryId),
-		state.previousAttack().fromRollArray,
-		state.previousAttack().toRollArray,
+	Renderer.renderHistoricalAttack(Map.getCountry(state.attack().fromCountryId),
+		Map.getCountry(state.attack().toCountryId),
+		state.attack().fromRollArray,
+		state.attack().toRollArray,
 		state);				
 };
 

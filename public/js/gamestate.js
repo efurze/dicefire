@@ -2,12 +2,12 @@
 
 var SHA1 = new Hashes.SHA1();
 
-var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
+var Gamestate = function(players, countries, currentPlayerId, attack) {
 	var self = this;
 	self._currentPlayerId = typeof currentPlayerId === 'undefined' ? -1 : currentPlayerId;
 	self._players = {};
 	self._countries = {};
-	self._previousAttack = {};
+	self._attack = {};
 	if (players) {
 		players.forEach(function(player) {
 			self._players[player.id()] = {
@@ -27,8 +27,8 @@ var Gamestate = function(players, countries, currentPlayerId, previousAttack) {
 			};
 		});
 	}
-	if (previousAttack) {
-		self._previousAttack = previousAttack;
+	if (attack) {
+		self._attack = attack;
 	}
 };
 
@@ -47,7 +47,7 @@ Gamestate.prototype.clone = function() {
 	copy._currentPlayerId = this._currentPlayerId;
 	copy._players = JSON.parse(JSON.stringify(this._players));
 	copy._countries = JSON.parse(JSON.stringify(this._countries));
-	copy._previousAttack = JSON.parse(JSON.stringify(this._previousAttack));
+	copy._attack = JSON.parse(JSON.stringify(this._attack));
 	return copy;
 };
 
@@ -111,16 +111,19 @@ Gamestate.prototype.setCountryDice = function(countryId, count) {
 	this._countries[countryId].numDice = count;
 };
 
-Gamestate.prototype.previousAttack = function() {
-	if (!this._previousAttack) {
-		this._previousAttack =  {
+Gamestate.prototype.setAttack = function(attack) {
+	this._attack = attack;
+}
+Gamestate.prototype.attack = function() {
+	if (!this._attack) {
+		this._attack =  {
 			fromCountryId: -1,
 			toCountryId: -1,
 			fromRollArray: [],
 			toRollArray: []
 		};
 	} 
-	return JSON.parse(JSON.stringify(this._previousAttack));
+	return JSON.parse(JSON.stringify(this._attack));
 };
 
 Gamestate.prototype.playerHash = function(playerId) {

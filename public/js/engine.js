@@ -6,7 +6,6 @@ var Engine = {
 	_currentPlayerId: 0,
 	_gameOver: false,
 	_attackInProgress: false,
-	_previousAttack: {},
 	_history: [],
 	_callback: null,
 	_renderCallback: null,
@@ -26,7 +25,6 @@ var Engine = {
 		Engine.setCurrentPlayer(0);
 		this._gameOver = false;
 		this._attackInProgress = false;
-		this._previousAttack = false;
 		this._callback = callback;
 		this._renderCallback = null;
 		
@@ -77,9 +75,19 @@ var Engine = {
 		//Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	},
 	
-	pushHistory: function() {
+	// @attack (optional):  {
+	//	fromCountryId: fromCountry._id,
+	//	toCountryId: toCountry._id,
+	//	fromRollArray: fromRollArray,
+	//	toRollArray: toRollArray
+	// } 
+	pushHistory: function(attack){
 		Globals.debug("Push history", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
-		Engine._history.push(this.getState());
+		var state = this.getState();
+		if (attack) {
+			state.setAttack(attack);
+		}
+		Engine._history.push(state);
 	},
 	
 	
@@ -115,7 +123,6 @@ var Engine = {
 	startTurn: function(playerId, callback) {
 		Globals.debug("Player " + playerId + " starting turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		Engine.setCurrentPlayer(playerId);
-		Engine._previousAttack = {};
 		Engine.pushHistory();
 
 		if (Engine._playerCode[Engine._currentPlayerId] != "human") {
@@ -203,12 +210,13 @@ var Engine = {
 		var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
 		var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 
-		self._previousAttack = {
+		var attack = {
 			fromCountryId: fromCountry._id,
 			toCountryId: toCountry._id,
 			fromRollArray: fromRollArray,
 			toRollArray: toRollArray
 		}
+		Engine.pushHistory(attack);
 
 		Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, Engine.getState(), function done() {
 
@@ -291,13 +299,12 @@ var Engine = {
 	},
 		
 	getState: function() {
-		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId, Engine._previousAttack);
+		return new Gamestate(Player.array(), Map._countryArray, Engine._currentPlayerId);
 	},
 	
 	setState: function(gamestate) {
 		Map.setState(gamestate);
 		Player.setState(gamestate);
-		this._previousAttack = gamestate.previousAttack();
 		Engine.setCurrentPlayer(gamestate.currentPlayerId());
 	},
 	
