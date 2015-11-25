@@ -83,7 +83,6 @@ var Engine = {
 	//	toRollArray: toRollArray
 	// } 
 	pushHistory: function(attack){
-		Globals.debug("Push history", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 		var state = this.getState();
 		if (attack) {
 			state.setAttack(attack);

@@ -7,9 +7,10 @@ $(function() {
 		_mouseOverCountry: null,
 	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
-		_players: ["human", AI.Plyer],
+		_players: [AI.Greedy, AI.Plyer],
 		_initialMap: null,
 		_initialState: null,
+		_controller: null,
 		
 		mouseOverCountry: function() { return Game._mouseOverCountry; },
 		selectedCountry: function() { return Game._selectedCountry; },
@@ -33,10 +34,16 @@ $(function() {
 			
 			Engine.init(Game._players.map(function(p){return p;}));
 			Engine.setup(Game._initialMap, Game._initialState);
+			Engine.registerRenderingCallback(Game.update);
 			Renderer.clearAll();
-			Renderer.render(Engine.getState());
+			
+			Game._controller = new Gamecontroller();
+			Game.update();
+			
 			$('#start_test').click(Game.start);
-			$('#end_turn').click(Engine.endTurn);
+			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
+			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
+			$('#forward_btn').click(Game._controller.historyForward.bind(Game._controller));
 		},
 		
 		ajaxFail: function(err) {
@@ -46,7 +53,15 @@ $(function() {
 		
 		start: function () {
 			Engine.startTurn(0);
-		}
+		},
+		
+		update: function(gamestate) {
+			gamestate = gamestate || Engine.getState();
+			Renderer.render(gamestate);
+			if (Game._controller) {
+				Game._controller.update();
+			}
+		},
 		
 	};
 });
