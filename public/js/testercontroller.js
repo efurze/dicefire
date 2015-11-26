@@ -1,14 +1,5 @@
 "use strict"
 
-/*
-
-<div style="margin-left:10px; margin-top:10px; margin-bottom: 20px;">
-	<select id="player_3">
-	  <option value="human">human</option>
-	  <option value="none">none</option>
-	</select>
-</div>
-*/
 
 $(function(){
 

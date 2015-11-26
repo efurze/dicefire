@@ -180,35 +180,9 @@ $(function() {
 			}
 		*/
 		simulationDone: function(results, runTracker) {
-			var self = this;
-			
-			$('#counter').html(AI_Tester._runner._currentRun + "/" + AI_Tester._runner._runCount);
-			
-			Object.keys(results).forEach(function(name, row) {
-				var playerResults = results[name];
-				
-				playerResults.forEach(function(result, col) {
-					var percentage = "% " + ((runTracker[name][col]) ? (100*result/runTracker[name][col]).toPrecision(3) : "--");
-					$('#results #' + (row+1) + (col+1)).html(percentage);
-				});
-			});
+			Testerrenderer.update(results, runTracker);
 		},
 		
-		makeTable: function (table, data) {
-		    $.each(data, function(rowIndex, r) {
-		        var row = $("<tr/>");
-		        $.each(r, function(colIndex, c) { 
-					if (rowIndex == 0) {
-						row.append($("<th/>").text(c));
-					} else {
-						row.append($("<td id='" + (rowIndex) + (colIndex) + "'/>").text(c));
-					}
-		            
-		        });
-		        table.append(row);
-		    });
-			return table;
-		},
 		
 		start: function (players, runCount) {
 			$('#setup').css('display', 'none');
@@ -216,33 +190,7 @@ $(function() {
 			AI_Tester._players = players.map(function(p){return p;});
 			runCount = runCount || 5;
 			
-			// make the results table
-			var uniquePlayers = {}; // so we don't have 2 entries for 2 copies of the same AI
-			var data = [];
-			var topRow = ["Start Position"];
-			players.forEach(function(player, idx) {
-				topRow.push(idx+1);
-				
-				if (uniquePlayers[player.getName()]) {
-					return;
-				} else {
-					uniquePlayers[player.getName()] = true;
-				}
-				
-				var row = [];
-				row.length = players.length+1;
-				row.fill(0);
-				if (player == "human") {
-					row[0] = "human";
-				} else {
-					row[0] = player.getName();
-				}
-				data.push(row);
-			});
-			data.unshift(topRow);
-			
-			var table = AI_Tester.makeTable($('#results'), data);
-			$('#results_div').append(table);
+			Testerrenderer.init(players, $('#results_div'));
 			
 			$('#results').css('width', '75%');
 			$('#results').css('text-align', 'left');

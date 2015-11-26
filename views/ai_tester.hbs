@@ -8,6 +8,7 @@
 
 <div id="results_div">
 	<div style="display: inline">Run Counter:  </div><div id="counter" style="display:inline; margin-top:30px; margin-bottom:30px"> 0/0 </div>
+	<div id="results_chart"></div>
 	<table id="results" style="margin-top:30px; margin-bottom:30px">
 	</table>
 </div
@@ -28,6 +29,7 @@
 
 
 <script>
+	google.load("visualization", "1.1", {packages:["bar"]});
 	$(function() {
 		AI_Tester.init();
 	});
