@@ -35,10 +35,11 @@
 	*/
 
 	window.AI = window.AI || {};
-	window.AI.Plyer =  function (id, ply_depth) {
+	window.AI.Plyer =  function (id, ply_depth, lookahead) {
 		
 		this._myId = id;
 		this._MAX_PLIES = ply_depth || 1;
+		this._lookahead = lookahead || 1
 		this._interface = null;
 	};
 		
@@ -50,7 +51,7 @@
 	// and the list of other players, so it can know who is human and where
 	// in the turn order this AI shows up.
 	window.AI.Plyer.create = function(playerId, isHumanList) {
-		return new window.AI.Plyer(playerId, 2);
+		return new window.AI.Plyer(playerId, 2, 1);
 	};
 
 	// Called each time the AI has a turn.
@@ -194,11 +195,12 @@
 	window.AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
 		length = length || 1;
 		var self = this;
-		var lookahead = 1;
+		var lookahead = state.currentPlayerId() == self._myId ? self._lookahead : 1;
 		var moves_ary = [];
 		
 		var moves = util.findAllMoves(state, lookahead)
 		if (!moves || !moves.length) {
+			moves_ary.push(new Move());
 			return moves_ary;
 		}
 		
