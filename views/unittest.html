@@ -18,22 +18,26 @@
 
 	<script type="text/javascript" src="/js/jshashes/hashes.js"></script>
 	<script type="text/javascript" src="/js/globals.js"></script>
-	<script type="text/javascript" src="/js/dir.js"></script>
-	<script type="text/javascript" src="/js/hex.js"></script>
-	<script type="text/javascript" src="/js/map.js"></script>
-	<script type="text/javascript" src="/js/player.js"></script>
-	<script type="text/javascript" src="/js/country.js"></script>
-	<script type="text/javascript" src="/js/gamestate.js"></script>
-	<script type="text/javascript" src="/js/engine.js"></script>
-	<script type="text/javascript" src="/js/renderer.js"></script>
-	<script type="text/javascript" src="/js/game_loader.js"></script>
-	
-	
-  <script type="text/javascript" src="/js/ai/util.js"></script>
-  <script type="text/javascript" src="/js/ai/donothing.js"></script>
-  <script type="text/javascript" src="/js/ai/aggressive.js"></script>
-  <script type="text/javascript" src="/js/ai/passive.js"></script>
-  <script type="text/javascript" src="/js/ai/plyer.js"></script>
+	<script type="text/javascript" src="/js/game/dir.js"></script>
+	<script type="text/javascript" src="/js/game/hex.js"></script>
+	<script type="text/javascript" src="/js/game/map.js"></script>
+	<script type="text/javascript" src="/js/game/player.js"></script>
+	<script type="text/javascript" src="/js/game/country.js"></script>
+	<script type="text/javascript" src="/js/game/gamestate.js"></script>
+	<script type="text/javascript" src="/js/game/engine.js"></script>
+	<script type="text/javascript" src="/js/controllers/gamecontroller.js"></script>
+	<script type="text/javascript" src="/js/controllers/mapcontroller.js"></script>
+	<script type="text/javascript" src="/js/controllers/setupcontroller.js"></script>
+	<script type="text/javascript" src="/js/controllers/testercontroller.js"></script>
+	<script type="text/javascript" src="/js/ui/testerrenderer.js"></script>
+	<script type="text/javascript" src="/js/ui/renderer.js"></script>
+
+	<script type="text/javascript" src="/js/ai/util.js"></script>	
+	<script type="text/javascript" src="/js/ai/greedy.js"></script>
+	<script type="text/javascript" src="/js/ai/plyer.js"></script>
+	<script type="text/javascript" src="/js/ai/donothing.js"></script>
+    <script type="text/javascript" src="/js/ai/aggressive.js"></script>
+    <script type="text/javascript" src="/js/ai/passive.js"></script>
 
   <script>mocha.setup({ui: 'bdd', globals: ['Game', 'Renderer', 'GameLoader']})</script>
   <script type="text/javascript" src="/data/testmaps/testmap"></script>
