@@ -1,5 +1,11 @@
 "use strict"
 
+if (typeof module !== 'undefined' && module.exports){
+	var Globals = require('../globals.js');
+	var Hex = require('./hex.js');
+	var Country = require('./country.js');
+}
+
 var Map = {
 
 	_hexArray: [],
@@ -325,3 +331,7 @@ var Map = {
 	    return closestHex;
 	}
 };
+
+if (typeof module !== 'undefined' && module.exports){
+	module.exports = Map;
+}

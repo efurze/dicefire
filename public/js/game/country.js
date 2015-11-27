@@ -1,5 +1,11 @@
 "use strict"
 
+if (typeof module !== 'undefined' && module.exports) {
+	var Globals = require('../globals.js');
+	var Hex = require('./hex.js');
+	var Map = require('./map.js');
+}
+
 var Country = function(id) {
         this._id = id; 
         this._hexIds = [];
@@ -148,5 +154,7 @@ Country.prototype.absorbLake = function() {
     this._hexIds = [];
 };
 
-
+if (typeof module !== 'undefined' && module.exports){
+	module.exports = Country;
+}
 

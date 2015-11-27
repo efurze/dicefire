@@ -1,5 +1,11 @@
 "use strict"
 
+if (typeof module !== 'undefined' && module.exports) {
+	var Globals = require('../globals.js');
+	var Country = require('./country.js');
+	var Map = require('./map.js');
+}
+
 var Player = function(id) {
 	this._id = id;
 	this._countries = []; // array of countryIds
@@ -152,3 +158,6 @@ Player.prototype.updateStatus = function() {
 
 
 
+if (typeof module !== 'undefined' && module.exports){
+	module.exports = Player;
+}

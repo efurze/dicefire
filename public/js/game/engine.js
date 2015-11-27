@@ -1,5 +1,14 @@
 "use strict"
 
+if (typeof module !== 'undefined' && module.exports) {
+	var Globals = require('../globals.js');
+	var Country = require('./country.js');
+	var Player = require('./player.js');
+	var Gamestate = require('./gamestate.js');
+	var Map = require('./map.js');
+}
+
+
 var Engine = {
 		
 	_playerCode: null,
@@ -350,3 +359,7 @@ var Engine = {
 
 
 
+
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = Engine;
+}

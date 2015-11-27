@@ -1,5 +1,10 @@
 "use strict"
 
+if (typeof module !== 'undefined' && module.exports){
+	var Globals = require('../globals.js');
+}
+
+
 var Hex = function(id, x, y, countryId, edgeDirections) {    
 		this._id = id;
         this._x = this._id % Hex.NUM_WIDE;
@@ -98,4 +103,6 @@ Hex.prototype.upperLeft = function() {
     return [upperLeftX, upperLeftY];
 }
 
-
+if (typeof module !== 'undefined' && module.exports){
+	module.exports = Hex;
+}

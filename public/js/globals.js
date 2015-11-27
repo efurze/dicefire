@@ -113,4 +113,6 @@ Globals.shuffleArray = function(inArray) {
 };
 
 
-
+if (typeof module !== 'undefined' && module.exports){
+	module.exports = Globals;
+}

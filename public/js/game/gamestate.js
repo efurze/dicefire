@@ -1,5 +1,10 @@
 "use strict"
 
+if (typeof module !== 'undefined' && module.exports) {
+	var Globals = require('../globals.js');
+	var Hashes = require('../jshashes');
+}
+
 var SHA1 = new Hashes.SHA1();
 
 var Gamestate = function(players, countries, currentPlayerId, attack) {
@@ -146,3 +151,7 @@ Gamestate.prototype.countryHash = function(countryId) {
 Gamestate.prototype.countriesHash = function() {
 	return SHA1.hex(JSON.stringify(this._countries));
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = Gamestate;
+}
