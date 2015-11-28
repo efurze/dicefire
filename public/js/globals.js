@@ -77,7 +77,7 @@ Globals.CHANNEL = {
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
 Globals.channels = [
-	0, //"ENGINE",
+	4, //"ENGINE",
 	0, //"MAP",
 	0, //"HEX",
 	0, //"COUNTRY",
