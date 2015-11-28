@@ -138,6 +138,7 @@ Player.prototype.updateStatus = function() {
 		return 1 + 
 				Map.adjacentCountries(country.id()).reduce(function(total, adjacentCountryId) {
 					var adjacentCountry = Map.getCountry(adjacentCountryId);
+					Globals.ASSERT(adjacentCountry);
 					if (adjacentCountry.ownerId() == self.id()) {
 						total += traverse(adjacentCountry);
 					}

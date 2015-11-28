@@ -2,10 +2,10 @@
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
+	var Dir = require('./dir.js');
 	var Hex = require('./hex.js');
 	var Country = require('./country.js');
 }
-
 var Map = {
 
 	_hexArray: [],
@@ -106,7 +106,7 @@ var Map = {
 		});
 	},
 		
-	generateMap: function() {
+	generateMap: function(players) {
 		for (var i=0; i < this._countryArray.length; i++) {
 			this._countryArray[i]._hexIds = [];
 			delete this._countryArray[i];
@@ -125,7 +125,7 @@ var Map = {
 		
 		var country = new Country(this._countryArray.length);
 		this._countryArray.push(country);
-		country.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)]);
+		Map.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)], country);
 		
 
 		for (var i = 0; i < Globals.numCountries - 1; i++) {
@@ -137,7 +137,7 @@ var Map = {
 				if (country.isLake()) {
 					continue;
 				}
-				adjacentHex = country.findAdjacentHex(true);
+				adjacentHex = Map.findAdjacentHex(country);
 				if (adjacentHex) {
 					break;
 				}
@@ -148,7 +148,7 @@ var Map = {
 			}
 			var newCountry = new Country(this._countryArray.length);
 			this._countryArray.push(newCountry);
-			newCountry.landGrab(adjacentHex);
+			Map.landGrab(adjacentHex, newCountry);
 			if (newCountry.isLake()) {
 				i--;
 			}
@@ -172,8 +172,7 @@ var Map = {
 	    });
 		
 		this.pruneLakes();
-		
-		this.assignCountries();
+		this.assignCountries(players);
 	},
 	
 	isConnected: function(countryId1, countryId2) {
@@ -201,22 +200,22 @@ var Map = {
 	    });
 	    // Redo country ids to eliminate holes
 	    this._countryArray = this._countryArray.map(function(elem, index) {
-	        elem.setId(index);
+	        Map.setCountryId(index, elem);
 	        return elem;
 	    });
 
 	},
 	
-	assignCountries: function() {
+	assignCountries: function(players) {
 		// Use a shuffled countries list to randomize who gets what.
 		var self = this;
 		var shuffledCountries = Globals.shuffleArray(this._countryArray);
 		var currPlayer = 0;
 		shuffledCountries.forEach(function(country) {
-			Player.get(currPlayer).addCountry(country);
+			players[currPlayer].addCountry(country);
 			self.setupCountryEdges(country);
 			currPlayer++;
-			if (currPlayer >= Player.count()) {
+			if (currPlayer >= players.length) {
 				currPlayer = 0;
 			}
 		});
@@ -229,23 +228,22 @@ var Map = {
 	setupCountryEdges: function(country) {
 		var self = this;
 	    var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
-		this._adjacencyList[country.id()] = [];
+		self._adjacencyList[country.id()] = [];
 		
 	    country.hexes().forEach(function(hexId) {
 			var hex = Map.getHex(hexId);
 	        var countryEdges = [];
 	        for (var i = 0; i < Dir.array.length; i++) {
 	            var newHex = Dir.nextHex(hex, i);
-
 	            if (!newHex || newHex.country() != country) {
 	                countryEdges.push(i);             
 	            }
-	            if (newHex && newHex.country() && newHex.country() != country && 
-	                !adjacentCountryHexes[newHex.country().id()]) {
-	                adjacentCountryHexes[newHex.country().id()] = true;
-	                self._adjacencyList[country.id()].push(newHex.country().id());
-	            }
-
+	            if (newHex && newHex.countryId() >= 0 && newHex.countryId() != country.id() && 
+	                !adjacentCountryHexes[newHex.countryId()]) {
+					Globals.ASSERT(newHex.countryId() >= 0);
+	                adjacentCountryHexes[newHex.countryId()] = true;
+	                self._adjacencyList[country.id()].push(newHex.countryId());
+	            } 
 	        }
 	        hex.setCountryEdgeDirections(countryEdges);
 	    });
@@ -329,8 +327,99 @@ var Map = {
 	    });
 
 	    return closestHex;
+	},
+	
+	// Find a hex that is adjacent to this country but is not occupied by this country.
+	// This can be used to grow this country or to find a new place to start a country.
+	findAdjacentHex: function(country) {
+
+	    // Pick a starting hex randomly. Then iterate through until one is hopefully found.
+	    // var startingHexPos = Math.floor(Math.random() * this._hexIds.length);
+	    for (var i = 0; i < country._hexIds.length; i++) {
+	        // Try to find a neighboring spot that works.
+	        var hex = Math.floor(Math.random() * country._hexIds.length);
+
+	        //Iterate over directions from the hex again randomly to see if one works.
+	        for ( var j = 0; j < Dir.array.length; j++) {
+	            var dir = Dir.array[Math.floor(Math.random() * Dir.array.length)];
+	            var newHex = Dir.nextHex(Map.getHex(country._hexIds[hex]), dir);
+	            if (newHex && !newHex.country()) {
+	                return newHex;
+	            }
+
+	        }
+	    }
+
+	    return null;
+
+	},
+	
+	growCountry: function(country) {
+	    if (country._hexIds.length >= country._numHexes) {
+	        return;
+	    }
+
+	    var hex = Map.findAdjacentHex(country);
+
+	    if (!hex) {
+	        Globals.debug("Couldn't find a new spot for a hex!", Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);        
+	        return;
+	    }
+
+	    hex.setCountry(country);
+	    country._hexIds.push(hex.id());
+
+		Globals.debug("growCountry", country, hex, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);        
+
+	    // Tail recursion to get the right number.
+	    Map.growCountry(country);
+
+	},
+	
+	landGrab: function(starthex, country) {
+		country._hexIds = [starthex.id()];
+	    starthex.setCountry(country);
+		country._numHexes = Math.floor(Math.random() * (Country.MAX_HEXES - Country.MIN_HEXES + 1)) + 
+	        Country.MIN_HEXES;
+
+		Map.growCountry(country);
+		if (country._numHexes != country._hexIds.length) {
+			// Mark it as a lake still so we can make enough countries. If it's a small lake,
+			// let it get absorbed into another country. If it's a big lake, it will remain
+			// and be pruned (in actual gameplay, all isLake() countries are gone)
+			country._isLake = true;
+			if (country._hexIds.length <= 5) {
+				Map.absorbLake(country);
+					return;
+				} 
+			}
+	},
+	
+	
+	// Absorbs a lake into an adjacent country.
+	absorbLake: function(country) {
+	    var newCountry = null;
+	    country._hexIds.forEach(function(hexId) {
+	        Map.moveToAdjacentCountry(Map.getHex(hexId));
+	    })
+	    country._hexIds = [];
+	},
+	
+	setCountryId: function(id, country) {
+		Globals.debug("Changine country id from "+ country._id + " to " + id, country, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);
+		country._id = id;
+		if (Map.getCountry(id) != country) {
+			Globals.debug("Country id set to value which doesn't match Map array", country, Globals.LEVEL.WARN, Globals.CHANNEL.COUNTRY);
+		}
+		country._hexIds.forEach(function(hexId) {
+			Map.getHex(hexId).setCountry(country);
+		});
 	}
 };
+
+
+
+
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Map;

@@ -2,10 +2,10 @@
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
+	var Map = require('./map.js');
 	var Country = require('./country.js');
 	var Player = require('./player.js');
 	var Gamestate = require('./gamestate.js');
-	var Map = require('./map.js');
 }
 
 
@@ -61,7 +61,7 @@ var Engine = {
 			Globals.debug("Using provided map", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 			Map.deserializeHexes(initialMap);
 		} else {
-			Map.generateMap();
+			Map.generateMap(Player._array);
 			//Globals.debug("Map: " + Map.serializeHexes(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		}
 		
@@ -130,12 +130,12 @@ var Engine = {
 	},
 
 	startTurn: function(playerId, callback) {
-		Globals.debug("Player " + playerId + " starting turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+		Globals.debug("Player " + playerId + " starting turn", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		Engine.setCurrentPlayer(playerId);
 		Engine.pushHistory();
 
 		if (Engine._playerCode[Engine._currentPlayerId] != "human") {
-			window.setTimeout(function() {
+			Engine._timeout(function() {
 					Engine._playerCode[Engine._currentPlayerId].startTurn(Engine.interface)
 				}, 0);
 		} 
@@ -144,7 +144,7 @@ var Engine = {
 	},
 
 	endTurn: function(event) {
-		Globals.debug("Player " + Engine._currentPlayerId + " ending turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+		Globals.debug("Player " + Engine._currentPlayerId + " ending turn", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		var cur = Engine._currentPlayerId;
 		var player = Player.get(Engine._currentPlayerId);
 		Engine.addDiceToPlayer(player, player._numContiguousCountries);
@@ -232,7 +232,7 @@ var Engine = {
 		}
 		Engine.pushHistory(attack);
 
-		Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, Engine.getState(), function done() {
+		var done =  function() {
 
 			self._attackInProgress = false;
 
@@ -247,6 +247,8 @@ var Engine = {
 				fromPlayer.addCountry(toCountry);
 				oldOwner.updateStatus();
 				fromPlayer.updateStatus();
+				
+				Globals.debug("Losing player has " + oldOwner.countryCount() + " countries left", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 				
 				if (oldOwner.hasLost()) {
 					Globals.debug("Player " + oldOwner.id() + " has lost and can no longer play", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
@@ -269,7 +271,13 @@ var Engine = {
 			Engine._redraw();
 
 			callback(fromRoll > toRoll);
-		});
+		};
+		
+		if (typeof module !== 'undefined' && module.exports) {
+			done();
+		} else {
+			Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, Engine.getState(), done);
+		}
 
 	},
 
@@ -338,6 +346,14 @@ var Engine = {
 	_redraw: function() {
 		if (Engine._renderCallback) {
 			Engine._renderCallback();
+		}
+	},
+	
+	_timeout: function(callback, interval) {
+		if (typeof module !== 'undefined' && module.exports) {
+			setTimeout(callback, interval);
+		} else {
+			window.setTimeout(callback, interval);
 		}
 	},
 	

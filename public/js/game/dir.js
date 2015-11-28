@@ -1,4 +1,9 @@
-"use strict"
+if (typeof module !== 'undefined' && module.exports){
+	var Globals = require('../globals.js');
+	var Hex = require('./hex.js');
+}
+
+var Map = null;
 
 var Dir = {
         obj: {
@@ -93,7 +98,13 @@ var Dir = {
 
             }
 
-
+			if (!Map) {
+				Map = require('./map.js');
+			}
             return Map.getHex(newHexId);
         }
     };
+
+	if (typeof module !== 'undefined' && module.exports){
+		module.exports = Dir;
+	}

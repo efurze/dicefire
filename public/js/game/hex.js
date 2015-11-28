@@ -2,6 +2,7 @@
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
+	var Map = require('./Map.js');
 }
 
 
