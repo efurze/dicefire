@@ -50,6 +50,7 @@ var Map = {
 	},
 	
 	adjacentCountries: function(countryId) {
+		Globals.debug("adjacencyLst: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP);
 		return this._adjacencyList[countryId];
 	},
 	
@@ -121,7 +122,7 @@ var Map = {
 	    for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
 	        this._hexArray.push(new Hex(i));
 	    }
-	    Globals.debug("Created hexes ", Hex._array, Globals.LEVEL.INFO, Globals.CHANNEL.MAP);
+	    Globals.debug("Created hexes ", JSON.stringify(this._hexArray), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP);
 		
 		var country = new Country(this._countryArray.length);
 		this._countryArray.push(country);
@@ -154,7 +155,7 @@ var Map = {
 			}
 		}
 
-		Globals.debug("Created countries ", this._countryArray, Globals.LEVEL.INFO, Globals.CHANNEL.MAP);
+		Globals.debug("Created countries ", JSON.stringify(this._countryArray), Globals.LEVEL.INFO, Globals.CHANNEL.MAP);
 
 		// Finds all hexes which are alone and absorbs them into a nearby country. Do this because
 		// they look kind of bad.
@@ -173,6 +174,8 @@ var Map = {
 		
 		this.pruneLakes();
 		this.assignCountries(players);
+		
+		Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP)
 	},
 	
 	isConnected: function(countryId1, countryId2) {
