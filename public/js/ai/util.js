@@ -1,107 +1,12 @@
 "use strict"
 
-var Attack = function(fromId, toId) {
-	if ((typeof fromId !== 'undefined') && (typeof toId !== 'undefined')) {
-		this._from = fromId;
-		this._to = toId;
-	} else {
-		this._from = -1;
-		this._to = -1;
-	}
-};
+if (typeof module !== 'undefined' && module.exports) {
+	var Globals = require('../globals.js');
+	var Gamestate = require('../game/gamestate.js');
+	var Map = require('../game/Map.js');
+	var window = {};
+}
 
-Attack.prototype.clone = function() {
-	return new Attack(this._from, this._to);
-};
-
-Attack.prototype.clear = function() {
-	this._from = -1;
-	this._to = -1;
-};
-Attack.prototype.from = function() {return this._from};
-Attack.prototype.to = function() {return this._to};
-Attack.prototype.isEmpty = function() {return ((this._from < 0) || (this._to < 0))};
-Attack.prototype.toString = function() {
-	if (this.isEmpty()) {
-		return "()";
-	} else {
-		return "(" + this._from + "," + this._to + ")";
-	}
-};
-
-Attack.arrayString = function(ary) {
-	var str = "[";
-	if (Array.isArray(ary)) {
-		if (!ary.length) {
-			return "[]";
-		} else {
-			Globals.ASSERT(ary[0] instanceof Attack || ary[0] instanceof Move);
-			for (var i=0; i < ary.length; i++) {
-				if (ary[i]){
-					str += ary[i].toString();
-				} else {
-					Globals.ASSERT(false);
-				}
-			}
-		}
-	}
-	str += "]";
-	return str;
-};
-
-var Move = function(attack) {
-	this._attacks = [];
-	if (typeof attack !== 'undefined') {
-		this._attacks.push(attack);
-	}
-};
-
-Move.prototype.clone = function() {
-	var copy = new Move();
-	for(var i=0; i < this._attacks.length; i++) {
-		copy.push(this._attacks[i].clone());
-	}
-	return copy;
-}	
-
-Move.prototype.length = function() {return this._attacks.length;}
-
-// adds to end
-Move.prototype.push = function(next) {
-	Globals.ASSERT(Array.isArray(next) || next instanceof Attack || next instanceof Move);
-	if (Array.isArray(next)) {
-		this._attacks.push(new Attack(next[0], next[1]));
-	} else if (next instanceof Attack){
-		this._attacks.push(next);
-	} else if (next instanceof Move && next.hasMoreAttacks()) {
-		this._attacks = this._attacks.concat(next._attacks);
-	}
-	this._attacks.forEach(function(item) {
-		Globals.ASSERT(item);
-	})
-};
-// removes first attack and returns it
-Move.prototype.pop = function() {
-	return (this._attacks.shift() || new Attack());
-};
-Move.prototype.at = function(index) {
-	Globals.ASSERT(index >= 0 && index < this._attacks.length);
-	return this._attacks[index];
-};
-Move.prototype.isEmpty = function() {
-	return (!this._attacks.length || this._attacks[0].isEmpty());
-};
-Move.prototype.hasMoreAttacks = function() {
-	return !this.isEmpty();
-};
-Move.prototype.toString = function() {
-	var str = '[';
-	for (var i=0; i < this._attacks.length; i++) {
-		str += this._attacks[i].toString();
-	}
-	str += ']';
-	return str;
-};
 
 window.AI = window.AI || {};
 window.AI.Util =  {
@@ -163,13 +68,13 @@ window.AI.Util =  {
 		var self = this;
 		var moves_ary = [];
 
-		var attacks = util.findAllAttacks(state);
+		var attacks = window.AI.Util.findAllAttacks(state);
 
 		attacks.forEach(function(attack) {
 			moves_ary.push(new Move(attack));
 			if (length > 1) {
 				// recurse
-				self.findAllMoves(util.applyAttack(attack, state, true), length-1).forEach(function(nextMove) {
+				self.findAllMoves(window.AI.Util.applyAttack(attack, state, true), length-1).forEach(function(nextMove) {
 					var move = new Move(attack);
 					move.push(nextMove);
 					moves_ary.push(move);
@@ -200,15 +105,16 @@ window.AI.Util =  {
 				return;
 			}
 			// for each country, loop through all adjacent enemies
-			var neighbors = Map.adjacentCountries(countryId).filter(function(neighbor) {
+			var ac = Map.adjacentCountries(countryId);
+			var neighbors = ac ? (ac.filter(function(neighbor) {
 				return (state.countryOwner(neighbor) != state.currentPlayerId())
-			});
+			})) : [];
 			//Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			neighbors.forEach(function (neighbor) {
 				Globals.ASSERT (state.countryOwner(neighbor) != state.currentPlayerId());
 				
 				var attack = new Attack(countryId, neighbor);
-				if (util.attackOdds(state, attack) >= threshold) {
+				if (window.AI.Util.attackOdds(state, attack) >= threshold) {
 					//Globals.debug("possible attack found", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 					attacks.push(attack);
 				} else {
@@ -351,9 +257,9 @@ window.AI.Util =  {
 			// deep-copy move
 			move = move.clone();
 			var attack = move.pop();
-			var winState = util.applyAttack(attack, state, true);
-			var loseState = util.applyAttack(attack, state, false);
-			var winOdds = util.attackOdds(state, attack);
+			var winState = window.AI.Util.applyAttack(attack, state, true);
+			var loseState = window.AI.Util.applyAttack(attack, state, false);
+			var winOdds = window.AI.Util.attackOdds(state, attack);
 			// recurse
 			score = ((1 - winOdds) * self.evalPosition(loseState, evalfxn)) + (winOdds * self.evalMove(move, winState, evalfxn));
 		}
@@ -392,9 +298,9 @@ window.AI.Util =  {
 			return 0;
 		}
 		
-		var myCountryCount = util.totalCountries(playerId, state);
+		var myCountryCount = window.AI.Util.totalCountries(playerId, state);
 		var myContiguous = state.numContiguous(playerId);
-		var myDice = util.totalDice(playerId, state);
+		var myDice = window.AI.Util.totalDice(playerId, state);
 		
 		if (state.currentPlayerId() == playerId) {
 			// for current player, count on them getting their end-of-turn dice injection
@@ -418,3 +324,113 @@ window.AI.Util =  {
 		return idx;
 	},
 };
+
+var Attack = function(fromId, toId) {
+	if ((typeof fromId !== 'undefined') && (typeof toId !== 'undefined')) {
+		this._from = fromId;
+		this._to = toId;
+	} else {
+		this._from = -1;
+		this._to = -1;
+	}
+};
+
+Attack.prototype.clone = function() {
+	return new Attack(this._from, this._to);
+};
+
+Attack.prototype.clear = function() {
+	this._from = -1;
+	this._to = -1;
+};
+Attack.prototype.from = function() {return this._from};
+Attack.prototype.to = function() {return this._to};
+Attack.prototype.isEmpty = function() {return ((this._from < 0) || (this._to < 0))};
+Attack.prototype.toString = function() {
+	if (this.isEmpty()) {
+		return "()";
+	} else {
+		return "(" + this._from + "," + this._to + ")";
+	}
+};
+
+Attack.arrayString = function(ary) {
+	var str = "[";
+	if (Array.isArray(ary)) {
+		if (!ary.length) {
+			return "[]";
+		} else {
+			Globals.ASSERT(ary[0] instanceof Attack || ary[0] instanceof Move);
+			for (var i=0; i < ary.length; i++) {
+				if (ary[i]){
+					str += ary[i].toString();
+				} else {
+					Globals.ASSERT(false);
+				}
+			}
+		}
+	}
+	str += "]";
+	return str;
+};
+
+var Move = function(attack) {
+	this._attacks = [];
+	if (typeof attack !== 'undefined') {
+		this._attacks.push(attack);
+	}
+};
+
+Move.prototype.clone = function() {
+	var copy = new Move();
+	for(var i=0; i < this._attacks.length; i++) {
+		copy.push(this._attacks[i].clone());
+	}
+	return copy;
+}	
+
+Move.prototype.length = function() {return this._attacks.length;}
+
+// adds to end
+Move.prototype.push = function(next) {
+	Globals.ASSERT(Array.isArray(next) || next instanceof Attack || next instanceof Move);
+	if (Array.isArray(next)) {
+		this._attacks.push(new Attack(next[0], next[1]));
+	} else if (next instanceof Attack){
+		this._attacks.push(next);
+	} else if (next instanceof Move && next.hasMoreAttacks()) {
+		this._attacks = this._attacks.concat(next._attacks);
+	}
+	this._attacks.forEach(function(item) {
+		Globals.ASSERT(item);
+	})
+};
+// removes first attack and returns it
+Move.prototype.pop = function() {
+	return (this._attacks.shift() || new Attack());
+};
+Move.prototype.at = function(index) {
+	Globals.ASSERT(index >= 0 && index < this._attacks.length);
+	return this._attacks[index];
+};
+Move.prototype.isEmpty = function() {
+	return (!this._attacks.length || this._attacks[0].isEmpty());
+};
+Move.prototype.hasMoreAttacks = function() {
+	return !this.isEmpty();
+};
+Move.prototype.toString = function() {
+	var str = '[';
+	for (var i=0; i < this._attacks.length; i++) {
+		str += this._attacks[i].toString();
+	}
+	str += ']';
+	return str;
+};
+
+
+if (typeof module !== 'undefined' && module.exports) {
+	window.AI.Util.Move = Move;
+	window.AI.Util.Attack = Attack;
+	module.exports = window.AI.Util;
+}

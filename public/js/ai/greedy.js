@@ -1,7 +1,4 @@
 "use strict"
-
-	var util = window.AI.Util;
-	
 	
 	/*
 		Here is what the interface contains:
@@ -27,6 +24,12 @@
         endTurn()
 			Called by the AI when its turn is over
 	*/
+	
+	if (typeof module !== 'undefined' && module.exports) {
+		var Globals = require('../globals.js');
+		var window = {AI:{}};
+		window.AI.Plyer = require('./plyer.js');
+	}
 
 	window.AI = window.AI || {};
 
@@ -45,5 +48,7 @@
 
 
 
-	
+	if (typeof module !== 'undefined' && module.exports) {
+		module.exports = window.AI.Greedy;
+	}
 	

@@ -1,8 +1,18 @@
 "use strict"
 
-	var util = window.AI.Util;
+	if (typeof module !== 'undefined' && module.exports) {
+		var Globals = require('../globals.js');
+		var Gamestate = require('../game/gamestate.js');
+		var util = require('./util.js');
+		var Hashes = require('../jshashes');
+		var Move = util.Move;
+		var Attack = util.Attack;
+		var window = {};
+	} else {
+		var util = window.AI.Util;
+		var SHA1 = new Hashes.SHA1();
+	}
 	
-	var SHA1 = new Hashes.SHA1();
 	var hashState = function(state) {
 		return SHA1.hex(JSON.stringify(state));
 	};
@@ -222,5 +232,7 @@
 		return moves_ary;
 	};
 	
-	
+	if (typeof module !== 'undefined' && module.exports) {
+		module.exports = window.AI.Plyer;
+	}
 	
