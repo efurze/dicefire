@@ -51,7 +51,8 @@ var Globals = {
 	    numCountries: 32,
 	    timeout: 0,
 		play_sounds: 0,
-		suppress_ui: 0
+		suppress_ui: 0,
+		uploadGame: false
 	};
 
 Globals.LEVEL = {
@@ -77,7 +78,7 @@ Globals.CHANNEL = {
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
 Globals.channels = [
-	4, //"ENGINE",
+	0, //"ENGINE",
 	0, //"MAP",
 	0, //"HEX",
 	0, //"COUNTRY",

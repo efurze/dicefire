@@ -18,7 +18,8 @@
   "homepage": "https://github.com/mikeslemmer/dicefire",
   "dependencies": {
     "express": "^4.13.3",
-    "express-handlebars": "latest"
+    "express-handlebars": "latest",
+	"body-parser": "latest"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
