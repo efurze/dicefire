@@ -3,7 +3,7 @@
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Gamestate = require('../game/gamestate.js');
-	var Map = require('../game/Map.js');
+	var Map = require('../game/map.js');
 	var window = {};
 }
 
@@ -54,7 +54,7 @@ window.AI.Util =  {
 			var a = state.countryDice(attack.from());
 			var d = state.countryDice(attack.to());
 			Globals.ASSERT(a > 0 && d > 0);
-			var o = AI.Util.ODDS_ARRAY[a - 1][d - 1];
+			var o = window.AI.Util.ODDS_ARRAY[a - 1][d - 1];
 			//Globals.debug("Attack odds for " + a + " vs " + d + " = " + o, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return o;
 		} else {
@@ -109,20 +109,20 @@ window.AI.Util =  {
 			var neighbors = ac ? (ac.filter(function(neighbor) {
 				return (state.countryOwner(neighbor) != state.currentPlayerId())
 			})) : [];
-			//Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+			Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			neighbors.forEach(function (neighbor) {
 				Globals.ASSERT (state.countryOwner(neighbor) != state.currentPlayerId());
 				
 				var attack = new Attack(countryId, neighbor);
 				if (window.AI.Util.attackOdds(state, attack) >= threshold) {
-					//Globals.debug("possible attack found", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					Globals.debug("possible attack found", attack.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 					attacks.push(attack);
 				} else {
-					//Globals.debug("attack too improbable", attack.toString(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+					Globals.debug("attack too improbable", attack.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 				}
 			});	
 		});
-		//Globals.debug("returning attacks ", Attack.arrayString(attacks), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+		Globals.debug("returning attacks ", Attack.arrayString(attacks), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 		return attacks;
 	},
 	

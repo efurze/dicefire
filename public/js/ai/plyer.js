@@ -78,6 +78,7 @@
 		self.logEval(state);
 		
 		var moveSequence = self.bestMove(state, self._MAX_PLIES);
+		Globals.debug("Attempting following move: ", JSON.stringify(moveSequence), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		self.makeMoves(moveSequence);
 	};
 	
