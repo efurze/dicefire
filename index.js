@@ -55,6 +55,10 @@ app.get('/loader', function(req, res) {
     res.render("loader", {title : "Replay Game"});
 });
 
+app.get('/replay', function(req, res) { 
+    res.render("replay", {'gameId' : 1, layout: "replay"});
+});
+
 app.get('/simulator', function(req, res) {
 	res.render("simulator.hbs", {layout: "simulator", title : "Simulator"});
 });
@@ -94,7 +98,31 @@ app.get('/getMap', function(req, res) {
 	if (!fs.existsSync(filename)) {
 		res.status(404).send("No mapfile found for gameId " + gameId);
 	} else {
-		
+		fs.readFile(filename, 'utf8', function (err, data) {
+			if (err) {
+				res.status(500).send("Error reading mapfile: " + JSON.stringify(err));
+			} else {
+				res.send(data);
+			}
+		});
+	}
+});
+
+app.get('/getState', function(req, res) {
+	var gameId = req.param('gameId');
+	var moveId = req.param('moveId');
+	
+	var filename = uploadDir + gameId + '/state_' + moveId + '.json';
+	if (!fs.existsSync(filename)) {
+		res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
+	} else {
+		fs.readFile(filename, 'utf8', function (err, data) {
+			if (err) {
+				res.status(500).send("Error reading statefile: " + JSON.stringify(err));
+			} else {
+				res.send(data);
+			}
+		});
 	}
 });
 
