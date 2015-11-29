@@ -53,14 +53,24 @@
 
 		var playerId = state.currentPlayerId();
 		var countryIds = state.countryIds();
+
+		var stuff = 0;
+
 		for (var i = 0; i < countryIds.length; i++) {
 			var countryId = countryIds[i];
 			if (state.countryOwner(countryId) == playerId) {
 				var possibleAttacks = [];
 				interface.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
-					if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
-						state.countryDice(countryId) >= state.countryDice(adjacentCountryId)) {
-						possibleAttacks.push(adjacentCountryId);
+					stuff++;
+
+					if (state.countryOwner(adjacentCountryId) != playerId) {
+						console.log("-- " + state.countryDice(countryId) + " - " + state.countryDice(adjacentCountryId));
+
+
+						if (state.countryDice(countryId) > 1 && 
+							state.countryDice(countryId) >= state.countryDice(adjacentCountryId)) {
+							possibleAttacks.push(adjacentCountryId);
+						}
 					}
 				});
 
@@ -75,6 +85,7 @@
 				}
 			}
 		}
+		console.log(stuff);
 
 		interface.endTurn();
 	};
