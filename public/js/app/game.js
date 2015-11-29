@@ -84,13 +84,13 @@ $(function() {
 				Game._controller.update();
 			}
 			
-			if (Globals.uploadGame && Game._gameId > 0 && Game.lastUploadedState < Engine.historyLength()) {
+			if (Globals.uploadGame && Game._gameId > 0 && Game._lastUploadedState < Engine.historyLength()) {
 				// upload the state info
-				Game.lastUploadedState = Engine.historyLength();
+				Game._lastUploadedState = Engine.historyLength();
 				$.ajax({
 					type: 'POST',
-					url: '/uploadState?gameId=' + Game._gameId + "&moveId=" + Game.lastUploadedState,
-					data: Engine.getHistory(Game.lastUploadedState - 1).serialize(),
+					url: '/uploadState?gameId=' + Game._gameId + "&moveId=" + Game._lastUploadedState,
+					data: Engine.getHistory(Game._lastUploadedState - 1).serialize(),
 					contentType: "application/json; charset=utf-8",
 					dataType: "json",
 					success: Game.uploadSuccess,
