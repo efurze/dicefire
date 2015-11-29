@@ -3,6 +3,7 @@ var app = express();
 var fs = require('fs');
 var bodyParser = require('body-parser');
 
+var uploadBaseDir = __dirname + "/public/upload/";
 var uploadDir = __dirname + "/public/upload/games/";
 
 
@@ -87,9 +88,25 @@ app.post('/uploadState', function(req, res) {
 	}
 });
 
+app.get('/getMap', function(req, res) {
+	var gameId = req.param('gameId');
+	var filename = uploadDir + gameId + '/map.json';
+	if (!fs.existsSync(filename)) {
+		res.status(404).send("No mapfile found for gameId " + gameId);
+	} else {
+		
+	}
+});
+
 
 app.listen(app.get('port'), function() {
-      console.log('Node app is running on port', app.get('port'));
+	if (!fs.existsSync(uploadDir)) {
+		if (!fs.existsSync(uploadBaseDir)) {
+			fs.mkdirSync(uploadBaseDir);
+		}
+		fs.mkdirSync(uploadDir);
+	}
+	console.log('Node app is running on port', app.get('port'));
 });
 
 
