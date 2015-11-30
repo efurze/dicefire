@@ -56,7 +56,8 @@ app.get('/loader', function(req, res) {
 });
 
 app.get('/replay', function(req, res) { 
-    res.render("replay", {'gameId' : 1, layout: "replay"});
+	var gameId = req.query['gameId'];
+    res.render("replay", {'gameId' : gameId, layout: "replay"});
 });
 
 app.get('/simulator', function(req, res) {
@@ -64,7 +65,7 @@ app.get('/simulator', function(req, res) {
 });
 
 app.post('/uploadMap', function(req, res) { 
-	var gameId = req.param('gameId');
+	var gameId = req.query['gameId'];
 	var mapData = JSON.stringify(req.body);
 	
 	var dirName = uploadDir + gameId;
@@ -74,26 +75,28 @@ app.post('/uploadMap', function(req, res) {
 	
 	fs.writeFileSync(dirName + "/map.json", mapData);
 	
-	res.send("");
+	res.status(200).send("success");
 });
 
 app.post('/uploadState', function(req, res) { 
-	var moveId = req.param('moveId');
-	var gameId = req.param('gameId');
+	var moveId = req.query['moveId'];
+	var gameId = req.query['gameId'];
 	var stateData = JSON.stringify(req.body);
 	
 	var dirName = uploadDir + gameId;
 	if (!fs.existsSync(dirName)) {
 		console.log("ERROR: uploaded state data for unknown gameId " + gameId);
 		res.status(404).send("Unrecognized gameId " + gameId);
-	} else {		
-		fs.writeFileSync(dirName + "/state_" + moveId + ".json", stateData);
-		res.send("");
+	} else {
+		var filename = dirName + "/state_" + moveId + ".json";
+		console.log("Saving state file " + filename);
+		fs.writeFileSync(filename, stateData);
+		res.status(200).send("success");
 	}
 });
 
 app.get('/getMap', function(req, res) {
-	var gameId = req.param('gameId');
+	var gameId = req.query['gameId'];
 	var filename = uploadDir + gameId + '/map.json';
 	if (!fs.existsSync(filename)) {
 		res.status(404).send("No mapfile found for gameId " + gameId);
@@ -109,8 +112,8 @@ app.get('/getMap', function(req, res) {
 });
 
 app.get('/getState', function(req, res) {
-	var gameId = req.param('gameId');
-	var moveId = req.param('moveId');
+	var gameId = req.query['gameId'];
+	var moveId = req.query['moveId'];
 	var gameDir = uploadDir + gameId;
 	
 	var filenames = fs.readdirSync(gameDir);

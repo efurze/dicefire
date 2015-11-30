@@ -1,4 +1,47 @@
 "use strict"
+
+var Uploader = function(gameId) {
+	this._count = 1;
+	this._gameId = gameId;
+	this._array = [];
+	this._pending = false;
+};
+
+Uploader.prototype.push = function(data) {
+	this._array.push(data);
+	this._doNext();
+};
+
+Uploader.prototype._doNext = function() {
+	var self = this;
+	if (!self._pending && self._array.length) {
+		var data = self._array.shift();
+		self._pending = true;
+		
+		
+		$.post('/uploadState?gameId=' + self._gameId + "&moveId=" + self._count,
+			data).done(function(d) {
+				self.ajaxDone(d);
+			}).fail(function(err) {
+				self.ajaxFail(err);
+			});
+
+		this._count++;
+	}
+};
+
+Uploader.prototype.ajaxDone = function(data) {
+	Globals.ASSERT(this._pending);
+	this._pending = false;
+	this._doNext();
+};
+
+Uploader.prototype.ajaxFail = function(err) {
+	console.log("UPLOAD FAILURE: ", err.error(), JSON.stringify(err));
+	this._pending = false;
+	this._doNext();
+};
+
 $(function() {
 
 	
@@ -11,6 +54,7 @@ $(function() {
 		_mapController: null,
 		_gameId: -1,
 		_lastUploadedState: 0,
+		_uploader: null,
 		
 		
 		currentPlayer: function() { return Engine.currentPlayer(); },
@@ -18,6 +62,7 @@ $(function() {
 		init: function (gameId) {
 			console.log("gameId: " + gameId);
 			Game._gameId = gameId;
+			Game._uploader = new Uploader(gameId);
 			$('#setup').css('display', 'block');
 			$('#game').css('display', 'none');
 			
@@ -50,7 +95,7 @@ $(function() {
 					contentType: "application/json; charset=utf-8",
 					dataType: "json",
 					success: Game.uploadSuccess,
-					failure: Game.uploadError
+					failure: Game.uploadFailure
 				});
 			}
 			
@@ -87,15 +132,7 @@ $(function() {
 			if (Globals.uploadGame && Game._gameId > 0 && Game._lastUploadedState < Engine.historyLength()) {
 				// upload the state info
 				Game._lastUploadedState = Engine.historyLength();
-				$.ajax({
-					type: 'POST',
-					url: '/uploadState?gameId=' + Game._gameId + "&moveId=" + Game._lastUploadedState,
-					data: Engine.getHistory(Game._lastUploadedState - 1).serialize(),
-					contentType: "application/json; charset=utf-8",
-					dataType: "json",
-					success: Game.uploadSuccess,
-					failure: Game.uploadError
-				});
+				Game._uploader.push(JSON.parse(Engine.getHistory(Game._lastUploadedState - 1).serialize()));
 			}
 		},
 		
