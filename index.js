@@ -111,8 +111,15 @@ app.get('/getMap', function(req, res) {
 app.get('/getState', function(req, res) {
 	var gameId = req.param('gameId');
 	var moveId = req.param('moveId');
+	var gameDir = uploadDir + gameId;
 	
-	var filename = uploadDir + gameId + '/state_' + moveId + '.json';
+	var filenames = fs.readdirSync(gameDir);
+	var moveCount = filenames.filter(function(name) {
+		return (name.substring(0, 6) == "state_");
+	}).length;
+	
+	
+	var filename =  gameDir + '/state_' + moveId + '.json';
 	if (!fs.existsSync(filename)) {
 		res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
 	} else {
@@ -120,7 +127,7 @@ app.get('/getState', function(req, res) {
 			if (err) {
 				res.status(500).send("Error reading statefile: " + JSON.stringify(err));
 			} else {
-				res.send(data);
+				res.send({'data': data, 'moveCount': moveCount});
 			}
 		});
 	}

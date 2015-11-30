@@ -12,6 +12,7 @@ $(function() {
 		init: function (gameId) {
 			console.log("gameId: " + gameId);
 			Replay._gameId = gameId;
+			Replay._controller = new Replaycontroller(Replay._gameId);
 
 			$.get( "/getMap?gameId=" + gameId).done(function(data) {
 				Replay.ajaxDone(data);
@@ -22,37 +23,30 @@ $(function() {
 		
 		ajaxDone: function(data) {
 			//console.log("Got ajax data: " + (data));
-			if (!Replay._initialMap) {
-				Replay._initialMap = JSON.parse(data);
-				$.get( "/getState?gameId=" + Replay._gameId + "&moveId=1").done(function(data) {
-					Replay.ajaxDone(data);
-				}).fail(function(err) {
-					Replay.ajaxFail(err);
-				});
-			} else {
-				Replay.start(Replay._initialMap, JSON.parse(data));
-			}
+			Replay._initialMap = JSON.parse(data);
+			Replay._controller.init(Replay.callback);
 		},
 		
-		start: function(map, state) {
-			Globals.ASSERT(state && state._players);
-			var players = [];
-			players.length = Object.keys(state._players).length;
-			players.fill(AI.DoNothing);
+		callback: function(state) {
 			
-			Engine.init(players.map(function(p){return p;}));
-			Renderer.init(players.length, Replay._canvas, players.map(function(pc, idx) {
-				return ("player " + idx);
-			}));						
+			if (!Engine.isInitialized()) {
+				Globals.ASSERT(state && state._players);
+				var players = [];
+				players.length = Object.keys(state._players).length;
+				players.fill(AI.DoNothing);
 			
-			Engine.setup(JSON.stringify(map), JSON.stringify(state));
-			Engine.registerRenderingCallback(Replay.update);
-			Renderer.clearAll();
+				Engine.init(players.map(function(p){return p;}));
+				Renderer.init(players.length, Replay._canvas, players.map(function(pc, idx) {
+					return ("player " + idx);
+				}));						
 			
-			Replay._controller = new Replaycontroller(Replay._gameId);
+				Engine.setup(JSON.stringify(Replay._initialMap), JSON.stringify(state));
+				Engine.pushHistory(state);
+				Renderer.clearAll();
 			
-			$('#back_btn').click(Replay._controller.historyBack.bind(Replay._controller));
-			$('#forward_btn').click(Replay._controller.historyForward.bind(Replay._controller));
+				$('#back_btn').click(Replay._controller.historyBack.bind(Replay._controller));
+				$('#forward_btn').click(Replay._controller.historyForward.bind(Replay._controller));
+			}
 			
 			Replay.update();
 		},

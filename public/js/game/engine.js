@@ -18,10 +18,12 @@ var Engine = {
 	_history: [],
 	_callback: null,
 	_renderCallback: null,
+	_initialized: false,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
 	currentPlayerId: function() { return Engine._currentPlayerId; },
 	isAttacking: function() {return Engine._attackInProgress;},
+	isInitialized: function() {return Engine._initialized;},
 	
 	setCurrentPlayer: function(id) {
 		Globals.debug("Current player set to " + id, Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
@@ -48,7 +50,8 @@ var Engine = {
 			}
 		});
 
-		Player.init(playerCode.length);		
+		Player.init(playerCode.length);	
+		Engine._initialized = true;	
 	},
 	
 	registerRenderingCallback: function(cb) {
@@ -91,8 +94,7 @@ var Engine = {
 	//	fromRollArray: fromRollArray,
 	//	toRollArray: toRollArray
 	// } 
-	pushHistory: function(attack){
-		var state = this.getState();
+	pushHistory: function(state, attack){
 		if (attack) {
 			state.setAttack(attack);
 		}
@@ -132,7 +134,7 @@ var Engine = {
 	startTurn: function(playerId, callback) {
 		Globals.debug("Player " + playerId + " starting turn", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		Engine.setCurrentPlayer(playerId);
-		Engine.pushHistory();
+		Engine.pushHistory(Engine.getState());
 
 		if (Engine._playerCode[Engine._currentPlayerId] != "human") {
 			Engine._timeout(function() {
@@ -230,7 +232,7 @@ var Engine = {
 			fromRollArray: fromRollArray,
 			toRollArray: toRollArray
 		}
-		Engine.pushHistory(attack);
+		Engine.pushHistory(Engine.getState(), attack);
 
 		var done =  function() {
 
@@ -266,7 +268,7 @@ var Engine = {
 			}
 			
 			// attack is done, save to history
-			Engine.pushHistory();
+			Engine.pushHistory(Engine.getState());
 			
 			Engine._redraw();
 
