@@ -310,6 +310,10 @@ var Engine = {
 		this.setState(gamestate);
 	},
 	
+	serializeMap: function() {
+		return Map.serializeHexes();
+	},
+	
 	historyLength: function() {
 		return this._history.length;
 	},
