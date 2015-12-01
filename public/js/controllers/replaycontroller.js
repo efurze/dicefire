@@ -46,6 +46,10 @@ Replaycontroller.prototype.ajaxDone = function(data) {
 
 Replaycontroller.prototype.ajaxFail = function(err) {
 	console.log("Ajax error: " + err.error(), err);
+	if (this._updateCb) {
+		this._updateCb();
+		this._updateCb = null;
+	}
 }
 
 Replaycontroller.prototype.update = function() {

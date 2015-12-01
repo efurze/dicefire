@@ -432,7 +432,7 @@ $(function(){
 			}
 			
 			var self = this;
-			var country = hexToPaint.country();
+			var country = Map.getCountry(hexToPaint.countryId());
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
 

@@ -30,9 +30,13 @@ $(function() {
 		callback: function(state) {
 			
 			if (!Engine.isInitialized()) {
-				Globals.ASSERT(state && state._players);
 				var players = [];
-				players.length = Object.keys(state._players).length;
+				if (state && state._players) {
+					players.length = Object.keys(state._players).length;
+				} else {
+					// just default to 2 players
+					players.length = 2;
+				}
 				players.fill(AI.DoNothing);
 			
 				Engine.init(players.map(function(p){return p;}));
@@ -40,8 +44,10 @@ $(function() {
 					return ("player " + idx);
 				}));						
 			
-				Engine.setup(JSON.stringify(Replay._initialMap), JSON.stringify(state));
-				Engine.pushHistory(state);
+				Engine.setup(JSON.stringify(Replay._initialMap), state ? JSON.stringify(state) : null);
+				if (state) {
+					Engine.pushHistory(state);
+				}
 				Renderer.clearAll();
 			
 				$('#back_btn').click(Replay._controller.historyBack.bind(Replay._controller));

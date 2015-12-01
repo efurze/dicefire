@@ -99,6 +99,7 @@ app.get('/getMap', function(req, res) {
 	var gameId = req.query['gameId'];
 	var filename = uploadDir + gameId + '/map.json';
 	if (!fs.existsSync(filename)) {
+		console.log("Cannot find file " + filename);
 		res.status(404).send("No mapfile found for gameId " + gameId);
 	} else {
 		fs.readFile(filename, 'utf8', function (err, data) {

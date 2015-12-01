@@ -59,7 +59,10 @@ var Map = {
 	},
 	
 	serializeHexes: function() {
-		return JSON.stringify(this._hexArray);
+		// only save hexes which are assigned to countries
+		return JSON.stringify(this._hexArray.filter(function(hex){
+			return (hex.countryId() >= 0);
+		}));
 	},
 	
 	deserializeHexes: function(json) {
@@ -70,17 +73,30 @@ var Map = {
 		
 		var temp = {};
 		var hexes = JSON.parse(json);
-		self._hexArray.length = hexes.length;
+		var hexMap = {};
 		hexes.forEach(function(h) {
-			var hex = new Hex(h._id, h._x, h._y, h._countryId, h._countryEdgeDirections);
-			self._hexArray[hex.id()] = hex;
+			if (h && h.hasOwnProperty('_id')) {
+				hexMap[h._id] = h;
+			}
+		});
+		
+		for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
+			var hex;
+			if (hexMap.hasOwnProperty(i)) {
+				var h = hexMap[i];
+				hex = new Hex(h._id, h._x, h._y, h._countryId, h._countryEdgeDirections);
+			} else {
+	        	hex = new Hex(i);
+			}
+			self._hexArray[i] = hex;
+			
 			if (hex.countryId() >= 0) {
 				if (!temp[hex.countryId()]) {
 					temp[hex.countryId()] = new Country(hex.countryId());
 				}
 				temp[hex.countryId()].hexes().push(hex.id());
 			}
-		});
+	    }
 		
 		self._countryArray.length = Object.keys(temp).length;
 		Object.keys(temp).forEach(function(id) {
@@ -108,6 +124,7 @@ var Map = {
 	},
 		
 	generateMap: function(players) {
+		var self = this;
 		for (var i=0; i < this._countryArray.length; i++) {
 			this._countryArray[i]._hexIds = [];
 			delete this._countryArray[i];
@@ -127,7 +144,6 @@ var Map = {
 		var country = new Country(this._countryArray.length);
 		this._countryArray.push(country);
 		Map.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)], country);
-		
 
 		for (var i = 0; i < Globals.numCountries - 1; i++) {
 			var countryStart = Math.floor(Math.random() * this._countryArray.length);
@@ -155,15 +171,15 @@ var Map = {
 			}
 		}
 
-		Globals.debug("Created countries ", JSON.stringify(this._countryArray), Globals.LEVEL.INFO, Globals.CHANNEL.MAP);
+		Globals.debug("Created countries ", JSON.stringify(this._countryArray), Globals.LEVEL.INFO, Globals.CHANNEL.MAP);		
 
 		// Finds all hexes which are alone and absorbs them into a nearby country. Do this because
 		// they look kind of bad.
-		this._hexArray.forEach(function(hex) {
-	        if (!hex.country()) {
+		self._hexArray.forEach(function(hex) {
+	        if (!hex.hasCountry()) {
 	            for (var i = 0; i < Dir.array.length; i++) {
 	                var nextHex = Dir.nextHex(hex, Dir.array[i]);
-	                if (!nextHex || !nextHex.country() || nextHex.country().isLake()) {
+	                if (!nextHex || !nextHex.hasCountry() || self.getCountry(nextHex.countryId()).isLake()) {
 	                    return;
 	                }
 	            }
@@ -173,9 +189,25 @@ var Map = {
 	    });
 		
 		this.pruneLakes();
-		this.assignCountries(players);
-		
+		//this.validate();
 		Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP)
+	},
+	
+	// makes sure that the countries and hexes agree about who owns what
+	validate: function() {
+		var self = this;
+		self._countryArray.forEach(function(country, idx) {
+			Globals.ASSERT(country.id() == idx);
+			var hexes = country.hexes();
+			Globals.ASSERT(hexes.length);
+			hexes.forEach(function(hexId) {
+				Globals.ASSERT(self._hexArray[hexId]);
+				if (self._hexArray[hexId].countryId() !== country.id()) {
+					console.log("HexId " + hexId + " assigned to country " + self._hexArray[hexId].countryId() + 
+							" should be assigned to " + country.id());
+				}
+			})
+		});
 	},
 	
 	isConnected: function(countryId1, countryId2) {
@@ -238,7 +270,7 @@ var Map = {
 	        var countryEdges = [];
 	        for (var i = 0; i < Dir.array.length; i++) {
 	            var newHex = Dir.nextHex(hex, i);
-	            if (!newHex || newHex.country() != country) {
+	            if (!newHex || newHex.countryId() != country.id()) {
 	                countryEdges.push(i);             
 	            }
 	            if (newHex && newHex.countryId() >= 0 && newHex.countryId() != country.id() && 
@@ -253,11 +285,13 @@ var Map = {
 	},
 
 	moveToAdjacentCountry: function(hex) {
+		var self = this;
 	    for (var i = 0; i < Dir.array.length; i++) {
 	        var newHex = Dir.nextHex(hex, i);
-	        if (newHex && newHex.country() && !newHex.country().isLake()) {
-	            var newCountry = newHex.country();
+	        if (newHex && newHex.hasCountry() && !Map.getCountry(newHex.countryId()).isLake()) {
+	            var newCountry = Map.getCountry(newHex.countryId());
 	            hex.setCountry(newCountry);
+				Globals.ASSERT(self.getCountry(newCountry.id()));
 	            newCountry.hexes().push(hex.id());                
 	            return;
 	        }
@@ -346,7 +380,7 @@ var Map = {
 	        for ( var j = 0; j < Dir.array.length; j++) {
 	            var dir = Dir.array[Math.floor(Math.random() * Dir.array.length)];
 	            var newHex = Dir.nextHex(Map.getHex(country._hexIds[hex]), dir);
-	            if (newHex && !newHex.country()) {
+	            if (newHex && newHex.countryId() == -1) {
 	                return newHex;
 	            }
 
@@ -358,6 +392,7 @@ var Map = {
 	},
 	
 	growCountry: function(country) {
+		var self = this;
 	    if (country._hexIds.length >= country._numHexes) {
 	        return;
 	    }
@@ -370,6 +405,7 @@ var Map = {
 	    }
 
 	    hex.setCountry(country);
+		Globals.ASSERT(self.getCountry(country.id()));
 	    country._hexIds.push(hex.id());
 
 		Globals.debug("growCountry", country, hex, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);        
@@ -380,8 +416,10 @@ var Map = {
 	},
 	
 	landGrab: function(starthex, country) {
+		var self = this;
 		country._hexIds = [starthex.id()];
 	    starthex.setCountry(country);
+		Globals.ASSERT(self.getCountry(country.id()));
 		country._numHexes = Math.floor(Math.random() * (Country.MAX_HEXES - Country.MIN_HEXES + 1)) + 
 	        Country.MIN_HEXES;
 
@@ -416,6 +454,7 @@ var Map = {
 		}
 		country._hexIds.forEach(function(hexId) {
 			Map.getHex(hexId).setCountry(country);
+			Globals.ASSERT(Map.getCountry(country.id()));
 		});
 	}
 };

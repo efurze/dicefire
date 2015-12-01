@@ -2,7 +2,6 @@
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
-	var Map = require('./Map.js');
 }
 
 
@@ -44,19 +43,14 @@ Hex.FUDGE = 0.5;
 Hex.prototype.id = function() { return this._id; };
 Hex.prototype.x = function() { return this._x; };
 Hex.prototype.y = function() { return this._y; };
+Hex.prototype.hasCountry = function() { return (this._countryId != -1); };
 
 Hex.prototype.setCountry = function(country) { 
 	Globals.debug("Set country for hex", this, country, Globals.LEVEL.TRACE, Globals.CHANNEL.HEX);
-	if (country && country !== Map.getCountry(country._id)) {
-		Globals.debug("Parented to country not in country list", this, country, Globals.LEVEL.WARN, Globals.CHANNEL.HEX);
-	} 
 	this._countryId = country ? country._id : -1;
 };
 
 Hex.prototype.countryId = function() {return this._countryId;};
-Hex.prototype.country = function() { 
-	return Map.getCountry(this._countryId); 
-};
 
 // The directions which are boundaries between this cell and another country or the edge of the board.
 Hex.prototype.setCountryEdgeDirections = function(array) { 

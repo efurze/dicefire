@@ -64,20 +64,20 @@ var Engine = {
 			Globals.debug("Using provided map", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 			Map.deserializeHexes(initialMap);
 		} else {
-			Map.generateMap(Player._array);
+			Map.generateMap();
 			//Globals.debug("Map: " + Map.serializeHexes(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		}
+		
+		Map.assignCountries(Player._array);
 		
 		if (initialState) {
 			Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 			Engine.deserialize(initialState);
-			
 		} else {
 			// assign initial dice
 			Player.array().forEach(function(player) {
 				Engine.addDiceToPlayer(player, Globals.startingDice);
 			});
-			
 		}
 		
 		Player.array().forEach(function(player) {
