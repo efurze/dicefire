@@ -54,7 +54,7 @@
 	};
 		
 	window.AI.Plyer.getName = function() {
-		return "Plyer";
+		return "Plyer 1.0";
 	};
 		
 	// Factory method. Called when the AI is first started. Tells the AI its player number

@@ -36,7 +36,7 @@
 	window.AI.Greedy = function(){};
 		
 	window.AI.Greedy.getName = function() {
-		return "Greedy";
+		return "Greedy 1.0";
 	};
 		
 	// Factory method. Called when the AI is first started. Tells the AI its player number

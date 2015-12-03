@@ -11,7 +11,7 @@ app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
 
-app.use( bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
+app.use( bodyParser.json({limit: '1mb'}));       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
@@ -24,11 +24,16 @@ app.engine('.hbs', exphbs({defaultLayout: 'single', extname: '.hbs'}));
 app.set('view engine', '.hbs');
 
 app.get('/', function(req, res) { 
-	// assign a game id
-	var filenames = fs.readdirSync(uploadDir);
-	var id = filenames.length + 1;
-	fs.mkdirSync(uploadDir + id);
-    res.render("index", {'gameId': id});
+	if (req.query['save']) {
+		// assign a game id
+		var filenames = fs.readdirSync(uploadDir);
+		var id = filenames.length + 1;
+		fs.mkdirSync(uploadDir + id);
+		res.render("index", {'gameId': id});
+	} else {
+		res.render("index");
+	}
+    
 });
 
 

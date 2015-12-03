@@ -31,12 +31,12 @@ $(function(){
 		}
 		
 		$('#player_0').val("human");
-		$('#player_1').val("Aggressive");
-		$('#player_2').val("Greedy");
-		$('#player_3').val("Plyer");
-		$('#player_4').val("Plyer");
-		$('#player_5').val("Greedy");
-		$('#player_6').val("Aggressive");
+		$('#player_1').val(AI.Aggressive.getName());
+		$('#player_2').val(AI.Greedy.getName());
+		$('#player_3').val(AI.Plyer.getName());
+		$('#player_4').val(AI.Plyer.getName());
+		$('#player_5').val(AI.Greedy.getName());
+		$('#player_6').val(AI.Aggressive.getName());
 		$('#player_7').val("none");
 		
 		$('.player_selector').change(Setupcontroller.update);
@@ -52,13 +52,13 @@ $(function(){
 			if (option === "human") {
 				players.push("human");
 			}  
-			if (option === "Plyer") {
+			if (option === AI.Plyer.getName()) {
 				players.push(AI.Plyer);
 			} 
-			if (option === "Greedy") {
+			if (option === AI.Greedy.getName()) {
 				players.push(AI.Greedy);
 			} 
-			if (option === "Aggressive") {
+			if (option === AI.Aggressive.getName()) {
 				players.push(AI.Aggressive);
 			}
 		}
