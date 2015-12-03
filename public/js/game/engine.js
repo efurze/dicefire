@@ -16,7 +16,7 @@ var Engine = {
 	_gameOver: false,
 	_attackInProgress: false,
 	_history: [],
-	_callback: null,
+	_gameCallback: null,
 	_renderCallback: null,
 	_initialized: false,
         
@@ -37,10 +37,11 @@ var Engine = {
 		Engine.setCurrentPlayer(0);
 		this._gameOver = false;
 		this._attackInProgress = false;
-		this._callback = callback;
+		this._gameCallback = callback;
 		this._renderCallback = null;
+		this._stateCallback = null;
 		
-		Engine._playerCode = playerCode;
+		Engine._playerCode = playerCode.map(function(p) {return p;});
 		var isHumanList = Engine._playerCode.map(function(elem) { return elem == "human"; });
 		Engine._playerCode.forEach(function(elem, index) {
 			if (elem != "human") {
@@ -56,6 +57,11 @@ var Engine = {
 	
 	registerRenderingCallback: function(cb) {
 		this._renderCallback = cb;
+	},
+	
+	// @cb: function(gamestate, index){}
+	registerStateCallback: function(cb) {
+		this._stateCallback = cb;
 	},
 	
 	setup: function(initialMap, initialState) {
@@ -98,7 +104,11 @@ var Engine = {
 		if (attack) {
 			state.setAttack(attack);
 		}
+		var len = Engine._history.length;
 		Engine._history.push(state);
+		if (Engine._stateCallback) {
+			Engine._stateCallback(state, len);
+		}
 	},
 	
 	
@@ -290,8 +300,8 @@ var Engine = {
 			Engine._gameOver = true;
 			console.timeEnd("DICEFIRE");
 		
-			if (Engine._callback) {
-				Engine._callback(Engine._playerCode[winner.id()], winner.id());
+			if (Engine._gameCallback) {
+				Engine._gameCallback(Engine._playerCode[winner.id()], winner.id());
 			}
 		}
 	},
