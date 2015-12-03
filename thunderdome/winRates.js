@@ -4,7 +4,7 @@ var fs = require('fs');
 
 
 var WinRates = function(dir) {
-	this._dir = dir || "./results";
+	this._dir = dir || "/Users/efurze/working/thunderdome_data/results";
 };
 
 WinRates.prototype.calculate = function() {
@@ -26,16 +26,19 @@ WinRates.prototype.calculateGameType = function(dir) {
 	var matches = fs.readdirSync(dir);
 	matches.forEach(function(match) {
 		var matchDir = dir + '/' + match;
-		var results = JSON.parse(fs.readFileSync(matchDir + '/results.json', 'utf8'));
-		var keys = Object.keys(results);
-		if (!wins.length) {
-			wins.length = keys.length - 1;
-			for (var i=0; i < wins.length; i++) {
-				wins[i] = 0;
+		var filename = matchDir + '/results.json';
+		if (fs.existsSync(filename)) {
+			var results = JSON.parse(fs.readFileSync(filename, 'utf8'));
+			var keys = Object.keys(results);
+			if (!wins.length) {
+				wins.length = keys.length - 1;
+				for (var i=0; i < wins.length; i++) {
+					wins[i] = 0;
+				}
 			}
+			var winnerId = parseInt(results.winner) - 1;
+			wins[winnerId] ++;
 		}
-		var winnerId = parseInt(results.winner) - 1;
-		wins[winnerId] ++;
 	});
 	
 	var winRate = wins.map(function(total) {
