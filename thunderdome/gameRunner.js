@@ -90,14 +90,27 @@ var GameRunner = function(aiFiles, resultsDir) {
 
 // @gameOver_cb = function(){}
 GameRunner.prototype.start = function(gameOver_cb) {
-	this._callback = gameOver_cb;
-	this._engine.init(this._players, this.gameDone.bind(this));
-	this._engine.setup();
-	this._serializer.writeMap(this._engine.serializeMap());
-	this._engine.registerStateCallback(this._serializer.engineUpdate.bind(this._serializer));
+	if (this._players.length > 1) {
+		this._callback = gameOver_cb;
+		this._engine.init(this._players, this.gameDone.bind(this));
+		this._engine.setup();
+		this._serializer.writeMap(this._engine.serializeMap());
+		this._engine.registerStateCallback(this._serializer.engineUpdate.bind(this._serializer));
 	
-	debug("Beginning game: " + this._players.map(function(p) {return p.getName();}));
-	this._engine.startTurn(0);
+		debug("Beginning game: " + this._players.map(function(p) {return p.getName();}));
+		this._engine.startTurn(0);
+	} else {
+		debug("Not enough players to play: " + JSON.stringify(this._players));
+		this._callback = null;
+		this._engine = null;
+		this._ais = null;
+		this._players = null;
+		this._resultsDir = null;
+		this._serializer = null;
+		if (gameOver_cb) {
+			gameOver_cb();
+		}
+	}
 };
 
 GameRunner.prototype.gameDone = function(winner, id) {
@@ -139,7 +152,9 @@ GameRunner.prototype._loadAIs = function() {
 		}
 	});
 	
-	Globals.ASSERT(self._players.length > 1);
+	if (self._players.length < 2) {
+		debug("Not enough players: " + self._ais);
+	}
 };
 
 var debug = function(msg) {

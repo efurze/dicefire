@@ -11,7 +11,7 @@ var RandomRunner = function(playerFiles, max) {
 RandomRunner.prototype.start = function() {
 	// construct a random list of players
 	var players = [];
-	var numPlayers = 1 + Math.round(Math.random() * 7);
+	var numPlayers = 1 + Math.ceil(Math.random() * 7);
 	while (players.length < numPlayers) {
 		var pool = this._players.map(function(p) {return p;});
 		while (pool.length && players.length < numPlayers) {
