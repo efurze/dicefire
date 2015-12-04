@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var fs = require('fs');
+var uuid = require('node-uuid');
 var bodyParser = require('body-parser');
 
 var uploadBaseDir = __dirname + "/public/upload/";
@@ -11,7 +12,7 @@ app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
 
-app.use( bodyParser.json({limit: '1mb'}));       // to support JSON-encoded bodies
+app.use( bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
@@ -24,15 +25,7 @@ app.engine('.hbs', exphbs({defaultLayout: 'single', extname: '.hbs'}));
 app.set('view engine', '.hbs');
 
 app.get('/', function(req, res) { 
-	if (req.query['save']) {
-		// assign a game id
-		var filenames = fs.readdirSync(uploadDir);
-		var id = filenames.length + 1;
-		fs.mkdirSync(uploadDir + id);
-		res.render("index", {'gameId': id});
-	} else {
-		res.render("index");
-	}
+	res.render("index", {'gameId': uuid.v1()});
     
 });
 
@@ -72,13 +65,16 @@ app.get('/simulator', function(req, res) {
 app.post('/uploadMap', function(req, res) { 
 	var gameId = req.query['gameId'];
 	var mapData = JSON.stringify(req.body);
-	
+	console.log("UploadMap for gameId " + gameId);
 	var dirName = uploadDir + gameId;
-	if (!fs.existsSync(dirName)) {
-		fs.mkdirSync(dirName);
-	}
+	var filename = dirName + "/map.json";
 	
-	fs.writeFileSync(dirName + "/map.json", mapData);
+	ensureDir(dirName);
+	fs.writeFile(filename, mapData, function(err) {
+		if (err) {
+			console.log("Error saving mapfile ", filename, err);
+		}
+	});
 	
 	res.status(200).send("success");
 });
@@ -89,20 +85,30 @@ app.post('/uploadState', function(req, res) {
 	var stateData = JSON.stringify(req.body);
 	
 	var dirName = uploadDir + gameId;
+	ensureDir(dirName);
 	if (!fs.existsSync(dirName)) {
 		console.log("ERROR: uploaded state data for unknown gameId " + gameId);
 		res.status(404).send("Unrecognized gameId " + gameId);
 	} else {
 		var filename = dirName + "/state_" + moveId + ".json";
 		console.log("Saving state file " + filename);
-		fs.writeFileSync(filename, stateData);
+		fs.writeFile(filename, stateData, function(err) {
+			if (err) {
+				console.log("Error saving statefile ", filename, err);
+			}
+		});
 		res.status(200).send("success");
 	}
+
 });
 
 app.get('/getMap', function(req, res) {
 	var gameId = req.query['gameId'];
-	var filename = uploadDir + gameId + '/map.json';
+	var gameDir = uploadDir + gameId;
+	
+	ensureDir(gameDir);
+	var filename = gameDir + '/map.json';
+	
 	if (!fs.existsSync(filename)) {
 		console.log("Cannot find file " + filename);
 		res.status(404).send("No mapfile found for gameId " + gameId);
@@ -122,6 +128,7 @@ app.get('/getState', function(req, res) {
 	var moveId = req.query['moveId'];
 	var gameDir = uploadDir + gameId;
 	
+	ensureDir(gameDir);
 	var filenames = fs.readdirSync(gameDir);
 	var moveCount = filenames.filter(function(name) {
 		return (name.substring(0, 6) == "state_");
@@ -153,6 +160,30 @@ app.listen(app.get('port'), function() {
 	console.log('Node app is running on port', app.get('port'));
 });
 
+
+var ensureDir = function(dir) {
+	if (fs.existsSync(dir)) {
+		return;
+	}
+	
+	var dirAry = dir.split('/');
+	var assembledPath = dir[0] == '/' ? '/' : '';
+	dirAry.forEach(function(d) {
+		d = d.trim();
+		if (!d || !d.length) {
+			return;
+		}
+	
+		assembledPath += d + '/';
+		if (!fs.existsSync(assembledPath)) {
+			fs.mkdirSync(assembledPath);
+		}
+	});
+	
+	if (!fs.existsSync(dir)) {
+		console.log("Unable to create directory " + dir);
+	}
+};
 
 module.exports = app;
 

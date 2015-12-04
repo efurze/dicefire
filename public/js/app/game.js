@@ -15,25 +15,29 @@ Uploader.prototype.push = function(data) {
 Uploader.prototype._doNext = function() {
 	var self = this;
 	if (!self._pending && self._array.length) {
-		var data = self._array.shift();
+		
 		self._pending = true;
 		
-		
-		$.post('/uploadState?gameId=' + self._gameId + "&moveId=" + self._count,
-			data).done(function(d) {
-				self.ajaxDone(d);
-			}).fail(function(err) {
-				self.ajaxFail(err);
-			});
+		window.setTimeout(function() {
+			var data = self._array.shift();
 
-		this._count++;
+			$.post('/uploadState?gameId=' + self._gameId + "&moveId=" + self._count,
+				data).done(function(d) {
+					self.ajaxDone(d);
+				}).fail(function(err) {
+					self.ajaxFail(err);
+				});
+		}, 10);
 	}
 };
 
 Uploader.prototype.ajaxDone = function(data) {
 	Globals.ASSERT(this._pending);
-	this._pending = false;
-	this._doNext();
+	var self = this;
+	self._array.shift();
+	self._count++;
+	self._pending = false;
+	self._doNext();
 };
 
 Uploader.prototype.ajaxFail = function(err) {
@@ -52,7 +56,7 @@ $(function() {
 		_canvas: document.getElementById("c"),
 		_controller: null,
 		_mapController: null,
-		_gameId: -1,
+		_gameId: null,
 		_lastUploadedState: 0,
 		_uploader: null,
 		
@@ -86,7 +90,7 @@ $(function() {
 			
 			Engine.setup();
 			
-			if (Globals.uploadGame && Game._gameId > 0) {
+			if (Globals.uploadGame && Game._gameId) {
 				// upload map data to server
 				$.ajax({
 					type: 'POST',
@@ -129,7 +133,7 @@ $(function() {
 				Game._controller.update();
 			}
 			
-			if (Globals.uploadGame && Game._gameId > 0 && Game._lastUploadedState < Engine.historyLength()) {
+			if (Globals.uploadGame && Game._gameId && Game._lastUploadedState < Engine.historyLength()) {
 				// upload the state info
 				Game._lastUploadedState = Engine.historyLength();
 				Game._uploader.push(JSON.parse(Engine.getHistory(Game._lastUploadedState - 1).serialize()));

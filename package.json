@@ -19,7 +19,8 @@
   "dependencies": {
     "express": "^4.13.3",
     "express-handlebars": "latest",
-	"body-parser": "latest"
+	"body-parser": "latest",
+	"node-uuid": "latest"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
