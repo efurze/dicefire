@@ -19,8 +19,9 @@
   "dependencies": {
     "express": "^4.13.3",
     "express-handlebars": "latest",
-	"body-parser": "latest",
-	"node-uuid": "latest"
+  	"body-parser": "latest",
+	  "node-uuid": "latest",
+    "redis": "latest"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

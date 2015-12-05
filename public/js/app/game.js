@@ -15,29 +15,25 @@ Uploader.prototype.push = function(data) {
 Uploader.prototype._doNext = function() {
 	var self = this;
 	if (!self._pending && self._array.length) {
-		
+		var data = self._array.shift();
 		self._pending = true;
 		
-		window.setTimeout(function() {
-			var data = self._array.shift();
+		
+		$.post('/uploadState?gameId=' + self._gameId + "&moveId=" + self._count,
+			data).done(function(d) {
+				self.ajaxDone(d);
+			}).fail(function(err) {
+				self.ajaxFail(err);
+			});
 
-			$.post('/uploadState?gameId=' + self._gameId + "&moveId=" + self._count,
-				data).done(function(d) {
-					self.ajaxDone(d);
-				}).fail(function(err) {
-					self.ajaxFail(err);
-				});
-		}, 10);
+		this._count++;
 	}
 };
 
 Uploader.prototype.ajaxDone = function(data) {
 	Globals.ASSERT(this._pending);
-	var self = this;
-	self._array.shift();
-	self._count++;
-	self._pending = false;
-	self._doNext();
+	this._pending = false;
+	this._doNext();
 };
 
 Uploader.prototype.ajaxFail = function(err) {
