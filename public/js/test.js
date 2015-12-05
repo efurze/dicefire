@@ -27,7 +27,7 @@ Engine.setup();
 var mapData = Engine.serializeMap();
 fs.writeFileSync(dirName + "/map.json", mapData);
 lastSaved = 0;
-Engine.registerRenderingCallback(update);
+Engine.registerStateCallback(update);
 Engine.startTurn(0);
 
 

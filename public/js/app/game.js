@@ -104,7 +104,7 @@ $(function() {
 			}
 			
 			
-			Engine.registerRenderingCallback(Game.update);
+			Engine.registerStateCallback(Game.update);
 			Game._controller = new Gamecontroller();
 			Game._mapController = new Mapcontroller(Game.update);
 
@@ -126,7 +126,7 @@ $(function() {
 			console.log("UPLOAD FAILURE: " + errMsg);
 		},
 
-		update: function(gamestate) {
+		update: function(gamestate, stateId) {
 			gamestate = gamestate || Engine.getState();
 			Renderer.render(gamestate);
 			if (Game._controller) {

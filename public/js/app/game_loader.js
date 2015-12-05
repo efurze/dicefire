@@ -46,7 +46,7 @@ $(function() {
 			}));						
 			
 			Engine.setup(GameLoader._initialMap, GameLoader._initialState);
-			Engine.registerRenderingCallback(GameLoader.update);
+			Engine.registerStateCallback(GameLoader.update);
 			Renderer.clearAll();
 			
 			GameLoader._mapController = new Mapcontroller(GameLoader.update);
