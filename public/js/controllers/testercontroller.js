@@ -54,13 +54,13 @@ $(function(){
 			if (option === "human") {
 				players.push("human");
 			}  
-			if (option === "Plyer") {
+			if (option === AI.Plyer.getName()) {
 				players.push(AI.Plyer);
 			} 
-			if (option === "Greedy") {
+			if (option === AI.Greedy.getName()) {
 				players.push(AI.Greedy);
 			} 
-			if (option === "Aggressive") {
+			if (option === AI.Aggressive.getName()) {
 				players.push(AI.Aggressive);
 			}
 		}
