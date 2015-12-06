@@ -19,7 +19,7 @@ Uploader.prototype._doNext = function() {
 		self._pending = true;
 		
 		window.setTimeout(function() {
-			var data = self._array.shift();
+			var data = self._array[0];
 
 			$.post('/uploadState?gameId=' + self._gameId + "&moveId=" + self._count,
 				data).done(function(d) {
@@ -57,7 +57,6 @@ $(function() {
 		_controller: null,
 		_mapController: null,
 		_gameId: null,
-		_lastUploadedState: 0,
 		_uploader: null,
 		
 		
@@ -104,11 +103,11 @@ $(function() {
 			}
 			
 			
-			Engine.registerStateCallback(Game.update);
+			Engine.registerStateCallback(Game.engineUpdate);
 			Game._controller = new Gamecontroller();
-			Game._mapController = new Mapcontroller(Game.update);
+			Game._mapController = new Mapcontroller(Game.mapUpdate);
 
-			Game.update();
+			Game.redraw();
 			
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
@@ -125,20 +124,27 @@ $(function() {
 		uploadFailure: function(errMsg) {
 			console.log("UPLOAD FAILURE: " + errMsg);
 		},
+		
+		mapUpdate: function() {
+			Game.redraw();
+		},
 
-		update: function(gamestate, stateId) {
+		engineUpdate: function(gamestate, stateId) {
+			gamestate = gamestate || Engine.getState();
+			if (Globals.uploadGame && Game._gameId) {
+				// upload the state info
+				Game._uploader.push(JSON.parse(gamestate.serialize()));
+			}
+			Game.redraw(gamestate);
+		},
+		
+		redraw: function(gamestate) {
 			gamestate = gamestate || Engine.getState();
 			Renderer.render(gamestate);
 			if (Game._controller) {
 				Game._controller.update();
 			}
-			
-			if (Globals.uploadGame && Game._gameId && Game._lastUploadedState < Engine.historyLength()) {
-				// upload the state info
-				Game._lastUploadedState = Engine.historyLength();
-				Game._uploader.push(JSON.parse(Engine.getHistory(Game._lastUploadedState - 1).serialize()));
-			}
-		},
+		}
 		
 	};
 });

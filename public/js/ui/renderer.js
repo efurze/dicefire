@@ -283,7 +283,7 @@ $(function(){
 			isFighting = isFighting || false;
 			
 	        Map.countryHexes(countryId).forEach(function(hexId) {
-	            self._renderHex(Map.getHex(hexId), isFighting);
+	            self._renderHex(Map.getHex(hexId), state, isFighting);
 	        });
 
 	        var ctr = Map.countryCenter(countryId);
@@ -426,13 +426,14 @@ $(function(){
 		
 
 
-		_renderHex: function (hexToPaint, isFighting) {
+		_renderHex: function (hexToPaint, state, isFighting) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
 			var self = this;
-			var country = Map.getCountry(hexToPaint.countryId());
+			var countryId = hexToPaint.countryId();
+			var country = Map.getCountry(countryId);
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
 
@@ -447,7 +448,7 @@ $(function(){
 	        path.closePath();
 
 
-	        self._context.fillStyle = country ? Renderer._countryDrawColor(country, isFighting) : "white";
+	        self._context.fillStyle = country ? Renderer._countryDrawColor(countryId, state.countryOwner(countryId), isFighting) : "white";
 	        if (hexToPaint._color) {
 	            self._context.fillStyle = hexToPaint._color;
 	        }
@@ -531,21 +532,21 @@ $(function(){
 			
 		},
 		
-		_countryDrawColor: function(country, isFighting) {
+		_countryDrawColor: function(countryId, ownerId, isFighting) {
 			var self = this;
 			if (isFighting) {
 				return "black";
-			} else if (country.id() == self._mouseOverCountry) {
-		        if (country.id() == self._selectedCountry) {
+			} else if (countryId == self._mouseOverCountry) {
+		        if (countryId == self._selectedCountry) {
 		            return "gray";
 		        } else {
 		            return "lightgray";
 		        }
 		    } else {
-		        if (country.id() == self._selectedCountry) {
+		        if (countryId == self._selectedCountry) {
 		            return "black";
 		        } else {
-		            return self._playerColors[country.ownerId()];
+		            return self._playerColors[ownerId];
 		        }
 		    }
 		},
