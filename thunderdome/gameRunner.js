@@ -6,7 +6,7 @@ var sourceDir = '../public/js';
 var Globals = require(sourceDir + '/globals.js');
 
 var GameSerializer = function(engine, playerCount, baseDir) {
-	this._dir = (baseDir || './results/matches');
+	this._dir = (baseDir || '/Users/efurze/working/thunderdome_data/results/matches');
 	this._engine = engine;
 	this._data = [];
 	
@@ -85,7 +85,7 @@ var GameRunner = function(aiFiles, resultsDir) {
 	this._ais = aiFiles.map(function(p){return p;});
 	this._players = [];
 	this._loadAIs();
-	this._resultsDir = resultsDir || "./results";
+	this._resultsDir = resultsDir || '/Users/efurze/working/thunderdome_data/results';
 	this._serializer = new GameSerializer(this._engine, this._players.length);
 	this._callback = null;
 };
