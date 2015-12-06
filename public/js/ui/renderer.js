@@ -190,8 +190,8 @@ $(function(){
 			
 			this._resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
 			
-			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
-	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+			var fromRoll = fromRollArray.reduce(function(total, die) { return parseInt(total) + parseInt(die); });
+	    	var toRoll = toRollArray.reduce(function(total, die) { return parseInt(total) + parseInt(die); });
 			
 			// Render attack roll
 			$('#lefttotal').html(fromRoll);
