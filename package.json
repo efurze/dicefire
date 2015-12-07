@@ -30,6 +30,8 @@
     "grunt-contrib-qunit": "latest",
     "grunt-contrib-watch": "latest",
     "grunt-contrib-concat": "latest",
-    "grunt-nodemon": "latest"
+    "grunt-nodemon": "latest",
+    "grunt-shell": "latest",
+    "grunt-concurrent": "latest"
   }
 }
