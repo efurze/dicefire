@@ -114,12 +114,7 @@ Replaycontroller.prototype.historyForward = function (event) {
 
 Replaycontroller.prototype.renderHistory = function (state) {
 	var self = this;
-	Renderer.render(state);
-	Renderer.renderHistoricalAttack(Map.getCountry(state.attack().fromCountryId),
-		Map.getCountry(state.attack().toCountryId),
-		state.attack().fromRollArray,
-		state.attack().toRollArray,
-		state);				
+	Renderer.render(state);			
 };
 
 Replaycontroller.prototype._viewingHistory = function () {

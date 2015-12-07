@@ -3,9 +3,12 @@ var app = express();
 var fs = require('fs');
 var uuid = require('node-uuid');
 var bodyParser = require('body-parser');
+var redis = require('redis');
+var redisClient = redis.createClient(); //6379, 'localhost', '');
 
-var uploadBaseDir = __dirname + "/public/upload/";
-var uploadDir = __dirname + "/public/upload/games/";
+var data = redisClient.get("test", function(err, data) {
+	console.log(data);
+});
 
 
 app.set('port', (process.env.PORT || 5000));
@@ -66,17 +69,11 @@ app.post('/uploadMap', function(req, res) {
 	var gameId = req.query['gameId'];
 	var mapData = JSON.stringify(req.body);
 	console.log("UploadMap for gameId " + gameId);
-	var dirName = uploadDir + gameId;
-	var filename = dirName + "/map.json";
-	
-	ensureDir(dirName);
-	fs.writeFile(filename, mapData, function(err) {
-		if (err) {
-			console.log("Error saving mapfile ", filename, err);
-		}
+	var filename = gameId + "/map.json";
+
+	redisClient.set(filename, mapData, function(err, reply) {
+		res.status(200).send("success");
 	});
-	
-	res.status(200).send("success");
 });
 
 app.post('/uploadState', function(req, res) { 
@@ -84,106 +81,57 @@ app.post('/uploadState', function(req, res) {
 	var gameId = req.query['gameId'];
 	var stateData = JSON.stringify(req.body);
 	
-	var dirName = uploadDir + gameId;
-	ensureDir(dirName);
-	if (!fs.existsSync(dirName)) {
-		console.log("ERROR: uploaded state data for unknown gameId " + gameId);
-		res.status(404).send("Unrecognized gameId " + gameId);
-	} else {
-		var filename = dirName + "/state_" + moveId + ".json";
-		console.log("Saving state file " + filename);
-		fs.writeFile(filename, stateData, function(err) {
-			if (err) {
-				console.log("Error saving statefile ", filename, err);
-			}
-		});
+	var filename = gameId + "/state_" + moveId + ".json";
+	console.log("Saving state file " + filename);
+	redisClient.set(filename, stateData, function(err, reply) {
 		res.status(200).send("success");
-	}
+	});
 
 });
 
 app.get('/getMap', function(req, res) {
 	var gameId = req.query['gameId'];
-	var gameDir = uploadDir + gameId;
-	
-	ensureDir(gameDir);
-	var filename = gameDir + '/map.json';
-	
-	if (!fs.existsSync(filename)) {
-		console.log("Cannot find file " + filename);
-		res.status(404).send("No mapfile found for gameId " + gameId);
-	} else {
-		fs.readFile(filename, 'utf8', function (err, data) {
-			if (err) {
-				res.status(500).send("Error reading mapfile: " + JSON.stringify(err));
-			} else {
-				res.send(data);
-			}
-		});
-	}
+	var filename = gameId + '/map.json';
+
+	redisClient.get(filename, function(err, data) {
+		if (!data) {
+			res.status(404).send("No map file found for gameId " + gameId);
+		} else {
+			res.send(data);
+		}
+	});
 });
 
 app.get('/getState', function(req, res) {
 	var gameId = req.query['gameId'];
 	var moveId = req.query['moveId'];
-	var gameDir = uploadDir + gameId;
-	
-	ensureDir(gameDir);
-	var filenames = fs.readdirSync(gameDir);
-	var moveCount = filenames.filter(function(name) {
-		return (name.substring(0, 6) == "state_");
-	}).length;
-	
-	
-	var filename =  gameDir + '/state_' + moveId + '.json';
-	if (!fs.existsSync(filename)) {
-		res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
-	} else {
-		fs.readFile(filename, 'utf8', function (err, data) {
-			if (err) {
-				res.status(500).send("Error reading statefile: " + JSON.stringify(err));
+
+	redisClient.keys(gameId + '*', function(err, reply) {
+		var filenames = reply;
+		console.log(filenames);
+		var moveCount = filenames.filter(function(name) {
+			return (name.indexOf("state_") != -1);
+		}).length;
+			
+		var filename =  gameId + '/state_' + moveId + '.json';
+		redisClient.get(filename, function(err, data) {
+			if (!data) {
+				res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
 			} else {
 				res.send({'data': data, 'moveCount': moveCount});
 			}
 		});
-	}
+
+	});
+
 });
+
 
 
 app.listen(app.get('port'), function() {
-	if (!fs.existsSync(uploadDir)) {
-		if (!fs.existsSync(uploadBaseDir)) {
-			fs.mkdirSync(uploadBaseDir);
-		}
-		fs.mkdirSync(uploadDir);
-	}
 	console.log('Node app is running on port', app.get('port'));
 });
 
-
-var ensureDir = function(dir) {
-	if (fs.existsSync(dir)) {
-		return;
-	}
-	
-	var dirAry = dir.split('/');
-	var assembledPath = dir[0] == '/' ? '/' : '';
-	dirAry.forEach(function(d) {
-		d = d.trim();
-		if (!d || !d.length) {
-			return;
-		}
-	
-		assembledPath += d + '/';
-		if (!fs.existsSync(assembledPath)) {
-			fs.mkdirSync(assembledPath);
-		}
-	});
-	
-	if (!fs.existsSync(dir)) {
-		console.log("Unable to create directory " + dir);
-	}
-};
 
 module.exports = app;
 

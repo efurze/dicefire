@@ -95,7 +95,7 @@ $(function(){
 			Renderer._selectedCountry = id;
 		},
 		
-		render: function(state) {
+		render: function(state, attackCallback) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
@@ -104,12 +104,15 @@ $(function(){
 			
 			this._renderMap(state);
 			this._renderPlayers(state);
+			if (state.attack() && state.attack().fromCountryId >= 0) {
+				this.renderAttack(state, attackCallback);
+			}
 		},
 		
 		/*
 			@callback: function done(){}
 		*/
-		renderAttack: function(fromCountry, toCountry, fromRollArray, toRollArray, state, callback) {
+		renderAttack: function(state, callback) {
 		
 			if (Globals.suppress_ui || !this._initialized || !state) {
 				callback();
@@ -118,25 +121,32 @@ $(function(){
 			Globals.debug("renderAttack", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			
 			var self = this;
+			var fromCountry = state.attack().fromCountryId;
+			var fromPlayerId = state.countryOwner(fromCountry);
 			
-			var fromPlayerId = fromCountry.ownerId();
+			var toCountry = state.attack().toCountryId;
 			
-			var fromNumDice = fromRollArray.length;
-			var toNumDice = toRollArray.length;
+			var fromNumDice = state.attack().fromRollArray.length;
+			var toNumDice = state.attack().toRollArray.length;
 			
-			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
-	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+			var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; });
+	    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; });
 			
-			self._resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
+			self._resetRollDivs(state,
+				fromCountry, 
+				toCountry, 
+				state.attack().fromRollArray, 
+				state.attack().toRollArray);
 	
 			// roll attacker
 			Globals.debug("render attacker", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-			self._renderCountry(fromCountry.id(), state, true);
+			self._renderCountry(fromCountry, state, true);
 	        
-			if (Globals.play_sounds) {
+			if (Globals.play_sounds && callback) {
 	            $.playSound('/sounds/2_dice_throw_on_table');
 	        }
-	        window.setTimeout(function(){renderAttackRoll(state);}, Globals.timeout);
+			var timeout = callback ? Globals.timeout : 0;
+	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
 	
 			function renderAttackRoll(state) {
 				$('#lefttotal').html(fromRoll);
@@ -147,8 +157,8 @@ $(function(){
 	                "display": "inline-block"
 	            });
 
-				self._renderCountry(toCountry.id(), state, true);
-	            window.setTimeout(function(){renderDefendRoll(state);}, Globals.timeout);
+				self._renderCountry(toCountry, state, true);
+	            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
 			}
 			
 			function renderDefendRoll(state) {
@@ -157,65 +167,30 @@ $(function(){
 	            $('#rightroll').css({
 	                "display": "inline-block"
 	            });              
-	            window.setTimeout(function(){renderVerdict(state);}, Globals.timeout);
+	            window.setTimeout(function(){renderVerdict(state);}, timeout);
 			}
 			
 			function renderVerdict(state) {
 				Globals.debug("render verdict", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 	        	if (fromRoll > toRoll) {
 					// attacker wins
-	                if (Globals.play_sounds) {
+	                if (Globals.play_sounds && callback) {
 	                    $.playSound('/sounds/clink_sound');
 	                }
 	        	} else {
 					// defender wins
-	                if (Globals.play_sounds) {                
+	                if (Globals.play_sounds && callback) {                
 	                    $.playSound('/sounds/wood_hit_brick_1');               
 	                }
 	            }
-					
-				callback();
+				if (callback) {
+					callback(state.attack());
+				}
 			}
 		
 		},
 		
-		renderHistoricalAttack: function(fromCountry, toCountry, fromRollArray, toRollArray, state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-				
-			if (!fromCountry || !toCountry || !fromRollArray || !toRollArray) {
-				return;
-			}
-			
-			this._resetRollDivs(fromCountry, toCountry, fromRollArray, toRollArray);
-			
-			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
-	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
-			
-			// Render attack roll
-			$('#lefttotal').html(fromRoll);
-            $('#roll').css({
-                "display": "inline-block"
-            });
-            $('#leftroll').css({
-                "display": "inline-block"
-            });
 
-			// Render defensive roll
-			$('#righttotal').html(toRoll);
-            $('#rightroll').css({
-                "display": "inline-block"
-            });
-			
-			
-			// draw countries as attacking
-			this._renderMap(state);
-			this._renderCountry(fromCountry.id(), state, true);
-			this._renderCountry(toCountry.id(), state, true);
-		},
-		
-		
 		_renderMap: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
@@ -283,7 +258,7 @@ $(function(){
 			isFighting = isFighting || false;
 			
 	        Map.countryHexes(countryId).forEach(function(hexId) {
-	            self._renderHex(Map.getHex(hexId), isFighting);
+	            self._renderHex(Map.getHex(hexId), state, isFighting);
 	        });
 
 	        var ctr = Map.countryCenter(countryId);
@@ -331,7 +306,7 @@ $(function(){
 		
 		
 		
-		_resetRollDivs: function(fromCountry, toCountry, fromRollArray, toRollArray) {
+		_resetRollDivs: function(state, fromCountry, toCountry, fromRollArray, toRollArray) {
 			
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
@@ -366,7 +341,7 @@ $(function(){
 			for (var i = 0; i < Globals.maxDice; i++) {
 				$('#leftdie' + i).css({
 					'display': (i < fromNumDice ? 'inline-block' : 'none'),
-					'background-color': self._playerColors[fromCountry.ownerId()]
+					'background-color': self._playerColors[state.countryOwner(fromCountry)]
 				});
 
 				if (i < fromNumDice) {
@@ -375,7 +350,7 @@ $(function(){
 
 				$('#rightdie' + i).css({
 					'display': (i < toNumDice ? 'inline-block' : 'none'),
-					'background-color': self._playerColors[toCountry.ownerId()]
+					'background-color': self._playerColors[state.countryOwner(toCountry)]
 				});
 
 				if (i < fromNumDice) {
@@ -426,13 +401,14 @@ $(function(){
 		
 
 
-		_renderHex: function (hexToPaint, isFighting) {
+		_renderHex: function (hexToPaint, state, isFighting) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
 			var self = this;
-			var country = Map.getCountry(hexToPaint.countryId());
+			var countryId = hexToPaint.countryId();
+			var country = Map.getCountry(countryId);
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
 
@@ -447,7 +423,7 @@ $(function(){
 	        path.closePath();
 
 
-	        self._context.fillStyle = country ? Renderer._countryDrawColor(country, isFighting) : "white";
+	        self._context.fillStyle = country ? Renderer._countryDrawColor(countryId, state.countryOwner(countryId), isFighting) : "white";
 	        if (hexToPaint._color) {
 	            self._context.fillStyle = hexToPaint._color;
 	        }
@@ -531,21 +507,21 @@ $(function(){
 			
 		},
 		
-		_countryDrawColor: function(country, isFighting) {
+		_countryDrawColor: function(countryId, ownerId, isFighting) {
 			var self = this;
 			if (isFighting) {
 				return "black";
-			} else if (country.id() == self._mouseOverCountry) {
-		        if (country.id() == self._selectedCountry) {
+			} else if (countryId == self._mouseOverCountry) {
+		        if (countryId == self._selectedCountry) {
 		            return "gray";
 		        } else {
 		            return "lightgray";
 		        }
 		    } else {
-		        if (country.id() == self._selectedCountry) {
+		        if (countryId == self._selectedCountry) {
 		            return "black";
 		        } else {
-		            return self._playerColors[country.ownerId()];
+		            return self._playerColors[ownerId];
 		        }
 		    }
 		},

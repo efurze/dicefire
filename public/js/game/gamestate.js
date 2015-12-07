@@ -12,7 +12,7 @@ var Gamestate = function(players, countries, currentPlayerId, attack) {
 	self._currentPlayerId = typeof currentPlayerId === 'undefined' ? -1 : currentPlayerId;
 	self._players = {};
 	self._countries = {};
-	self._attack = {};
+	self._attack = null;
 	if (players) {
 		players.forEach(function(player) {
 			self._players[player.id()] = {
@@ -33,6 +33,7 @@ var Gamestate = function(players, countries, currentPlayerId, attack) {
 		});
 	}
 	if (attack) {
+		Globals.ASSERT(attack.fromCountryId >= 0);
 		self._attack = attack;
 	}
 };
@@ -52,7 +53,7 @@ Gamestate.prototype.clone = function() {
 	copy._currentPlayerId = this._currentPlayerId;
 	copy._players = JSON.parse(JSON.stringify(this._players));
 	copy._countries = JSON.parse(JSON.stringify(this._countries));
-	copy._attack = this._attack ? JSON.parse(JSON.stringify(this._attack)) : {};
+	copy._attack = this._attack ? JSON.parse(JSON.stringify(this._attack)) : null;
 	return copy;
 };
 
@@ -105,7 +106,10 @@ Gamestate.prototype.countries = function() {
 	return JSON.parse(JSON.stringify(this._countries));
 };
 
-Gamestate.prototype.countryOwner = function(countryId) {return this._countries[countryId].owner;};
+Gamestate.prototype.countryOwner = function(countryId) {
+	Globals.ASSERT(this._countries[countryId]);
+	return this._countries[countryId].owner;
+};
 Gamestate.prototype.setCountryOwner = function(countryId, owner) {
 	this._countries[countryId].owner = owner;
 };
@@ -117,6 +121,7 @@ Gamestate.prototype.setCountryDice = function(countryId, count) {
 };
 
 Gamestate.prototype.setAttack = function(attack) {
+	Globals.ASSERT(attack.fromCountryId >= 0);
 	this._attack = attack;
 }
 Gamestate.prototype.attack = function() {
