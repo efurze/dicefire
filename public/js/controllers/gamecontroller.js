@@ -27,7 +27,7 @@ Gamecontroller.prototype.update = function() {
 	
 	
 	if (Engine.isHuman(Engine.currentPlayerId())) {	
-		if (self._viewingHistory()) {
+		if (self.viewingHistory()) {
 			// don't let player end their turn while they're looking at history
 			$('#end_turn').prop('disabled', true);
 		} else if (Engine.isAttacking()) {
@@ -39,7 +39,7 @@ Gamecontroller.prototype.update = function() {
 		
 		$('#history').html((self._historyIndex+1)  + ' / ' + self._historyLength);
 		
-		if (self._viewingHistory()) {
+		if (self.viewingHistory()) {
 			$('#forward_btn').prop('disabled', false);
 		}
 		
@@ -70,7 +70,7 @@ Gamecontroller.prototype.historyBack = function (event) {
 
 Gamecontroller.prototype.historyForward = function (event) {
 	var self = this;
-	if (self._viewingHistory()) {
+	if (self.viewingHistory()) {
 		if (self._historyIndex < (Engine.historyLength()-1)) {
 			self._historyIndex ++;
 		} 
@@ -83,14 +83,9 @@ Gamecontroller.prototype.historyForward = function (event) {
 Gamecontroller.prototype.renderHistory = function (state) {
 	var self = this;
 	Renderer.render(state);
-	Renderer.renderHistoricalAttack(Map.getCountry(state.attack().fromCountryId),
-		Map.getCountry(state.attack().toCountryId),
-		state.attack().fromRollArray,
-		state.attack().toRollArray,
-		state);				
 };
 
-Gamecontroller.prototype._viewingHistory = function () {
+Gamecontroller.prototype.viewingHistory = function () {
 	var self = this;
 	return self._historyIndex < (Engine.historyLength()-1);
 };

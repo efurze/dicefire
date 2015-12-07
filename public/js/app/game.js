@@ -126,7 +126,9 @@ $(function() {
 		},
 		
 		mapUpdate: function() {
-			Game.redraw();
+			if (!Game._controller.viewingHistory()) {
+				Game.redraw();
+			}
 		},
 
 		engineUpdate: function(gamestate, stateId) {
@@ -140,7 +142,7 @@ $(function() {
 		
 		redraw: function(gamestate) {
 			gamestate = gamestate || Engine.getState();
-			Renderer.render(gamestate);
+			Renderer.render(gamestate, Engine.finishAttack);
 			if (Game._controller) {
 				Game._controller.update();
 			}

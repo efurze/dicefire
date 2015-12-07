@@ -18,6 +18,7 @@ var Engine = {
 	_history: [],
 	_gameCallback: null, 	// called when game is over
 	_stateCallback: null,	// called whenever the state updates
+	_attackCallback: null, 	// call AIs back with attack results
 	_initialized: false,
         
 	currentPlayer: function() { return Player.get(Engine._currentPlayerId); },
@@ -176,9 +177,9 @@ var Engine = {
 
 	attack: function(fromCountry, toCountry, callback) {
 		Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-		var self = this;
 
-		self._attackInProgress = true;
+		Engine._attackInProgress = true;
+		Engine._attackCallback = callback;
 
 		var fromPlayer = Player.get(fromCountry.ownerId());
 		var toPlayer = Player.get(toCountry.ownerId());
@@ -231,50 +232,64 @@ var Engine = {
 			fromRollArray: fromRollArray,
 			toRollArray: toRollArray
 		}
+		
+		// IMPORTANT: the way this now works is that Engine expects the application wrapper (ie, Game) to call
+		// finishAttack() when the attack rendering is done. The pushHistory() here informs Game, via
+		// the stateCallback that an attack needs to be rendered
+		
 		Engine.pushHistory(Engine.getState(), attack);
 
-		var done =  function() {
+		if (typeof module !== 'undefined' && module.exports) {
+			Engine.finishAttack();
+		} 
+	},
+	
+	finishAttack: function(attack) {
 
-			self._attackInProgress = false;
+		Engine._attackInProgress = false;
+		
+		var fromCountry = Map.getCountry(attack.fromCountryId);
+		var toCountry = Map.getCountry(attack.toCountryId);
+		var fromRoll = attack.fromRollArray.reduce(function(total, die) { return total + die; });
+		var toRoll = attack.toRollArray.reduce(function(total, die) { return total + die; });
+		var fromNumDice = fromCountry.numDice();
+		var toNumDice = toCountry.numDice();
+		var fromPlayer = Player.get(fromCountry.ownerId());
+		var toPlayer = Player.get(toCountry.ownerId());
 
-			// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
-			// goes down to 1 die.
-			fromCountry.setNumDice(1);
+		// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
+		// goes down to 1 die.
+		fromCountry.setNumDice(1);
 
-			if (fromRoll > toRoll) {
-				Globals.debug("Attacker wins", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-				var oldOwner = Player.get(toCountry.ownerId());
-				toCountry.setNumDice(fromNumDice - 1);
-				fromPlayer.addCountry(toCountry);
-				oldOwner.updateStatus();
-				fromPlayer.updateStatus();
-				
-				Globals.debug("Losing player has " + oldOwner.countryCount() + " countries left", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-				
-				if (oldOwner.hasLost()) {
-					Globals.debug("Player " + oldOwner.id() + " has lost and can no longer play", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-				}
-				
-
-				if (fromPlayer.countryCount() == Map.countryCount()) {
-					Engine.gameOver(fromPlayer);
-				}
-			} else {
-				Globals.debug("Attacker loses", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+		if (fromRoll > toRoll) {
+			Globals.debug("Attacker wins", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+			var oldOwner = Player.get(toCountry.ownerId());
+			toCountry.setNumDice(fromNumDice - 1);
+			fromPlayer.addCountry(toCountry);
+			oldOwner.updateStatus();
+			fromPlayer.updateStatus();
+			
+			Globals.debug("Losing player has " + oldOwner.countryCount() + " countries left", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+			
+			if (oldOwner.hasLost()) {
+				Globals.debug("Player " + oldOwner.id() + " has lost and can no longer play", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 			}
 			
-			// attack is done, save to history
-			Engine.pushHistory(Engine.getState());
 
-			callback(fromRoll > toRoll);
-		};
-		
-		if (typeof module !== 'undefined' && module.exports) {
-			done();
+			if (fromPlayer.countryCount() == Map.countryCount()) {
+				Engine.gameOver(fromPlayer);
+			}
 		} else {
-			Renderer.renderAttack(fromCountry, toCountry, fromRollArray, toRollArray, Engine.getState(), done);
+			Globals.debug("Attacker loses", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		}
-
+		
+		// attack is done, save to history
+		Engine.pushHistory(Engine.getState());
+		if (Engine._attackCallback) {
+			var temp = Engine._attackCallback;
+			Engine._attackCallback = null;
+			temp(fromRoll > toRoll);
+		}
 	},
 
 	// Called when an attack ends the game.
