@@ -1,15 +1,19 @@
 var express = require('express');
+var http = require('http');
 var app = express();
 var fs = require('fs');
 var uuid = require('node-uuid');
 var bodyParser = require('body-parser');
+
+// Redis
 var redis = require('redis');
 var redisClient = redis.createClient(); //6379, 'localhost', '');
-
 var data = redisClient.get("test", function(err, data) {
 	console.log(data);
 });
 
+// Websockets
+var ss = require('./sockethandler.js')(app, 5001);
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -30,6 +34,10 @@ app.set('view engine', '.hbs');
 app.get('/', function(req, res) { 
 	res.render("index", {'gameId': uuid.v1()});
     
+});
+
+app.get('/client', function(req, res) { 
+	res.render("client", {gameId: uuid.v1(), layout: "client"});
 });
 
 
@@ -125,8 +133,6 @@ app.get('/getState', function(req, res) {
 	});
 
 });
-
-
 
 app.listen(app.get('port'), function() {
 	console.log('Node app is running on port', app.get('port'));

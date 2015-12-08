@@ -105,14 +105,14 @@ $(function(){
 			this._renderMap(state);
 			this._renderPlayers(state);
 			if (state.attack() && state.attack().fromCountryId >= 0) {
-				this.renderAttack(state, attackCallback);
+				this._renderAttack(state, attackCallback);
 			}
 		},
 		
 		/*
 			@callback: function done(){}
 		*/
-		renderAttack: function(state, callback) {
+		_renderAttack: function(state, callback) {
 		
 			if (Globals.suppress_ui || !this._initialized || !state) {
 				callback();
