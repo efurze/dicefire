@@ -1,7 +1,8 @@
 "use strict"
 
-var Replaycontroller = function (gameId) {
+var Replaycontroller = function (gameId, engine) {
 	this._gameId = gameId;
+	this._engine = engine;
 	this._historyIndex = -1;
 	this._historyLength = 0;
 	this._pendingIndex = -1;
@@ -32,7 +33,7 @@ Replaycontroller.prototype.ajaxDone = function(data) {
 	Globals.ASSERT(this._pendingIndex != -1);
 	
 	var state = Gamestate.deserialize(data.data);
-	Engine.pushHistory(state);
+	this._engine.pushHistory(state);
 	this._historyLength = data.moveCount;
 	this._historyIndex = this._pendingIndex;
 	this._pendingIndex = -1;
@@ -89,7 +90,7 @@ Replaycontroller.prototype.historyBack = function (event) {
 		self._historyIndex --;
 	}
 	
-	self.renderHistory(Engine.getHistory(self._historyIndex));
+	self.renderHistory(self._engine.getHistory(self._historyIndex));
 	self.update();
 };
 
@@ -103,8 +104,8 @@ Replaycontroller.prototype.historyForward = function (event) {
 			self._historyIndex ++;
 		} 
 		
-		if (self._historyIndex < (Engine.historyLength()-1)) {
-			self.renderHistory(Engine.getHistory(self._historyIndex));
+		if (self._historyIndex < (self._engine.historyLength()-1)) {
+			self.renderHistory(self._engine.getHistory(self._historyIndex));
 		} else {
 			self._ajaxRequest(self._historyIndex);
 		}

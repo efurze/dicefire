@@ -8,6 +8,7 @@ var GameRepeater = function(players, runCount) {
 	this._whoWentFirst = {};
 	this._results = {};
 	this._callback = null;
+	this._engine = null;
 };
 
 GameRepeater.prototype.start = function(callback) {
@@ -94,13 +95,14 @@ GameRepeater.prototype.simulateGame = function() {
 	
 	self._currentRun ++;
 	
-	Engine.init(players.map(function(p){return p;}), self.gameOver.bind(self));
-	Engine.setup();
+	self._engine = new Engine();
+	self._engine.init(players.map(function(p){return p;}), self.gameOver.bind(self));
+	self._engine.setup();
 	Renderer.clearAll();
 	
-	Renderer.render(Engine.getState());
+	Renderer.render(self._engine.getState());
 	
-	Engine.startTurn(0);
+	self._engine.startTurn(0);
 };
 
 // the idea here is you give it an AI, and this will run all combinations of that AI.

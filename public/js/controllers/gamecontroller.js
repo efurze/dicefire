@@ -1,8 +1,9 @@
 "use strict"
 
-var Gamecontroller = function () {
+var Gamecontroller = function (engine) {
 	this._historyIndex = 0;
 	this._historyLength = 0;
+	this._engine = engine;
 };
 
 $(function(){
@@ -14,23 +15,23 @@ Gamecontroller.prototype.update = function() {
 	
 	var self = this;
 	
-	if (self._historyLength < Engine.historyLength()) {
+	if (self._historyLength < self._engine.historyLength()) {
 		// history has changed since we last updated. If it's human's turn, assume that it 
 		// means that a user-generated attack occured. That means we're not viewing history anymore
-		self._historyIndex = Engine.historyLength() - 1;
+		self._historyIndex = self._engine.historyLength() - 1;
 	}
 	
-	self._historyLength = Engine.historyLength();
+	self._historyLength = self._engine.historyLength();
 	
 	$('#back_btn').prop('disabled', true);
 	$('#forward_btn').prop('disabled', true);
 	
 	
-	if (Engine.isHuman(Engine.currentPlayerId())) {	
+	if (self._engine.isHuman(self._engine.currentPlayerId())) {	
 		if (self.viewingHistory()) {
 			// don't let player end their turn while they're looking at history
 			$('#end_turn').prop('disabled', true);
-		} else if (Engine.isAttacking()) {
+		} else if (self._engine.isAttacking()) {
 			// can't end turn during an attack
 			$('#end_turn').prop('disabled', true);
 		} else {
@@ -54,8 +55,8 @@ Gamecontroller.prototype.update = function() {
 
 Gamecontroller.prototype.endTurn = function() {
 	var self = this;
-	self._historyIndex = Engine.historyLength() - 1;
-	Engine.endTurn();
+	self._historyIndex = self._engine.historyLength() - 1;
+	self._engine.endTurn();
 };
 
 Gamecontroller.prototype.historyBack = function (event) {
@@ -64,18 +65,18 @@ Gamecontroller.prototype.historyBack = function (event) {
 		self._historyIndex --;
 	}
 	
-	self.renderHistory(Engine.getHistory(self._historyIndex));			
+	self.renderHistory(self._engine.getHistory(self._historyIndex));			
 	self.update();
 };
 
 Gamecontroller.prototype.historyForward = function (event) {
 	var self = this;
 	if (self.viewingHistory()) {
-		if (self._historyIndex < (Engine.historyLength()-1)) {
+		if (self._historyIndex < (self._engine.historyLength()-1)) {
 			self._historyIndex ++;
 		} 
 					
-		self.renderHistory(Engine.getHistory(self._historyIndex));
+		self.renderHistory(self._engine.getHistory(self._historyIndex));
 		self.update();
 	}
 };
@@ -87,7 +88,7 @@ Gamecontroller.prototype.renderHistory = function (state) {
 
 Gamecontroller.prototype.viewingHistory = function () {
 	var self = this;
-	return self._historyIndex < (Engine.historyLength()-1);
+	return self._historyIndex < (self._engine.historyLength()-1);
 };
 
 });

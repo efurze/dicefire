@@ -8,11 +8,13 @@ $(function() {
 		_initialMap: null,
 		_gameId: -1,
 		_controller: null,
+		_engine: null,
 		
 		init: function (gameId) {
 			console.log("gameId: " + gameId);
 			Replay._gameId = gameId;
-			Replay._controller = new Replaycontroller(Replay._gameId);
+			Replay._engine = new Engine();
+			Replay._controller = new Replaycontroller(Replay._gameId, Replay._engine);			
 
 			$.get( "/getMap?gameId=" + gameId).done(function(data) {
 				Replay.ajaxDone(data);
@@ -29,7 +31,7 @@ $(function() {
 		
 		callback: function(state) {
 			
-			if (!Engine.isInitialized()) {
+			if (!Replay._engine.isInitialized()) {
 				var players = [];
 				if (state && state._players) {
 					players.length = Object.keys(state._players).length;
@@ -39,14 +41,14 @@ $(function() {
 				}
 				players.fill(AI.DoNothing);
 			
-				Engine.init(players.map(function(p){return p;}));
+				Replay._engine.init(players.map(function(p){return p;}));
 				Renderer.init(players.length, Replay._canvas, players.map(function(pc, idx) {
 					return ("player " + idx);
 				}));						
 			
-				Engine.setup(JSON.stringify(Replay._initialMap), state ? JSON.stringify(state) : null);
+				Replay._engine.setup(JSON.stringify(Replay._initialMap), state ? JSON.stringify(state) : null);
 				if (state) {
-					Engine.pushHistory(state);
+					Replay._engine.pushHistory(state);
 				}
 				Renderer.clearAll();
 			
@@ -62,7 +64,7 @@ $(function() {
 		},
 
 		update: function(gamestate) {
-			gamestate = gamestate || Engine.getState();
+			gamestate = gamestate || Replay._engine.getState();
 			Renderer.render(gamestate);
 			if (Replay._controller) {
 				Replay._controller.update();

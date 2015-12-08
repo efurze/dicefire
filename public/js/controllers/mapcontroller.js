@@ -1,7 +1,8 @@
 "use strict"
 
-var Mapcontroller = function(update_cb) {
+var Mapcontroller = function(update_cb, engine) {
 	this._update_cb = update_cb;
+	this._engine = engine;
 	this._mouseOverCountry = null;
     this._selectedCountry = null;
 	$(Game._canvas).mousemove(this.mouseMove.bind(this));
@@ -24,7 +25,7 @@ $(function(){
 		};
 		
 		Mapcontroller.prototype.isCountryClickable = function(country) {
-			if (!country || !Engine.isHuman(Engine.currentPlayerId())) {
+			if (!country || !this._engine.isHuman(this._engine.currentPlayerId())) {
 				return false;
 			}
 			
@@ -34,12 +35,12 @@ $(function(){
 			}
 			
 			// user is choosing a country to attack from
-			if (!this.selectedCountry() && country.ownerId() == Engine.currentPlayerId() && country.numDice() > 1) {
+			if (!this.selectedCountry() && country.ownerId() == this._engine.currentPlayerId() && country.numDice() > 1) {
 				return true;
 			}
 			
 			// user is choosing a country to attack
-			if (this.selectedCountry() && country.ownerId() !== Engine.currentPlayerId()) {
+			if (this.selectedCountry() && country.ownerId() !== this._engine.currentPlayerId()) {
 				return true;
 			}
 			
@@ -47,7 +48,7 @@ $(function(){
 		};
 		
 		Mapcontroller.prototype.mouseMove = function(event) {
-			var currentPlayer = Engine.currentPlayer();
+			var currentPlayer = this._engine.currentPlayer();
             var hex = Map.fromMousePos(event.offsetX, event.offsetY);
 			var country = hex ? Map.getCountry(hex.countryId()) : null;
             if (this.isCountryClickable(country)) {
@@ -78,8 +79,8 @@ $(function(){
 
 		Mapcontroller.prototype.click = function(event) {
 			var self = this;
-			var currentPlayer = Engine.currentPlayer(); 
-			if (!Engine.isHuman(currentPlayer._id)) {
+			var currentPlayer = self._engine.currentPlayer(); 
+			if (!self._engine.isHuman(currentPlayer._id)) {
 				if (self.selectedCountry()) {
 					var prevCountry = self.selectedCountry();
 					self.setSelectedCountry(null);
@@ -104,7 +105,7 @@ $(function(){
                         }
                     } else {
                         // Attacks.
-						Engine.attack(self.selectedCountry(), country, function(result) {
+						self._engine.attack(self.selectedCountry(), country, function(result) {
                             var prevCountry = self.selectedCountry();
                             self.setSelectedCountry(null);
                             $('#end_turn').prop('disabled', false);
