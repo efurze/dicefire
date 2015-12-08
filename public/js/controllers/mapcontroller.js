@@ -49,8 +49,8 @@ $(function(){
 		
 		Mapcontroller.prototype.mouseMove = function(event) {
 			var currentPlayer = this._engine.currentPlayer();
-            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
-			var country = hex ? Map.getCountry(hex.countryId()) : null;
+            var hex = this._engine.map().fromMousePos(event.offsetX, event.offsetY);
+			var country = hex ? this._engine.map().getCountry(hex.countryId()) : null;
             if (this.isCountryClickable(country)) {
 				
 				if (this.mouseOverCountry() !== country) {
@@ -88,9 +88,9 @@ $(function(){
 				}
 				return;
 			}
-            var hex = Map.fromMousePos(event.offsetX, event.offsetY);
+            var hex = self._engine.map().fromMousePos(event.offsetX, event.offsetY);
             if (hex) {
-                var country = Map.getCountry(hex.countryId());
+                var country = self._engine.map().getCountry(hex.countryId());
                 
                 if (country) {
                     if (Player.get(country.ownerId()) == currentPlayer && country.numDice() > 1) {  

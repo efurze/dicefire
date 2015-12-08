@@ -3,13 +3,15 @@
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Gamestate = require('../game/gamestate.js');
-	var Map = require('../game/map.js');
 	var window = {};
 }
 
 
 window.AI = window.AI || {};
 window.AI.Util =  {
+	
+	iface: null,
+	
 	// USAGE: ODDS_ARRAY[attackingDiceCount - 1, defendingDiceCount - 1] gives the odds that the attacker wins
 	ODDS_ARRAY: [
 		[ 0.4098, 	0.0603, 0.0047, 0, 		0, 		0, 		0, 		0 ], 		// 1 dice attacking
@@ -95,6 +97,7 @@ window.AI.Util =  {
 		//Globals.debug("Find attacks for player " + state.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 		var threshold = threshold || 0.44;
 		var attacks = [];
+		var self = this;
 		
 		// loop over all possible attacks, filter out the ones that are too improbable
 		Object.keys(state.playerCountries(state.currentPlayerId())).forEach(function(cid) {
@@ -105,7 +108,7 @@ window.AI.Util =  {
 				return;
 			}
 			// for each country, loop through all adjacent enemies
-			var ac = Map.adjacentCountries(countryId);
+			var ac = self.iface.adjacentCountries(countryId);
 			var neighbors = ac ? (ac.filter(function(neighbor) {
 				return (state.countryOwner(neighbor) != state.currentPlayerId())
 			})) : [];
@@ -200,7 +203,7 @@ window.AI.Util =  {
 			alreadySeen[countryId] = true;
 
 			return 1 + 
-					Map.adjacentCountries(countryId).reduce(function(total, adjacentCountry) {
+					self.iface.adjacentCountries(countryId).reduce(function(total, adjacentCountry) {
 						if (state.countryOwner(adjacentCountry) == playerId) {
 							total += traverse(adjacentCountry);
 						}

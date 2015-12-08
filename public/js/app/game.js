@@ -36,7 +36,9 @@ $(function() {
 			
 			Game._engine = new Engine();
 			Game._engine.init(playerCode.map(function(pc){return pc;}));
-			Renderer.init(playerCode.length, Game._canvas, playerCode.map(function(pc) {
+			Game._engine.setup();
+			
+			Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerCode.map(function(pc) {
 				if (pc == "human") {
 					return "human";
 				} else {
@@ -44,14 +46,14 @@ $(function() {
 				}
 			}));
 			
-			Game._engine.setup();
+			
 			
 			if (Globals.uploadGame && Game._gameId) {
 				// upload map data to server
 				$.ajax({
 					type: 'POST',
 					url: '/uploadMap?gameId=' + Game._gameId,
-					data: Map.serializeHexes(),
+					data: Game._engine.map().serializeHexes(),
 					contentType: "application/json; charset=utf-8",
 					dataType: "json",
 					success: Game.uploadSuccess,

@@ -70,6 +70,7 @@
 		var self = this;
 		self._interface = iface;
 		var state = iface.getState();
+		util.iface = iface;
 		
 		Globals.ASSERT(self._myId == state.currentPlayerId());
 		

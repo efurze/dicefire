@@ -3,7 +3,6 @@
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Country = require('./country.js');
-	var Map = require('./map.js');
 }
 
 var Player = function(id) {
@@ -24,7 +23,7 @@ Player.init = function(count) {
 
 
 
-Player.setState = function(gamestate) {
+Player.setState = function(gamestate, map) {
 	
 	Player._array = [];
 	Player._array.length = gamestate.playerIds().length;
@@ -33,8 +32,7 @@ Player.setState = function(gamestate) {
 		var player = new Player(playerId);
 		player._countries = [];
 		gamestate.countryIds().forEach(function(countryId) {
-			// TODO: FIXME: _countries should be an array of Ids, not objects
-			var country = Map.getCountry(countryId);
+			var country = map.getCountry(countryId);
 			if (country.ownerId() == playerId) {
 				player._countries.push(countryId);
 			}
@@ -102,22 +100,16 @@ Player.prototype.loseCountry = function(country) {
 };
 
 // Pick all the countries which have some space in them.
-Player.prototype.countriesWithSpace = function() {
+Player.prototype.countriesWithSpace = function(map) {
 	return this._countries.filter(function(countryId) {
-		return Map.getCountry(countryId).numDice() < Globals.maxDice;
+		return map.getCountry(countryId).numDice() < Globals.maxDice;
 	}).map(function(countryId) {
-		return Map.getCountry(countryId);
+		return map.getCountry(countryId);
 	});
 };
 
-// Can the player attack this country from the country that's selected?
-Player.prototype.canAttack = function(selectedCountry, country) {
-	return Map.isConnected(selectedCountry.id(), country.id()) && country.owner != this;
-};
-
-
 // Update the information for this player.
-Player.prototype.updateStatus = function() {
+Player.prototype.updateStatus = function(map) {
 	var self = this;
 
 	// Did this player lose?
@@ -136,8 +128,8 @@ Player.prototype.updateStatus = function() {
 		alreadySeen[country.id()] = true;
 	
 		return 1 + 
-				Map.adjacentCountries(country.id()).reduce(function(total, adjacentCountryId) {
-					var adjacentCountry = Map.getCountry(adjacentCountryId);
+				map.adjacentCountries(country.id()).reduce(function(total, adjacentCountryId) {
+					var adjacentCountry = map.getCountry(adjacentCountryId);
 					Globals.ASSERT(adjacentCountry);
 					if (adjacentCountry.ownerId() == self.id()) {
 						total += traverse(adjacentCountry);
@@ -147,7 +139,7 @@ Player.prototype.updateStatus = function() {
 	};
 
 	this._countries.forEach(function(countryId) {
-		var islandSize = traverse(Map.getCountry(countryId));
+		var islandSize = traverse(map.getCountry(countryId));
 
 		if (islandSize > maxIslandSize) {
 			maxIslandSize = islandSize;

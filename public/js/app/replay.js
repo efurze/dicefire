@@ -42,11 +42,12 @@ $(function() {
 				players.fill(AI.DoNothing);
 			
 				Replay._engine.init(players.map(function(p){return p;}));
-				Renderer.init(players.length, Replay._canvas, players.map(function(pc, idx) {
+				Replay._engine.setup(JSON.stringify(Replay._initialMap), state ? JSON.stringify(state) : null);
+				
+				Renderer.init(players.length, Replay._canvas, Replay._engine.map(), players.map(function(pc, idx) {
 					return ("player " + idx);
 				}));						
 			
-				Replay._engine.setup(JSON.stringify(Replay._initialMap), state ? JSON.stringify(state) : null);
 				if (state) {
 					Replay._engine.pushHistory(state);
 				}

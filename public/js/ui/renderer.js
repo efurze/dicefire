@@ -49,6 +49,7 @@ $(function(){
 		_mouseOverCountry: -1,
 		_selectedCountry: -1,
 		_names: [],
+		_map: null,
 		_playerColors: [
 			"red",
 			"blue",
@@ -60,7 +61,7 @@ $(function(){
 			"tan"
 		],
 		
-		init: function(playerCount, canvas, playerNames) {
+		init: function(playerCount, canvas, map, playerNames) {
 			if (!Globals.suppress_ui) {
 				this._canvas = canvas;
 				if (!canvas) {
@@ -69,6 +70,7 @@ $(function(){
 				this._context = this._canvas.getContext('2d');
 				this.clearAll();
 	            this._context.lineJoin = "straight";
+				this._map = map;
 				this._names = playerNames || [];
 				
 				this._setupRollDivs();
@@ -257,11 +259,11 @@ $(function(){
 			var self = this;
 			isFighting = isFighting || false;
 			
-	        Map.countryHexes(countryId).forEach(function(hexId) {
-	            self._renderHex(Map.getHex(hexId), state, isFighting);
+	        self._map.countryHexes(countryId).forEach(function(hexId) {
+	            self._renderHex(self._map.getHex(hexId), state, isFighting);
 	        });
 
-	        var ctr = Map.countryCenter(countryId);
+	        var ctr = self._map.countryCenter(countryId);
 
 	        self._renderNumberBox(countryId, state);
 
@@ -284,8 +286,8 @@ $(function(){
 	        }
 
 	        if (Globals.drawCountryConnections) {
-	            Map.adjacentCountries(countryId).forEach(function(country) {
-	                var otherCenter = Map.countryCenter(country.id());
+	            self._map.adjacentCountries(countryId).forEach(function(country) {
+	                var otherCenter = self._map.countryCenter(country.id());
 	                var path = new Path2D();
 	                path.moveTo(ctr[0], ctr[1]);
 	                path.lineTo(otherCenter[0], otherCenter[1]);
@@ -298,7 +300,7 @@ $(function(){
 	
 			// number boxes can overlap between adjacent countries. Redraw
 			// them for all our neighbors
-			Map.adjacentCountries(countryId).forEach(function(neighborId) {
+			self._map.adjacentCountries(countryId).forEach(function(neighborId) {
 				self._renderNumberBox(neighborId, state);
 			});
 		},
@@ -366,7 +368,7 @@ $(function(){
 			}
 			
 			var self = this;
-			var ctr = Map.countryCenter(countryId);
+			var ctr = self._map.countryCenter(countryId);
 			
 			// Draw the number box.
 	        var boxSize = 10;
@@ -408,7 +410,7 @@ $(function(){
 			
 			var self = this;
 			var countryId = hexToPaint.countryId();
-			var country = Map.getCountry(countryId);
+			var country = self._map.getCountry(countryId);
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
 
