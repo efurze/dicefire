@@ -93,7 +93,7 @@ $(function(){
                 var country = self._engine.map().getCountry(hex.countryId());
                 
                 if (country) {
-                    if (Player.get(country.ownerId()) == currentPlayer && country.numDice() > 1) {  
+                    if (country.ownerId() == currentPlayer.id() && country.numDice() > 1) {  
                         // Select and deselect of countries owned by this user.                  
                         if (self.selectedCountry() == country) {
                             self.setSelectedCountry(null);

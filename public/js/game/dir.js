@@ -1,7 +1,6 @@
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
 	var Hex = require('./hex.js');
-	var Map = null;
 }
 
 
@@ -50,7 +49,7 @@ var Dir = {
         },
 
         // What is the hex you reach when you move a given direction from the current hex?
-        nextHex: function(hex, dir) {
+        nextHex: function(hex, dir, map) {
 
             // Is it an illegal direction? If so, just return null.
             if (!Dir.isLegal(hex, dir)) {
@@ -97,13 +96,7 @@ var Dir = {
                     break;    
 
             }
-
-			if (typeof module !== 'undefined' && module.exports) {
-				if (!Map) {
-					Map = require('./map.js');
-				}
-			}
-            return Map.getHex(newHexId);
+            return map.getHex(newHexId);
         }
     };
 

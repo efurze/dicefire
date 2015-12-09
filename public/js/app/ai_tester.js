@@ -13,7 +13,6 @@ var GameRepeater = function(players, runCount) {
 
 GameRepeater.prototype.start = function(callback) {
 	var self = this;
-	Renderer.init(self._players.length, AI_Tester._canvas);
 	self._callback = callback;
 	self._currentRun = 0;
 	self._playerMapping = [];
@@ -98,9 +97,6 @@ GameRepeater.prototype.simulateGame = function() {
 	self._engine = new Engine();
 	self._engine.init(players.map(function(p){return p;}), self.gameOver.bind(self));
 	self._engine.setup();
-	Renderer.clearAll();
-	
-	Renderer.render(self._engine.getState());
 	
 	self._engine.startTurn(0);
 };

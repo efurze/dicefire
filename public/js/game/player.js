@@ -12,49 +12,6 @@ var Player = function(id) {
 	this._numContiguousCountries = 0;		
 };
 
-Player.init = function(count) {
-
-	Player._array = [];
-	for (var i = 0; i < count; i++) {
-		Player._array.push(new Player(i));
-	}
-	Globals.debug("Created players ", Player._array, Globals.LEVEL.INFO, Globals.CHANNEL.PLAYER);
-};
-
-
-
-Player.setState = function(gamestate, map) {
-	
-	Player._array = [];
-	Player._array.length = gamestate.playerIds().length;
-	
-	gamestate.playerIds().forEach(function(playerId) {
-		var player = new Player(playerId);
-		player._countries = [];
-		gamestate.countryIds().forEach(function(countryId) {
-			var country = map.getCountry(countryId);
-			if (country.ownerId() == playerId) {
-				player._countries.push(countryId);
-			}
-		});
-		player._storedDice = gamestate.storedDice(playerId);
-		player._numContiguousCountries = gamestate.numContiguous(playerId);
-		Player._array[playerId] = player;
-		Globals.debug("Deserialized player: " + JSON.stringify(player), Globals.LEVEL.INFO, Globals.CHANNEL.PLAYER);
-	});
-};
-
-
-Player.array = function() { return Player._array; };
-Player.count = function() { return Player._array.length; };
-Player.get = function(id) { 
-	//Globals.ASSERT(Player._array[id]);
-	return Player._array[id]; 
-};
-
-Player.randomPlayer = function() {
-	return Player._array[Math.floor(Math.random() * Player._array.length)];
-};
 
 Player.rollDie = function() {
 	return Math.floor(Math.random() * 6) + 1;
@@ -79,10 +36,6 @@ Player.prototype.numContiguousCountries = function() { return this._numContiguou
 
 // Take ownership of a country.
 Player.prototype.addCountry = function(country) {
-	var oldOwner = Player.get(country.ownerId());
-	if (oldOwner) {
- 		oldOwner.loseCountry(country);
- 	}
 	country.setOwner(this.id());
 	this._countries.push(country.id());
 	Globals.debug("Player " + this._id + " added country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
