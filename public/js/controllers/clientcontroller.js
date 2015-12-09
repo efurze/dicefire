@@ -1,7 +1,15 @@
 "use strict"
-
-var Clientcontroller = function (history) {
+/*
+@history = {
+	length(),
+	getState(id),
+	currentPlayerId(),
+	isAttacking()
+}
+*/
+var Clientcontroller = function (history, end_cb) {
 	this._history = history;
+	this._endCb = end_cb;
 	this._historyIndex = 0;
 	this._historyLength = 0;
 };
@@ -56,8 +64,9 @@ Clientcontroller.prototype.update = function() {
 Clientcontroller.prototype.endTurn = function() {
 	var self = this;
 	self._historyIndex = self._history.length() - 1;
-	//TODO: FIXME
-	//Engine.endTurn();
+	if (self._endCb) {
+		self._endCb();
+	}
 };
 
 Clientcontroller.prototype.historyBack = function (event) {

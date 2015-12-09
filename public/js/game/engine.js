@@ -260,7 +260,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	self.pushHistory(self.getState(), attack);
 
 	if (typeof module !== 'undefined' && module.exports) {
-		self.finishAttack();
+		self.finishAttack(attack);
 	} 
 };
 

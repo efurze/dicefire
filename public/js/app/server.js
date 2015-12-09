@@ -37,7 +37,11 @@ Server.prototype.start = function(playerCode) {
 	self._engine.registerStateCallback(self.engineUpdate.bind(self));			
 	self._engine.startTurn(0);
 };
-	
+
+Server.prototype.endTurn = function(playerId) {
+	var self = this;
+	self._engine.endTurn();
+}	
 
 Server.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;

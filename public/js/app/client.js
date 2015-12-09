@@ -25,6 +25,10 @@ History.prototype.currentPlayerId = function() {
 	return this._array[this._array.length-1].currentPlayerId();
 };
 
+History.prototype.isAttacking = function() {
+	return false;
+};
+
 $(function() {
 
 	
@@ -53,6 +57,8 @@ $(function() {
 			$('#start_game').click(Setupcontroller.startGame);
 			Setupcontroller.init(Client.start);
 			
+			Client._history = new History();
+			
 			Client._socket = io.connect(window.location.hostname + ":5001");
 			Client._socket.on('map', Client.mapLoad);
 			Client._socket.on('state', Client.engineUpdate);
@@ -74,7 +80,7 @@ $(function() {
 			
 			Client._socket.emit("initialized", {gameId: Client._gameId, players: Client._playerNames});
 			
-			Client._controller = new Clientcontroller(Client._history);
+			Client._controller = new Clientcontroller(Client._history, Client.endTurn);
 			//Client._mapController = new Mapcontroller(Client.mapUpdate);
 			
 			
@@ -83,6 +89,7 @@ $(function() {
 			$('#forward_btn').click(Client._controller.historyForward.bind(Client._controller));
 		},
 		
+		// from server
 		mapLoad: function(mapData) {
 			if (!Client._map) {
 				Client._map = new Map();
@@ -91,15 +98,23 @@ $(function() {
 			}
 		},
 
+		// from mapController
 		mapUpdate: function() {
 			if (!Client._controller.viewingHistory()) {
 				Client.redraw();
 			}
 		},
 
+		// from server
 		engineUpdate: function(stateData) {
 			var gamestate = Gamestate.deserialize(stateData);
+			Client._history.push(gamestate);
 			Client.redraw(gamestate);
+		},
+		
+		// from controller
+		endTurn: function() {
+			Client._socket.emit("end_turn", {playerId: 0});
 		},
 		
 		redraw: function(stateData) {
