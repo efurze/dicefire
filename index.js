@@ -4,13 +4,17 @@ var app = express();
 var fs = require('fs');
 var uuid = require('node-uuid');
 var bodyParser = require('body-parser');
+var passport = require('passport');
+var passportConf = require('./config/passport');
+
 
 // Redis
 var redis = require('redis');
 var redisClient = redis.createClient(); //6379, 'localhost', '');
-var data = redisClient.get("test", function(err, data) {
-	console.log(data);
-});
+
+
+// Controllers
+var userController = require('./controllers/user');
 
 // Websockets
 var ss = require('./sockethandler.js')(app, 5001);
@@ -30,6 +34,12 @@ app.set('views', __dirname + '/views');
 var exphbs = require('express-handlebars');
 app.engine('.hbs', exphbs({defaultLayout: 'single', extname: '.hbs'}));
 app.set('view engine', '.hbs');
+
+// Turn on passport for auth.
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Routes
 
 app.get('/', function(req, res) { 
 	res.render("index", {'gameId': uuid.v1()});
@@ -133,6 +143,19 @@ app.get('/getState', function(req, res) {
 	});
 
 });
+
+// User account routes
+/**
+ * OAuth authentication routes. (Sign in)
+ */
+app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email', 'user_location'] }));
+app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/' }), function(req, res) {
+  res.redirect(req.session.returnTo || '/');
+});
+
+app.get('/account/unlink/:provider', passportConf.isAuthenticated, userController.getOauthUnlink);
+
+
 
 app.listen(app.get('port'), function() {
 	console.log('Node app is running on port', app.get('port'));
