@@ -14,18 +14,27 @@ var connect = function(socket) {
 
 /*========================================================================================================================================*/
 
-
+var server = require('./public/js/app/server.js');
 
 var Session = function(socket) {
 	this._socket = socket;
-	this._engine = null;
+	this._server = null;
+	socket.on('error', this.socketError.bind(this));
 	socket.on('initialized', this.initialize.bind(this));
 };
 
 Session.prototype.initialize = function(data) {
-	console.log(data);
+	this._server = new server(data.gameId, this._socket);
+	try {
+		this._server.start(data.players);
+	} catch (err) {
+		console.log("Server error: " + err);
+	}
 };
 
+Session.prototype.socketError = function(err) {
+	console.log("Socket error: " + err);
+};
 
 
 /*========================================================================================================================================*/

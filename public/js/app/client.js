@@ -38,6 +38,8 @@ $(function() {
 		_gameId: null,
 		_history: null,
 		_socket: null,
+		_map: null,
+		_playerNames: [],
 		
 		
 		currentPlayer: function() { return Engine.currentPlayer(); },
@@ -52,14 +54,17 @@ $(function() {
 			Setupcontroller.init(Client.start);
 			
 			Client._socket = io.connect(window.location.hostname + ":5001");
+			Client._socket.on('map', Client.mapLoad);
+			Client._socket.on('state', Client.engineUpdate);
 		},
+		
 		
 		start: function(playerCode) {
 			
 			$('#setup').css('display', 'none');
 			$('#game').css('display', 'block');
 			
-			var playerNames = playerCode.map(function(pc) {
+			Client._playerNames = playerCode.map(function(pc) {
 				if (pc == "human") {
 					return "human";
 				} else {
@@ -67,9 +72,7 @@ $(function() {
 				}
 			});
 			
-			Client._socket.emit("initialized", playerNames);
-			
-			Renderer.init(playerCode.length, Client._canvas, playerNames);
+			Client._socket.emit("initialized", {gameId: Client._gameId, players: Client._playerNames});
 			
 			Client._controller = new Clientcontroller(Client._history);
 			//Client._mapController = new Mapcontroller(Client.mapUpdate);
@@ -79,6 +82,14 @@ $(function() {
 			$('#back_btn').click(Client._controller.historyBack.bind(Client._controller));
 			$('#forward_btn').click(Client._controller.historyForward.bind(Client._controller));
 		},
+		
+		mapLoad: function(mapData) {
+			if (!Client._map) {
+				Client._map = new Map();
+				Client._map.deserializeHexes(mapData);
+				Renderer.init(Client._playerNames.length, Client._canvas, Client._map, Client._playerNames);
+			}
+		},
 
 		mapUpdate: function() {
 			if (!Client._controller.viewingHistory()) {
@@ -86,11 +97,13 @@ $(function() {
 			}
 		},
 
-		engineUpdate: function(gamestate, stateId) {
+		engineUpdate: function(stateData) {
+			var gamestate = Gamestate.deserialize(stateData);
 			Client.redraw(gamestate);
 		},
 		
-		redraw: function(gamestate) {
+		redraw: function(stateData) {
+			var gamestate = Gamestate.deserialize(stateData)
 			Renderer.render(gamestate /*,Engine.finishAttack*/);
 			if (Client._controller) {
 				Client._controller.update();
