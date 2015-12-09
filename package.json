@@ -17,12 +17,17 @@
   },
   "homepage": "https://github.com/mikeslemmer/dicefire",
   "dependencies": {
+    "crypto": "latest",
     "express": "^4.13.3",
     "express-handlebars": "latest",
   	"body-parser": "latest",
-	"node-uuid": "latest",
+    "lodash": "latest",
+	  "node-uuid": "latest",
+    "passport": "0.3.0",
+    "passport-facebook": "^2.0.0",
+    "passport-oauth": "^1.0.0",
     "redis": "latest",
-	"socket.io": "latest"
+	  "socket.io": "latest"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
