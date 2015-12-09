@@ -73,7 +73,8 @@ Globals.CHANNEL = {
 	"PLAYER" : 4,
 	"PLYER" : 5,
 	"RENDERER" : 6,
-	"GREEDY" : 7
+	"GREEDY" : 7,
+	"CLIENT" : 8
 };
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
@@ -85,7 +86,8 @@ Globals.channels = [
 	0, //"PLAYER"
 	0, //"AI.PLYER"
 	0, //"RENDERER",
-	0, //"GREEDY"
+	0, //"GREEDY",
+	0, //"CLIENT"
 ];
 
 

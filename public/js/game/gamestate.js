@@ -125,15 +125,11 @@ Gamestate.prototype.setAttack = function(attack) {
 	this._attack = attack;
 }
 Gamestate.prototype.attack = function() {
-	if (!this._attack) {
-		this._attack =  {
-			fromCountryId: -1,
-			toCountryId: -1,
-			fromRollArray: [],
-			toRollArray: []
-		};
-	} 
-	return JSON.parse(JSON.stringify(this._attack));
+	if (this._attack) {
+		return JSON.parse(JSON.stringify(this._attack));
+	} else {
+		return null;
+	}
 };
 
 Gamestate.prototype.playerHash = function(playerId) {

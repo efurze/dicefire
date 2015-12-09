@@ -25,9 +25,6 @@ History.prototype.currentPlayerId = function() {
 	return this._array[this._array.length-1].currentPlayerId();
 };
 
-History.prototype.isAttacking = function() {
-	return false;
-};
 
 $(function() {
 
@@ -43,13 +40,15 @@ $(function() {
 		_history: null,
 		_socket: null,
 		_map: null,
+		_isAttacking: false,
+		_lastRenderedState: -1,
 		_playerNames: [],
 		
 		
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
 		init: function (gameId) {
-			console.log("gameId: " + gameId);
+			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 			Client._gameId = gameId;
 			$('#setup').css('display', 'block');
 			$('#game').css('display', 'none');
@@ -62,8 +61,12 @@ $(function() {
 			Client._socket = io.connect(window.location.hostname + ":5001");
 			Client._socket.on('map', Client.mapLoad);
 			Client._socket.on('state', Client.engineUpdate);
+			Client._socket.on('error', Client.socketError);
 		},
 		
+		socketError: function(err) {
+			Globals.debug("Socket ERROR:", err, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+		},
 		
 		start: function(playerCode) {
 			
@@ -89,27 +92,38 @@ $(function() {
 			$('#forward_btn').click(Client._controller.historyForward.bind(Client._controller));
 		},
 		
+		upToDate: function() {
+			return (Client._lastRenderedState == (Client._history.length()-1));
+		},
+		
 		// from server
 		mapLoad: function(mapData) {
 			if (!Client._map) {
+				Globals.debug("Got map from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				Client._map = new Map();
 				Client._map.deserializeHexes(mapData);
 				Renderer.init(Client._playerNames.length, Client._canvas, Client._map, Client._playerNames);
 			}
 		},
 
-		// from mapController
-		mapUpdate: function() {
-			if (!Client._controller.viewingHistory()) {
-				Client.redraw();
-			}
-		},
-
 		// from server
 		engineUpdate: function(stateData) {
+			Globals.debug("Got state update from server", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			var gamestate = Gamestate.deserialize(stateData);
 			Client._history.push(gamestate);
-			Client.redraw(gamestate);
+			if (Client._controller) {
+				Client._controller.update();
+			}
+			if (!Client.upToDate()) {
+				Client.redraw(Client._lastRenderedState + 1);
+			}
+		},
+		
+		// from mapController
+		mapUpdate: function() {
+			if (!Client._controller.viewingHistory() && !Client._isAttacking && Client.upToDate()) {
+				Client.redraw(Client._lastRenderedState);
+			}
 		},
 		
 		// from controller
@@ -117,11 +131,47 @@ $(function() {
 			Client._socket.emit("end_turn", {playerId: 0});
 		},
 		
-		redraw: function(stateData) {
-			var gamestate = Gamestate.deserialize(stateData)
-			Renderer.render(gamestate /*,Engine.finishAttack*/);
-			if (Client._controller) {
-				Client._controller.update();
+		// from renderer
+		renderAttackDone: function() {
+			Globals.debug("Attack animation finished", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			Client._isAttacking = false;
+			Client._controller.setIsAttacking(false);
+			if (!Client.upToDate()) {
+				Client.redraw(Client._lastRenderedState + 1);
+			}
+		},
+		
+		
+		redraw: function(stateNum) {
+			
+			// only render if we're not currently in the process of animating
+			// some previous attack
+			if (Client._isAttacking || Client._controller.viewingHistory()) {
+				Globals.debug("aborting redraw", "attacking", Client._isAttacking, "viewHistory", 
+								Client._controller.viewingHistory(), Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+				return;
+			}
+			
+			var gamestate = Client._history.getState(stateNum);
+			if (gamestate) {
+				if (gamestate.attack()) {
+					Client._isAttacking = true;
+					Client._controller.setIsAttacking(true);
+					Globals.debug("Attack animation beginning", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+				}
+				
+				Client._lastRenderedState = stateNum;
+				Globals.debug("Rendering state", stateNum, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+				Renderer.render(gamestate, Client.renderAttackDone);
+				if (Client._controller) {
+					Client._controller.update();
+				}
+				
+				if (!Client._isAttacking && !Client.upToDate()) {
+					window.setTimeout(function() {
+						Client.redraw(Client._lastRenderedState + 1);
+					}, 0);
+				}
 			}
 		}
 		

@@ -106,7 +106,7 @@ $(function(){
 			
 			this._renderMap(state);
 			this._renderPlayers(state);
-			if (state.attack() && state.attack().fromCountryId >= 0) {
+			if (state.attack()) {
 				this._renderAttack(state, attackCallback);
 			}
 		},

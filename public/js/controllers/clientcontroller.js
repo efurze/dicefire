@@ -3,8 +3,7 @@
 @history = {
 	length(),
 	getState(id),
-	currentPlayerId(),
-	isAttacking()
+	currentPlayerId()
 }
 */
 var Clientcontroller = function (history, end_cb) {
@@ -12,6 +11,7 @@ var Clientcontroller = function (history, end_cb) {
 	this._endCb = end_cb;
 	this._historyIndex = 0;
 	this._historyLength = 0;
+	this._isAttacking = false;
 };
 
 $(function(){
@@ -39,7 +39,7 @@ Clientcontroller.prototype.update = function() {
 		if (self.viewingHistory()) {
 			// don't let player end their turn while they're looking at history
 			$('#end_turn').prop('disabled', true);
-		} else if (self._history.isAttacking()) {
+		} else if (self._isAttacking) {
 			// can't end turn during an attack
 			$('#end_turn').prop('disabled', true);
 		} else {
@@ -60,6 +60,12 @@ Clientcontroller.prototype.update = function() {
 		$('#end_turn').prop('disabled', true);
 	}
 };
+
+
+Clientcontroller.prototype.setIsAttacking = function(isAttacking) {
+	this._isAttacking = isAttacking;
+};
+
 
 Clientcontroller.prototype.endTurn = function() {
 	var self = this;
