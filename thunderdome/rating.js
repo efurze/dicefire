@@ -18,6 +18,31 @@ var Rating = function() {
 	this._defaultRating = 1000;
 };
 
+Rating.prototype.calculateFromRandomizedResults = function (results, trials) {
+	var self = this;
+	var ratings = {};
+	
+	for (var i=0; i < trials; i++) {
+		var rating = self.calculateFromResults(results, true);
+		Object.keys(rating).forEach(function(player) {
+			if (!ratings.hasOwnProperty(player)) {
+				ratings[player] = [];
+			}
+			ratings[player].push(rating[player]);
+		});
+	}
+	
+	Object.keys(ratings).sort().forEach(function(player) {
+		var scores = ratings[player];
+		var avg = (scores.reduce(function(tot, val) {return tot+val;})) / scores.length;
+		var std = scores.reduce(function(tot, val) {return tot + Math.pow(val - avg, 2);}, 0);
+		std = std/scores.length;
+		std = Math.pow(std, 0.5);
+		console.log(player, avg, std);
+	});
+	
+};
+
 // @results = [{ winner: 1, player1: 'Greedy 1.0', player2: 'Plyer 1.0' },...]
 Rating.prototype.calculateFromResults = function (results, randomize) {
 	var self = this;
@@ -26,6 +51,7 @@ Rating.prototype.calculateFromResults = function (results, randomize) {
 	var reordered = [];
 	
 	if (randomize) {
+		results = JSON.parse(JSON.stringify(results));
 		while (results.length) {
 			// pick a random game
 			var idx = Math.round(Math.random() * (results.length-1));
@@ -37,8 +63,6 @@ Rating.prototype.calculateFromResults = function (results, randomize) {
 	}
 	
 	reordered.forEach(function(result, idx) {	
-		console.log("");
-		console.log("Game", idx+1);
 		var players = self.extractPlayers(result);
 		players.forEach(function(player) {
 			if (!ratings.hasOwnProperty(player)) {
@@ -46,11 +70,9 @@ Rating.prototype.calculateFromResults = function (results, randomize) {
 				ratings[player] = self._defaultRating;
 			}
 		});
-		//console.log("initial ratings: ", JSON.stringify(ratings));
-		//console.log("results:", JSON.stringify(result));
 		ratings = self.updateRatings(ratings, players, result);
-		console.log("updated ratings: ", JSON.stringify(ratings));
 	});
+	return ratings;
 };
 
 // @ratings = {'Plyer 1.0' : 1230, 'Aggressive' : 1000'}
@@ -163,11 +185,11 @@ Rating.prototype.aggregateResults = function (dir) {
 
 var rating = new Rating();
 var results = [];
-//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/2players'));
-//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/3players'));
-//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/4players'));
-//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/5players'));
-//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/6players'));
-//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/7players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/2players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/3players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/4players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/5players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/6players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/7players'));
 results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/8players'));
-rating.calculateFromResults(results, true);
+rating.calculateFromRandomizedResults(results, 10);
