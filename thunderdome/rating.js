@@ -35,7 +35,8 @@ Rating.prototype.calculateFromResults = function (results) {
 		});
 		//console.log("initial ratings: ", JSON.stringify(ratings));
 		//console.log("results:", JSON.stringify(result));
-		ratings = self.updateRatings(ratings, players, result);
+		ratings = self.updateByDecomposition(ratings, players, result);
+		//ratings = self.updateRatings(ratings, players, result);
 		console.log("updated ratings: ", JSON.stringify(ratings));
 	});
 };
@@ -47,6 +48,17 @@ Rating.prototype.calculateFromResults = function (results) {
 Rating.prototype.expectedResults = function (ratings, players) {
 	var expected = [];
 	
+	
+	
+	expected.length = 2;
+	var rating0 = ratings[players[0]];
+	var rating1 = ratings[players[1]];
+	expected = [ (1 / (1 + Math.pow(10, (rating1 - rating0)/400) ) ),
+				 (1 / (1 + Math.pow(10, (rating0 - rating1)/400) ) )
+	];
+	
+	
+	/*
 	expected = players.map(function(player, index) {	
 		var playerRating = ratings[player];
 		var oppenentsCombinedRating = 0;
@@ -56,28 +68,59 @@ Rating.prototype.expectedResults = function (ratings, players) {
 			}
 		});
 		oppenentsCombinedRating = Math.pow(oppenentsCombinedRating, 0.5);
-		return (1 / (1 + Math.pow(10, (playerRating - oppenentsCombinedRating)/400) ) );
+		return (1 / (1 + Math.pow(10, (oppenentsCombinedRating - playerRating)/400) ) );
 	});
 	
 	// normalize
 	var sum = expected.reduce(function(total, val){return total + val;});
 	expected = expected.map(function(val) {return val/sum;});
+	*/
 	
+	var output = {};
+	output[players[0]] = expected[0];
+	output[players[1]] = expected[1];
+	//console.log("Expected outcome:", JSON.stringify(output));
 	return expected;
 };
 
-Rating.prototype.updateRatings = function (oldRatings, players, result) {
+// for games of 2 + n players, updates ratings by considering it an (n+1)-sequence
+// of 2 player games
+// @result = { winner: 1, player1: 'Greedy 1.0', player2: 'Plyer 1.0' }
+Rating.prototype.updateByDecomposition = function (oldRatings, players, result) {
+	var self = this;
+	if (players.length == 2) {
+		return self.updateRatings(oldRatings, players, result);
+	}
 	
+	var newRatings = JSON.parse(JSON.stringify(oldRatings));
+	var winnerIdx = result.winner - 1;
+	players.forEach(function(player, idx) {
+		if (idx == winnerIdx) {
+			return;
+		}
+		var subPlayers = [players[winnerIdx], players[idx]];
+		var subResult = {winner: 1, player1: players[winnerIdx], player2: players[idx]};
+		newRatings = self.updateRatings(newRatings, subPlayers, subResult);
+	});
+	
+	return newRatings;
+}
+	
+Rating.prototype.updateRatings = function (oldRatings, players, result) {
+	if (players[0] == players[1]) {
+		return oldRatings;
+	}
 	var gameSize = players.length;
 	
 	var expectedResults = this.expectedResults(oldRatings, players);
 	
-	var winner = players[result.winner - 1];
+	var winnerIdx = result.winner - 1;
+	var winner = players[winnerIdx];
 		
 	var newRatings = JSON.parse(JSON.stringify(oldRatings));
 	var kFactor = 24;
 	players.forEach(function(player, idx) {
-		var result = (player == winner) ? 1 : 0;
+		var result = (idx == winnerIdx) ? 1 : 0;
 		newRatings[player] = oldRatings[player] + kFactor*(result - expectedResults[idx]);
 	});
 	
