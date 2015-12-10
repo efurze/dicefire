@@ -19,11 +19,24 @@ var Rating = function() {
 };
 
 // @results = [{ winner: 1, player1: 'Greedy 1.0', player2: 'Plyer 1.0' },...]
-Rating.prototype.calculateFromResults = function (results) {
+Rating.prototype.calculateFromResults = function (results, randomize) {
 	var self = this;
+	randomize = randomize || false;
 	var ratings = {};
+	var reordered = [];
 	
-	results.forEach(function(result, idx) {
+	if (randomize) {
+		while (results.length) {
+			// pick a random game
+			var idx = Math.round(Math.random() * (results.length-1));
+			reordered.push(results[idx]);
+			results.splice(idx, 1);
+		}
+	} else {
+		reordered = results;
+	}
+	
+	reordered.forEach(function(result, idx) {	
 		console.log("");
 		console.log("Game", idx+1);
 		var players = self.extractPlayers(result);
@@ -35,8 +48,7 @@ Rating.prototype.calculateFromResults = function (results) {
 		});
 		//console.log("initial ratings: ", JSON.stringify(ratings));
 		//console.log("results:", JSON.stringify(result));
-		ratings = self.updateByDecomposition(ratings, players, result);
-		//ratings = self.updateRatings(ratings, players, result);
+		ratings = self.updateRatings(ratings, players, result);
 		console.log("updated ratings: ", JSON.stringify(ratings));
 	});
 };
@@ -46,69 +58,42 @@ Rating.prototype.calculateFromResults = function (results) {
 //
 // @return = [.87, .13] each players' chance of winning. Must sum to 1.
 Rating.prototype.expectedResults = function (ratings, players) {
-	var expected = [];
-	
-	
-	
-	expected.length = 2;
 	var rating0 = ratings[players[0]];
 	var rating1 = ratings[players[1]];
-	expected = [ (1 / (1 + Math.pow(10, (rating1 - rating0)/400) ) ),
-				 (1 / (1 + Math.pow(10, (rating0 - rating1)/400) ) )
-	];
+	var expected = [ (1 / (1 + Math.pow(10, (rating1 - rating0)/400) ) ),
+				 	 (1 / (1 + Math.pow(10, (rating0 - rating1)/400) ) ) ];
 	
-	
-	/*
-	expected = players.map(function(player, index) {	
-		var playerRating = ratings[player];
-		var oppenentsCombinedRating = 0;
-		players.forEach(function(p, opponentIndex) {
-			if (opponentIndex != index) {
-				oppenentsCombinedRating += Math.pow(ratings[p], 2);
-			}
-		});
-		oppenentsCombinedRating = Math.pow(oppenentsCombinedRating, 0.5);
-		return (1 / (1 + Math.pow(10, (oppenentsCombinedRating - playerRating)/400) ) );
-	});
-	
-	// normalize
-	var sum = expected.reduce(function(total, val){return total + val;});
-	expected = expected.map(function(val) {return val/sum;});
-	*/
-	
-	var output = {};
-	output[players[0]] = expected[0];
-	output[players[1]] = expected[1];
-	//console.log("Expected outcome:", JSON.stringify(output));
 	return expected;
 };
 
 // for games of 2 + n players, updates ratings by considering it an (n+1)-sequence
 // of 2 player games
 // @result = { winner: 1, player1: 'Greedy 1.0', player2: 'Plyer 1.0' }
-Rating.prototype.updateByDecomposition = function (oldRatings, players, result) {
+Rating.prototype.updateRatings = function (oldRatings, players, result) {
 	var self = this;
-	if (players.length == 2) {
-		return self.updateRatings(oldRatings, players, result);
-	}
-	
 	var newRatings = JSON.parse(JSON.stringify(oldRatings));
 	var winnerIdx = result.winner - 1;
-	players.forEach(function(player, idx) {
+	var winner = players[winnerIdx];
+	
+	players.forEach(function(loser, idx) {
 		if (idx == winnerIdx) {
 			return;
 		}
-		var subPlayers = [players[winnerIdx], players[idx]];
-		var subResult = {winner: 1, player1: players[winnerIdx], player2: players[idx]};
-		newRatings = self.updateRatings(newRatings, subPlayers, subResult);
+		var subPlayers = [winner, loser];
+		var subResult = {winner: 1, player1: winner, player2: loser};
+		var delta = self.calculateRatingsDelta(oldRatings, subPlayers, subResult);
+		
+		newRatings[winner] += delta[0];
+		newRatings[loser] += delta[1];
 	});
+	
 	
 	return newRatings;
 }
 	
-Rating.prototype.updateRatings = function (oldRatings, players, result) {
+Rating.prototype.calculateRatingsDelta = function (oldRatings, players, result) {
 	if (players[0] == players[1]) {
-		return oldRatings;
+		return [0,0];
 	}
 	var gameSize = players.length;
 	
@@ -119,12 +104,12 @@ Rating.prototype.updateRatings = function (oldRatings, players, result) {
 		
 	var newRatings = JSON.parse(JSON.stringify(oldRatings));
 	var kFactor = 24;
-	players.forEach(function(player, idx) {
+	var adjustments = players.map(function(player, idx) {
 		var result = (idx == winnerIdx) ? 1 : 0;
-		newRatings[player] = oldRatings[player] + kFactor*(result - expectedResults[idx]);
+		return kFactor*(result - expectedResults[idx]);
 	});
 	
-	return newRatings;
+	return adjustments;
 };
 
 // @result = { winner: 1, player1: 'Greedy 1.0', player2: 'Plyer 1.0' }
@@ -178,11 +163,11 @@ Rating.prototype.aggregateResults = function (dir) {
 
 var rating = new Rating();
 var results = [];
-results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/2players'));
-results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/3players'));
-results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/4players'));
-results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/5players'));
-results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/6players'));
-results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/7players'));
+//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/2players'));
+//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/3players'));
+//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/4players'));
+//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/5players'));
+//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/6players'));
+//results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/7players'));
 results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/8players'));
-rating.calculateFromResults(results);
+rating.calculateFromResults(results, true);
