@@ -195,8 +195,14 @@ Engine.prototype.endTurn = function(event) {
 
 
 Engine.prototype.attack = function(fromCountry, toCountry, callback) {
-	Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 	var self = this;
+	if (typeof fromCountry === 'number') {
+		fromCountry = self._map.getCountry(fromCountry); 
+	}
+	if (typeof toCountry === 'number') {
+		toCountry = self._map.getCountry(toCountry); 
+	}
+	Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 	
 	self._attackInProgress = true;
 	self._attackCallback = callback;
@@ -234,7 +240,9 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	if (!ok) {
 		//Globals.ASSERT(false);
 		Globals.debug("Illegal attack", fromCountry, toCountry, Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
-		callback(false);
+		if (self._attackCallback) {
+			self._attackCallback(false);
+		}
 		return;    		
 	}
 

@@ -22,6 +22,7 @@ var Session = function(socket) {
 	socket.on('error', this.socketError.bind(this));
 	socket.on('initialized', this.initialize.bind(this));
 	socket.on('end_turn', this.endTurn.bind(this));
+	socket.on('attack', this.attack.bind(this));
 };
 
 Session.prototype.initialize = function(data) {
@@ -37,6 +38,11 @@ Session.prototype.endTurn = function(data) {
 	console.log("Player " + data.playerId + " ending turn");
 	this._server.endTurn(data.playerId);
 };
+
+Session.prototype.attack = function(data) {
+	this._server.attack(data.from, data.to);
+};
+
 
 Session.prototype.socketError = function(err) {
 	console.log("Socket error: " + err);

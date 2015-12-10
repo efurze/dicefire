@@ -6,8 +6,6 @@ $(function() {
 	
 	window.Game = {
 		
-		_mouseOverCountry: null,
-	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
 		_controller: null,
 		_mapController: null,
@@ -64,7 +62,7 @@ $(function() {
 			
 			Game._engine.registerStateCallback(Game.engineUpdate);
 			Game._controller = new Gamecontroller(Game._engine);
-			Game._mapController = new Mapcontroller(Game.mapUpdate, Game._engine);
+			Game._mapController = new Mapcontroller(Game.mapUpdate, Game._canvas, Game._engine.map(), Game.mapConInterface);
 
 			Game.redraw();
 			
@@ -104,6 +102,24 @@ $(function() {
 			Renderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
 			if (Game._controller) {
 				Game._controller.update();
+			}
+		},
+		
+		mapConInterface: {
+			currentPlayerId: function() {
+				return Game._engine.currentPlayerId();
+			},
+			
+			attack: function(from, to, callback) {
+				Game._engine.attack(from, to, callback);
+			},
+			
+			isThisPlayer: function(playerId) {
+				return Game._engine.isHuman(playerId);
+			},
+			
+			clickable: function() {
+				return !Game._controller.viewingHistory();
 			}
 		}
 		

@@ -21,6 +21,14 @@ History.prototype.getState = function(index) {
 	}
 };
 
+History.prototype.getLatest = function() {
+	if (this._array.length) {
+		return this._array[this._array.length - 1];
+	} else {
+		return null;
+	}
+};
+
 History.prototype.currentPlayerId = function() {
 	return this._array[this._array.length-1].currentPlayerId();
 };
@@ -31,16 +39,16 @@ $(function() {
 	
 	window.Client = {
 		
-		_mouseOverCountry: null,
-	    _selectedCountry: null,
 		_canvas: document.getElementById("c"),
 		_controller: null,
 		_mapController: null,
 		_gameId: null,
+		_playerId: 0,
 		_history: null,
 		_socket: null,
 		_map: null,
 		_isAttacking: false,
+		_mcAttackCallback: null,
 		_lastRenderedState: -1,
 		_playerNames: [],
 		
@@ -61,6 +69,7 @@ $(function() {
 			Client._socket = io.connect(window.location.hostname + ":5001");
 			Client._socket.on('map', Client.mapLoad);
 			Client._socket.on('state', Client.engineUpdate);
+			Client._socket.on('attack_done', Client.attackDone);
 			Client._socket.on('error', Client.socketError);
 		},
 		
@@ -84,7 +93,6 @@ $(function() {
 			Client._socket.emit("initialized", {gameId: Client._gameId, players: Client._playerNames});
 			
 			Client._controller = new Clientcontroller(Client._history, Client.endTurn);
-			//Client._mapController = new Mapcontroller(Client.mapUpdate);
 			
 			
 			$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
@@ -103,6 +111,7 @@ $(function() {
 				Client._map = new Map();
 				Client._map.deserializeHexes(mapData);
 				Renderer.init(Client._playerNames.length, Client._canvas, Client._map, Client._playerNames);
+				Client._mapController = new Mapcontroller(Client.mapUpdate, Client._canvas, Client._map, Client.mapConInterface);
 			}
 		},
 
@@ -116,6 +125,13 @@ $(function() {
 			}
 			if (!Client.upToDate()) {
 				Client.redraw(Client._lastRenderedState + 1);
+			}
+		},
+		
+		// from server
+		attackDone: function(data) {
+			if (Client._mcAttackCallback) {
+				Client._mcAttackCallback(data.result);
 			}
 		},
 		
@@ -158,6 +174,9 @@ $(function() {
 					Client._isAttacking = true;
 					Client._controller.setIsAttacking(true);
 					Globals.debug("Attack animation beginning", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+				} else {
+					// update the map state
+					Client._map.setState(gamestate);
 				}
 				
 				Client._lastRenderedState = stateNum;
@@ -172,6 +191,25 @@ $(function() {
 						Client.redraw(Client._lastRenderedState + 1);
 					}, 0);
 				}
+			}
+		},
+		
+		mapConInterface: {
+			currentPlayerId: function() {
+				return Client._history.getLatest().currentPlayerId();
+			},
+			
+			attack: function(from, to, callback) {
+				Client._mcAttackCallback = callback;
+				Client._socket.emit('attack', {from: from.id(), to: to.id()});
+			},
+			
+			isThisPlayer: function(playerId) {
+				return (playerId == Client._playerId);
+			},
+			
+			clickable: function() {
+				return (Client.upToDate() && !Client._controller.viewingHistory());
 			}
 		}
 		

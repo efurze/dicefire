@@ -43,6 +43,14 @@ Server.prototype.endTurn = function(playerId) {
 	self._engine.endTurn();
 }	
 
+Server.prototype.attack = function(from, to) {
+	var self = this;
+	console.log("attack from ", from, "to", to);
+	self._engine.attack(parseInt(from), parseInt(to), function (success) {
+		self._socket.emit("attack_done", {result: success});
+	});
+}
+
 Server.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
 	if (gamestate) {
