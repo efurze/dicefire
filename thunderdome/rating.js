@@ -23,51 +23,69 @@ Rating.prototype.calculateFromResults = function (results) {
 	var self = this;
 	var ratings = {};
 	
-	results.forEach(function(result) {
+	results.forEach(function(result, idx) {
+		console.log("");
+		console.log("Game", idx+1);
 		var players = self.extractPlayers(result);
-		
 		players.forEach(function(player) {
-			if (!ratings.hashOwnProperty(player)) {
+			if (!ratings.hasOwnProperty(player)) {
 				// never seen this player before - give it the default rating
 				ratings[player] = self._defaultRating;
 			}
-			
-			
 		});
+		//console.log("initial ratings: ", JSON.stringify(ratings));
+		//console.log("results:", JSON.stringify(result));
+		ratings = self.updateRatings(ratings, players, result);
+		console.log("updated ratings: ", JSON.stringify(ratings));
 	});
 };
 
+// @ratings = {'Plyer 1.0' : 1230, 'Aggressive' : 1000'}
+// @players = ['Plyer 1.0', 'Aggressive'] *IN THE ORDER* in which they played
+//
+// @return = [.87, .13] each players' chance of winning. Must sum to 1.
+Rating.prototype.expectedResults = function (ratings, players) {
+	var expected = [];
+	
+	expected = players.map(function(player, index) {	
+		var playerRating = ratings[player];
+		var oppenentsCombinedRating = 0;
+		players.forEach(function(p, opponentIndex) {
+			if (opponentIndex != index) {
+				oppenentsCombinedRating += Math.pow(ratings[p], 2);
+			}
+		});
+		oppenentsCombinedRating = Math.pow(oppenentsCombinedRating, 0.5);
+		return (1 / (1 + Math.pow(10, (playerRating - oppenentsCombinedRating)/400) ) );
+	});
+	
+	// normalize
+	var sum = expected.reduce(function(total, val){return total + val;});
+	expected = expected.map(function(val) {return val/sum;});
+	
+	return expected;
+};
+
 Rating.prototype.updateRatings = function (oldRatings, players, result) {
-	var newRatings = JSON.parse(JSON.stringify(oldRatings));
 	
 	var gameSize = players.length;
-	var expectedResults = players.map(function(player, idx) {
-		return (winRates[gameSize][idx] * oldRatings[player]);
+	
+	var expectedResults = this.expectedResults(oldRatings, players);
+	
+	var winner = players[result.winner - 1];
+		
+	var newRatings = JSON.parse(JSON.stringify(oldRatings));
+	var kFactor = 24;
+	players.forEach(function(player, idx) {
+		var result = (player == winner) ? 1 : 0;
+		newRatings[player] = oldRatings[player] + kFactor*(result - expectedResults[idx]);
 	});
-	
-	var normalizationFactor = expectedResults.reduce(function(total, val) {
-		return total + val;
-	});
-	
-	// make all expected results sum to 1
-	expectedResults = expectedResults.map(function(val) {
-		return val/normalizationFactor;
-	});
-	
-	var winnerIndex = result.winner - 1;
-	
-	var deltas = expectedResults.map(function(val, index) {
-		if (index == winnerIndex) {
-			return 1 - val;
-		} else {
-			return 0 - val;
-		}
-	})
 	
 	return newRatings;
 };
 
 // @result = { winner: 1, player1: 'Greedy 1.0', player2: 'Plyer 1.0' }
+// @return:  ['Greedy 1.0', 'Plyer 1.0']
 Rating.prototype.extractPlayers = function (result) {
 	var players = [];
 	var keys = Object.keys(result);
@@ -94,6 +112,10 @@ Rating.prototype.extractPlayers = function (result) {
 
 // dir is something like "/thunderdome/results/matches/3players"
 // This func goes through each subdir and loads the 'results.json' file
+// @return = [
+//				{"winner":1,"player1":"Plyer 1.0","player2":"Aggressive"},
+//				{"winner":2,"player1":"Plyer 1.0","player2":"Greedy"}, ...
+//			]
 Rating.prototype.aggregateResults = function (dir) {
 	var self = this;
 	var results = [];
@@ -112,5 +134,12 @@ Rating.prototype.aggregateResults = function (dir) {
 
 
 var rating = new Rating();
-var results = rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/2players');
+var results = [];
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/2players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/3players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/4players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/5players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/6players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/7players'));
+results = results.concat(rating.aggregateResults('/Users/efurze/working/thunderdome_data/results/matches/8players'));
 rating.calculateFromResults(results);
