@@ -6,6 +6,7 @@ var uuid = require('node-uuid');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var passportConf = require('./config/passport');
+var path = require('path');
 
 
 // Redis
@@ -22,6 +23,7 @@ var ss = require('./sockethandler.js')(app, 5001);
 app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
+app.use('/jquery', express.static(path.join(__dirname, '/node_modules/jquery/dist')));
 
 app.use( bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
