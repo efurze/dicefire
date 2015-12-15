@@ -183,14 +183,8 @@ Engine.prototype.endTurn = function(event) {
 	if (cur == self._currentPlayerId) {
 		self.gameOver(player);
 	} else {
-		self.setCurrentPlayer(cur);
+		self.startTurn(cur);
 	}
-
-	if (self._gameOver) {
-		return;
-	}
-
-	self.startTurn(self._currentPlayerId);
 };
 
 
@@ -307,6 +301,7 @@ Engine.prototype.finishAttack = function(attack) {
 
 		if (fromPlayer.countryCount() == self._map.countryCount()) {
 			self.gameOver(fromPlayer);
+			return;
 		}
 	} else {
 		Globals.debug("Attacker loses", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
