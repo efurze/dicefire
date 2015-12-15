@@ -72,6 +72,10 @@ app.get('/test', function(req, res) {
     res.render("ai_tester", {layout: "ai_tester", title : "AI Test"});
 });
 
+app.get('/thunderdome', function(req, res) { 
+    res.render("thunderdome", {layout: "thunderdome", title : "Welcome to Thunderdome"});
+});
+
 app.get('/loader', function(req, res) { 
     res.render("loader", {title : "Replay Game"});
 });
@@ -92,7 +96,7 @@ app.post('/uploadMap', function(req, res) {
 	var filename = gameId + "/map.json";
 
 	redisClient.set(filename, mapData, function(err, reply) {
-		res.status(200).send("success");
+		res.status(200).send("{}");
 	});
 });
 

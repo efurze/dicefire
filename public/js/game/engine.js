@@ -100,7 +100,7 @@ Engine.prototype.setup = function(initialMap, initialState) {
 		player.updateStatus(self._map);
 	});
 	
-	Globals.debug("Initial gamestate: " + this.getState().serialize(), Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
+	Globals.debug("Initial gamestate: " + this.getState().toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
 };
 
 // @attack (optional):  {
@@ -337,10 +337,6 @@ Engine.prototype.gameOver = function(winner) {
 
 Engine.prototype.isGameOver = function() {
 	return this._gameOver;
-};
-
-Engine.prototype.serialize = function() {
-	return this.getState().serialize();
 };
 
 Engine.prototype.deserialize = function(state) {	

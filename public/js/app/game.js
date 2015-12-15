@@ -31,6 +31,9 @@ $(function() {
 			
 			$('#setup').css('display', 'none');
 			$('#game').css('display', 'block');
+			if (Globals.uploadGame && Game._gameId) {
+				$('#view_link').css('display', 'block');
+			}
 			
 			Game._engine = new Engine();
 			Game._engine.init(playerCode.map(function(pc){return pc;}));
@@ -44,21 +47,10 @@ $(function() {
 				}
 			}));
 			
-			
-			
+			// upload map data to server
 			if (Globals.uploadGame && Game._gameId) {
-				// upload map data to server
-				$.ajax({
-					type: 'POST',
-					url: '/uploadMap?gameId=' + Game._gameId,
-					data: Game._engine.map().serializeHexes(),
-					contentType: "application/json; charset=utf-8",
-					dataType: "json",
-					success: Game.uploadSuccess,
-					failure: Game.uploadFailure
-				});
+				Game._uploader.push(Game._engine.map().serializeHexes());
 			}
-			
 			
 			Game._engine.registerStateCallback(Game.engineUpdate);
 			Game._controller = new Gamecontroller(Game._engine);
@@ -66,20 +58,11 @@ $(function() {
 
 			Game.redraw();
 			
-			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
 			$('#forward_btn').click(Game._controller.historyForward.bind(Game._controller));
 			
 			Game._engine.startTurn(0);
-		},
-		
-		uploadSuccess: function(data) {
-			console.log("UPLOAD SUCCESS: " + errMsg);
-		},
-		
-		uploadFailure: function(errMsg) {
-			console.log("UPLOAD FAILURE: " + errMsg);
 		},
 		
 		mapUpdate: function() {
@@ -92,7 +75,7 @@ $(function() {
 			gamestate = gamestate || Game._engine.getState();
 			if (Globals.uploadGame && Game._gameId) {
 				// upload the state info
-				Game._uploader.push(JSON.parse(gamestate.serialize()));
+				Game._uploader.push(gamestate.clone());
 			}
 			Game.redraw(gamestate);
 		},

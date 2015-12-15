@@ -39,7 +39,7 @@ var Gamestate = function(players, countries, currentPlayerId, attack) {
 };
 
 Gamestate.prototype.serialize = function() {
-	return JSON.stringify(this);
+	return JSON.parse(this.toString());
 };
 
 Gamestate.deserialize = function(state) {
