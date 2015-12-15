@@ -24,6 +24,7 @@ app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
 app.use('/jquery', express.static(path.join(__dirname, '/node_modules/jquery/dist')));
+app.use('/node-uuid', express.static(path.join(__dirname, '/node_modules/node-uuid')));
 
 app.use( bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
@@ -100,6 +101,17 @@ app.post('/uploadMap', function(req, res) {
 	});
 });
 
+app.post('/uploadResults', function(req, res) { 
+	var gameId = req.query['gameId'];
+	var resultsData = JSON.stringify(req.body);
+	console.log("UploadResults for gameId " + gameId);
+	var filename = gameId + "/game.json";
+
+	redisClient.set(filename, resultsData, function(err, reply) {
+		res.status(200).send("{}");
+	});
+});
+
 app.post('/uploadState', function(req, res) { 
 	var moveId = req.query['moveId'];
 	var gameId = req.query['gameId'];
@@ -108,7 +120,7 @@ app.post('/uploadState', function(req, res) {
 	var filename = gameId + "/state_" + moveId + ".json";
 	console.log("Saving state file " + filename);
 	redisClient.set(filename, stateData, function(err, reply) {
-		res.status(200).send("success");
+		res.status(200).send("{}");
 	});
 
 });

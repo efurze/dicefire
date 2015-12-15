@@ -29,6 +29,13 @@ Uploader.prototype._doNext = function() {
 					}).fail(function(err) {
 						self.ajaxFail(err);
 					});
+			} else if (data instanceof Gameresults) {
+				$.post('/uploadResults?gameId=' + self._gameId, 
+							data.serialize()).done(function(d) {
+						self.ajaxDone(d);
+					}).fail(function(err) {
+						self.ajaxFail(err);
+					});
 			} else {
 				$.ajax({
 							url: '/uploadMap?gameId=' + self._gameId,
