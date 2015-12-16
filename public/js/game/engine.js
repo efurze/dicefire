@@ -21,6 +21,7 @@ var Engine = function() {
 	this._attackCallback = null; // call AIs back with attack results
 	this._initialized = false;
 	this._map = null;
+	this._watchdogTimerID = -1;
 };
         
 Engine.prototype.map = function() { return this._map; };
@@ -263,11 +264,22 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 
 	if (typeof module !== 'undefined' && module.exports) {
 		self.finishAttack(attack);
-	} 
+	} else {
+		Globals.ASSERT(self._watchdogTimerID < 0);
+		self._watchdogTimerID = self._timeout(function() {
+			console.log("Watchdog timeout! Did you forget to call Engine.finishAttack?");
+		}, 5000);
+	}
 };
 
 Engine.prototype.finishAttack = function(attack) {
 	var self = this;
+	
+	if (self._watchdogTimerID >= 0) {
+		window.clearTimeout(self._watchdogTimerID);
+	}
+	self._watchdogTimerID = -1;
+	
 	self._attackInProgress = false;
 	
 	var fromCountry = self._map.getCountry(attack.fromCountryId);
@@ -398,9 +410,9 @@ Engine.prototype.totalCountryCount = function() {
 
 Engine.prototype._timeout = function(callback, interval) {
 	if (typeof module !== 'undefined' && module.exports) {
-		setTimeout(callback, interval);
+		return setTimeout(callback, interval);
 	} else {
-		window.setTimeout(callback, interval);
+		return window.setTimeout(callback, interval);
 	}
 };
 
