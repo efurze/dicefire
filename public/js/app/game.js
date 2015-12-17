@@ -39,16 +39,21 @@ $(function() {
 			Game._engine.init(playerCode.map(function(pc){return pc;}), Game.gameOver);
 			Game._engine.setup();
 			
-			Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerCode.map(function(pc) {
+			var playerNames = playerCode.map(function(pc) {
 				if (pc == "human") {
 					return "human";
 				} else {
 					return pc.getName();
 				}
-			}));
+			});
+			Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
 			
-			// upload map data to server
+			
 			if (Globals.uploadGame && Game._gameId) {
+				// upload game info to server
+				Game._uploader.push(new Gameinfo(playerNames));
+			
+				// upload map data to server
 				Game._uploader.push(Game._engine.map().serializeHexes());
 			}
 			

@@ -8,6 +8,7 @@ $(function() {
 		_initialMap: null,
 		_gameId: -1,
 		_controller: null,
+		_playerNames: null,
 		_engine: null,
 		
 		init: function (gameId) {
@@ -25,8 +26,24 @@ $(function() {
 		
 		ajaxDone: function(data) {
 			//console.log("Got ajax data: " + (data));
-			Replay._initialMap = JSON.parse(data);
-			Replay._controller.init(Replay.callback);
+			if (!Replay._initialMap) {
+				// got map data
+				Replay._initialMap = JSON.parse(data);
+				
+				// now request game info
+				$.get( "/getGameInfo?gameId=" + Replay._gameId).done(function(data) {
+					Replay.ajaxDone(data);
+				}).fail(function(err) {
+					Replay.ajaxFail(err);
+				});
+			} else if (!Replay._playerNames){
+				// got game info
+				Replay._playerNames = JSON.parse(data).players;
+				
+				// initialze controller (will call back to callback())
+				Replay._controller.init(Replay.callback);
+			}
+			
 		},
 		
 		callback: function(state) {
@@ -44,9 +61,11 @@ $(function() {
 				Replay._engine.init(players.map(function(p){return p;}));
 				Replay._engine.setup(JSON.stringify(Replay._initialMap), state ? JSON.stringify(state) : null);
 				
-				Renderer.init(players.length, Replay._canvas, Replay._engine.map(), players.map(function(pc, idx) {
-					return ("player " + idx);
-				}));						
+				if (!Replay._playerNames || Replay._playerNames.length != players.length) {
+					Replay._playerNames = players;
+				}
+				
+				Renderer.init(players.length, Replay._canvas, Replay._engine.map(), Replay._playerNames);						
 			
 				if (state) {
 					Replay._engine.pushHistory(state);

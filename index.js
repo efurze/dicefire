@@ -101,7 +101,7 @@ app.post('/uploadMap', function(req, res) {
 	});
 });
 
-app.post('/uploadResults', function(req, res) { 
+app.post('/uploadGameInfo', function(req, res) { 
 	var gameId = req.query['gameId'];
 	var resultsData = JSON.stringify(req.body);
 	console.log("UploadResults for gameId " + gameId);
@@ -109,6 +109,19 @@ app.post('/uploadResults', function(req, res) {
 
 	redisClient.set(filename, resultsData, function(err, reply) {
 		res.status(200).send("{}");
+	});
+});
+
+app.get('/getGameInfo', function(req, res) {
+	var gameId = req.query['gameId'];
+	var filename = gameId + '/game.json';
+
+	redisClient.get(filename, function(err, data) {
+		if (!data) {
+			res.status(404).send("No game file found for gameId " + gameId);
+		} else {
+			res.send(data);
+		}
 	});
 });
 

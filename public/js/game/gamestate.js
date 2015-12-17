@@ -55,6 +55,16 @@ Gamestate.prototype.clone = function() {
 	copy._players = JSON.parse(JSON.stringify(this._players));
 	copy._countries = JSON.parse(JSON.stringify(this._countries));
 	copy._attack = this._attack ? JSON.parse(JSON.stringify(this._attack)) : null;
+	
+	if (copy._players) {
+		copy._players.forEach(function(player) {
+			if (player.hasLost === "true") {
+				player.hasLost = true;
+			} else if (player.hasLost === "false") {
+				player.hasLost = false;
+			}
+		});
+	}
 	return copy;
 };
 

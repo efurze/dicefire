@@ -52,7 +52,7 @@ GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 
 GameRunner.prototype.gameDone = function(winner, id) {
 	var self = this;
-	var results = new Gameresults(id, self._players.map(function(p){return p.getName();}));
+	var results = new Gameinfo(self._players.map(function(p){return p.getName();}), id);
 	
 	self._uploader.push(results);
 	
