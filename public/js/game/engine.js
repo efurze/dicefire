@@ -90,7 +90,7 @@ Engine.prototype.setup = function(initialMap, initialState) {
 		if (elem != "human") {
 			Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 			self._AIs[index] = new AIWrapper(elem, self, index, true);
-			Globals.debug(JSON.stringify(ai), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+			Globals.debug(JSON.stringify(self._AIs[index].getAI()), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		} else {
 			self._AIs[index] = "human";
 		}

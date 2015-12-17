@@ -81,7 +81,8 @@ GameSerializer.prototype._writeCB = function(err) {
 
 
 var GameRunner = function(aiFiles, resultsDir) {
-	this._engine = require(sourceDir + '/game/engine.js');
+	var engine = require(sourceDir + '/game/engine.js');
+	this._engine = new engine();
 	this._ais = aiFiles.map(function(p){return p;});
 	this._players = [];
 	this._loadAIs();
