@@ -4,6 +4,10 @@ if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Gamestate = require('../game/gamestate.js');
 	var window = {};
+} else {
+	if (!window) {
+		window = {};
+	}
 }
 
 

@@ -18,6 +18,13 @@ var Country = function(id) {
 Country.MAX_HEXES = 100;
 Country.MIN_HEXES = 30;
 
+Country.prototype.clone = function() {
+	var newCopy = new Country(this._id);
+	newCopy._hexIds = JSON.parse(JSON.stringify(this._hexIds));
+	newCopy._ownerId = this._ownerId;
+	newCopy._numDice = this._numDice;
+	return newCopy;
+};
 
 Country.prototype.getState = function() {
 	var state = {

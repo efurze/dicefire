@@ -13,6 +13,15 @@ var Map = function() {
 	this._adjacencyList = {}; // countryId: [neighborId, ...]
 };
 
+Map.prototype.clone = function() {
+	var newCopy = new Map();
+	newCopy._hexArray = this._hexArray.map(function(h){return h.clone();});
+	newCopy._countryArray = this._hexArray.map(function(c){return c.clone();});
+	newCopy._adjacencyList = JSON.parse(JSON.stringify(this._adjacencyList));
+	return newCopy;
+};
+
+
 Map.prototype.getHex = function(id) {
 	if (id < 0 || id >= this._hexArray.length) {
 		return null;

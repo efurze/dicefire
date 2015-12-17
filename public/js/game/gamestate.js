@@ -5,7 +5,9 @@ if (typeof module !== 'undefined' && module.exports) {
 	var Hashes = require('../jshashes');
 }
 
-var SHA1 = new Hashes.SHA1();
+if (Hashes) {
+	var SHA1 = new Hashes.SHA1();
+}
 
 var Gamestate = function(players, countries, currentPlayerId, attack) {
 	var self = this;
@@ -133,7 +135,7 @@ Gamestate.prototype.attack = function() {
 };
 
 Gamestate.prototype.playerHash = function(playerId) {
-	if (this._players && this._players[playerId]) {
+	if (this._players && this._players[playerId] && SHA1) {
 		return SHA1.hex(JSON.stringify(this._players[playerId]));
 	} else {
 		return -1;
@@ -142,7 +144,7 @@ Gamestate.prototype.playerHash = function(playerId) {
 
 
 Gamestate.prototype.countryHash = function(countryId) {
-	if (this._countries[countryId]) {
+	if (this._countries[countryId] && SHA1) {
 		return SHA1.hex(JSON.stringify(this._countries[countryId]));
 	} else {
 		return -1;
@@ -150,7 +152,7 @@ Gamestate.prototype.countryHash = function(countryId) {
 };
 
 Gamestate.prototype.countriesHash = function() {
-	return SHA1.hex(JSON.stringify(this._countries));
+	return SHA1 ? SHA1.hex(JSON.stringify(this._countries)) : -1;
 };
 
 if (typeof module !== 'undefined' && module.exports) {

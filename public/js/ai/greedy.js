@@ -29,6 +29,10 @@
 		var Globals = require('../globals.js');
 		var window = {AI:{}};
 		window.AI.Plyer = require('./plyer.js');
+	} else {
+		if (!window) {
+			window = {};
+		}
 	}
 
 	window.AI = window.AI || {};

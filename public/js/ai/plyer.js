@@ -9,12 +9,15 @@
 		var Attack = util.Attack;
 		var window = {};
 	} else {
+		if (!window) {
+			window = {};
+		}
 		var util = window.AI.Util;
-		var SHA1 = new Hashes.SHA1();
+		//var SHA1 = new Hashes.SHA1();
 	}
 	
 	var hashState = function(state) {
-		return SHA1.hex(JSON.stringify(state));
+		//return SHA1.hex(JSON.stringify(state));
 	};
 
 	

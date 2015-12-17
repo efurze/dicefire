@@ -46,24 +46,20 @@ Engine.prototype.init = function(playerCode, callback) {
 	self._attackInProgress = false;
 	self._gameCallback = callback;
 	self._stateCallback = null;
+	self._playerCode = playerCode;
+	if (self._AIs){
+		self._AIs.forEach(function(ai) {
+			ai.stop();
+		});
+	}
 	self._AIs = [];
 	self._AIs.length = playerCode.length;
-	
-	var isHumanList = playerCode.map(function(elem) { return elem == "human"; });
-	playerCode.forEach(function(elem, index) {
-		if (elem != "human") {
-			Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-			self._AIs[index] = elem.create(index, isHumanList);
-			Globals.debug(JSON.stringify(self._AIs[index]), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-		} else {
-			self._AIs[index] = "human";
-		}
-	});
 	
 	self._players = [];
 	for (var i=0; i < playerCode.length; i++) {
 		self._players.push(new Player(i));
 	}
+	
 	self._initialized = true;	
 };
 		
@@ -87,6 +83,20 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	
 	self._map.assignCountries(self._players);
 	
+	// initialize AIs
+	var isHumanList = self._playerCode.map(function(elem) { return elem == "human"; });
+	self._playerCode.forEach(function(elem, index) {
+		if (elem != "human") {
+			Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+			var ai = elem.create(index, isHumanList);
+			self._AIs[index] = new AIWrapper(ai, self, false);
+			Globals.debug(JSON.stringify(ai), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+		} else {
+			self._AIs[index] = "human";
+		}
+	});
+
+	
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		self.deserialize(initialState);
@@ -96,7 +106,7 @@ Engine.prototype.setup = function(initialMap, initialState) {
 			self.addDiceToPlayer(player, Globals.startingDice);
 		});
 	}
-	
+		
 	self._players.forEach(function(player) {
 		player.updateStatus(self._map);
 	});
@@ -161,7 +171,7 @@ Engine.prototype.startTurn = function(playerId, callback) {
 
 	if (!self.isHuman(self._currentPlayerId)) {
 		self._timeout(function() {
-				self._AIs[self._currentPlayerId].startTurn(ai_interface(self))
+				self._AIs[self._currentPlayerId].startTurn(self.getState())
 			}, 0);
 	} 
 };
@@ -335,9 +345,14 @@ Engine.prototype.gameOver = function(winner) {
 		console.log("GAME OVER");
 		self._gameOver = true;
 		console.timeEnd("DICEFIRE");
+		
+		// shut down all of the AIs
+		self._AIs.forEach(function(ai) {
+			ai.stop();
+		});
 	
 		if (self._gameCallback) {
-			self._gameCallback(self._AIs[winner.id()], winner.id());
+			self._gameCallback(self._AIs[winner.id()].getAI(), winner.id());
 		}
 	}
 };
@@ -416,24 +431,111 @@ Engine.prototype._timeout = function(callback, interval) {
 	}
 };
 
-// The interface passed to AIs so they can control the game.
-var ai_interface = function(engine) {
+
+var AIInterface = function(aiwrapper) {
+	var engine = aiwrapper._engine;
 	return {
-		adjacentCountries: function(countryId) { return engine._map.adjacentCountries(countryId);},
+		adjacentCountries: function(countryId) { return engine.map().adjacentCountries(countryId);},
 		getState: function() { return engine.getState(); },
 		attack: function(fromCountryId, toCountryId, callback) { 	
-
-			engine.attack(engine._map._countryArray[fromCountryId], engine._map._countryArray[toCountryId], function(result) {	
-				callback(result);    
-			});
-
+			aiwrapper.attack(fromCountryId, toCountryId, callback);
 		},
-		endTurn: function() { engine.endTurn(); }
+		endTurn: function() { 
+			aiwrapper.endTurn(); 
+		}
 	};
+};
+
+//--------------------------------------------------------------------------------------
+//	AIWrapper
+//--------------------------------------------------------------------------------------
+var AIWrapper = function(ai, engine, trusted) {
+	this._trusted = (typeof trusted == undefined) ? false : trusted;
+	this._isMyTurn = false;
+	this._engine = engine;
+	
+	if (this._trusted) {
+		this._ai = ai;
+	} else {
+		this._worker = new Worker("/js/game/aiworker.js");
+		this._worker.onmessage = this.callback.bind(this);
+		this._worker.postMessage({command: 'init', adjacencyList: engine.map().adjacencyList(), ai: ai});
+	}
+};
+
+
+AIWrapper.prototype.getAI = function() {
+	return this._ai;
+};
+
+// from engine
+AIWrapper.prototype.stop = function() {
+	if (!this._trusted && this._worker) {
+		this._worker.close();
+		this._worker = null;
+	}
+};
+
+// from engine
+AIWrapper.prototype.startTurn = function(state) {
+	Globals.ASSERT(!this._isMyTurn);
+	this._isMyTurn = true;
+	if (this._trusted) {
+		this._ai.startTurn(AIInterface(this));
+	} else {
+		this._worker.postMessage({command: 'startTurn', state: state});
+	}
+};
+
+// from engine
+AIWrapper.prototype.attackDone = function(success) {
+	if (this._trusted) {
+		this._aiCallback(success);
+	} else {
+		this._worker.postMessage({command: 'attackResult', result: success, state: this._engine.getState()})
+	}
+};
+
+// from engine
+AIWrapper.prototype.loses = function() {
+	if (this._trusted) {
+		this._ai = null;
+	} else {
+		this._worker.close();
+		this._worker = null;
+	}
+};
+
+// from AI
+AIWrapper.prototype.endTurn = function() {
+	Globals.ASSERT(this._isMyTurn);
+	this._isMyTurn = false;
+	this._engine.endTurn();
+};
+
+// from AI
+AIWrapper.prototype.attack = function(from, to, callback) {
+	this._aiCallback = callback;
+	this._engine.attack(this._engine.map().getCountry(from), this._engine.map().getCountry(to), this.attackDone.bind(this));
 }
 
-
-
+// from AIWorker
+AIWrapper.prototype.callback = function(e) {
+	Globals.ASSERT(this._isMyTurn);
+	console.log("Got message from worker", e);
+	var data = e.data;
+	switch (data.command) {
+		case 'attack':
+			var from = parseInt(data.from);
+			var to = parseInt(data.to);
+			this._engine.attack(this._engine.map().getCountry(from), this._engine.map().getCountry(to), this.attackDone.bind(this));
+			break;
+		case 'endTurn':
+			this._isMyTurn = false;
+			this._engine.endTurn();
+			break;
+	}
+};
 
 
 if (typeof module !== 'undefined' && module.exports) {

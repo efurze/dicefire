@@ -39,7 +39,11 @@ Hex.TOTAL_HEXES = Hex.NUM_WIDE * Hex.NUM_HIGH;
 Hex.FUDGE = 0.5;
 
 
-
+Hex.prototype.clone = function() { 
+	var newCopy = new Hex(this._id, this._x, this._y, JSON.parse(JSON.stringify(this._countryEdgeDirections)));
+	newCopy._countryId = this._countryId;
+	return newCopy;
+};
 Hex.prototype.id = function() { return this._id; };
 Hex.prototype.x = function() { return this._x; };
 Hex.prototype.y = function() { return this._y; };

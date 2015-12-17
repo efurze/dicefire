@@ -27,6 +27,10 @@
 	if (typeof module !== 'undefined' && module.exports) {
 		var Globals = require('../globals.js');
 		var window = {};
+	} else {
+		if (!window) {
+			window = {};
+		}
 	}
 	
 	window.AI = window.AI || {};
