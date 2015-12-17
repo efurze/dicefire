@@ -57,7 +57,7 @@ Gamestate.prototype.clone = function() {
 	copy._attack = this._attack ? JSON.parse(JSON.stringify(this._attack)) : null;
 	
 	if (copy._players) {
-		copy._players.forEach(function(player) {
+		Object.keys(copy._players).forEach(function(player) {
 			if (player.hasLost === "true") {
 				player.hasLost = true;
 			} else if (player.hasLost === "false") {

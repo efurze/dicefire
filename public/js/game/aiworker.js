@@ -10,13 +10,13 @@ importScripts('/js/ai/plyer.js');
 importScripts('/js/ai/greedy.js');
 importScripts('/js/ai/aggressive.js');
 
-initAIs = function() {
+var initAIs = function() {
 	aiMap[AI.Plyer.getName()] = AI.Plyer;
 	aiMap[AI.Greedy.getName()] = AI.Greedy;
 	aiMap[AI.Aggressive.getName()] = AI.Aggressive;
 };
 
-createAIByName = function(name, playerId) {
+var createAIByName = function(name, playerId) {
 	return aiMap[name].create(playerId);
 }
 
@@ -29,7 +29,6 @@ var aiMap = {};
 initAIs();
 
 onmessage = function(e) {
-	console.log("worker got data:", e);
 	var data = e.data;
 
 	switch (data.command) {
