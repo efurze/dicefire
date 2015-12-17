@@ -45,8 +45,7 @@ Gamestate.prototype.serialize = function() {
 };
 
 Gamestate.deserialize = function(state) {
-	var gs = JSON.parse(state);
-	var gamestate = Gamestate.prototype.clone.call(gs);
+	var gamestate = Gamestate.prototype.clone.call(state);
 	return gamestate;
 };
 

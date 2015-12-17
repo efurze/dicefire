@@ -36,6 +36,7 @@ Engine.prototype.setCurrentPlayer = function(id) {
 	this._currentPlayerId = id;
 };
 
+// @callback = function(winningAI, winningID), called when game is over
 Engine.prototype.init = function(playerCode, callback) {
 	console.time("DICEFIRE");
 	var self = this;
@@ -88,8 +89,7 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	self._playerCode.forEach(function(elem, index) {
 		if (elem != "human") {
 			Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-			var ai = elem.create(index, isHumanList);
-			self._AIs[index] = new AIWrapper(ai, self, false);
+			self._AIs[index] = new AIWrapper(elem, self, index, true);
 			Globals.debug(JSON.stringify(ai), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		} else {
 			self._AIs[index] = "human";
@@ -348,7 +348,9 @@ Engine.prototype.gameOver = function(winner) {
 		
 		// shut down all of the AIs
 		self._AIs.forEach(function(ai) {
-			ai.stop();
+			if (ai && ai instanceof AIWrapper) {
+				ai.stop();
+			}
 		});
 	
 		if (self._gameCallback) {
@@ -449,17 +451,17 @@ var AIInterface = function(aiwrapper) {
 //--------------------------------------------------------------------------------------
 //	AIWrapper
 //--------------------------------------------------------------------------------------
-var AIWrapper = function(ai, engine, trusted) {
+var AIWrapper = function(ai, engine, playerId, trusted) {
 	this._trusted = (typeof trusted == undefined) ? false : trusted;
 	this._isMyTurn = false;
 	this._engine = engine;
 	
 	if (this._trusted) {
-		this._ai = ai;
+		this._ai = ai.create(playerId);
 	} else {
 		this._worker = new Worker("/js/game/aiworker.js");
 		this._worker.onmessage = this.callback.bind(this);
-		this._worker.postMessage({command: 'init', adjacencyList: engine.map().adjacencyList(), ai: ai});
+		this._worker.postMessage({command: 'init', adjacencyList: engine.map().adjacencyList(), ai: ai.getName(), playerId: playerId});
 	}
 };
 
@@ -483,7 +485,7 @@ AIWrapper.prototype.startTurn = function(state) {
 	if (this._trusted) {
 		this._ai.startTurn(AIInterface(this));
 	} else {
-		this._worker.postMessage({command: 'startTurn', state: state});
+		this._worker.postMessage({command: 'startTurn', state: state.serialize()});
 	}
 };
 
@@ -492,7 +494,7 @@ AIWrapper.prototype.attackDone = function(success) {
 	if (this._trusted) {
 		this._aiCallback(success);
 	} else {
-		this._worker.postMessage({command: 'attackResult', result: success, state: this._engine.getState()})
+		this._worker.postMessage({command: 'attackResult', result: success, state: this._engine.getState().serialize()})
 	}
 };
 

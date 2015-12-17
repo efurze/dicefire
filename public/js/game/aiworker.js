@@ -10,11 +10,23 @@ importScripts('/js/ai/plyer.js');
 importScripts('/js/ai/greedy.js');
 importScripts('/js/ai/aggressive.js');
 
+initAIs = function() {
+	aiMap[AI.Plyer.getName()] = AI.Plyer;
+	aiMap[AI.Greedy.getName()] = AI.Greedy;
+	aiMap[AI.Aggressive.getName()] = AI.Aggressive;
+};
+
+createAIByName = function(name, playerId) {
+	return aiMap[name].create(playerId);
+}
 
 var adjacencyList = null;
 var state = null;
 var ai = null;
 var attackCallback = null;
+var aiMap = {};
+
+initAIs();
 
 onmessage = function(e) {
 	console.log("worker got data:", e);
@@ -23,14 +35,15 @@ onmessage = function(e) {
 	switch (data.command) {
 		case 'init':
 			adjacencyList = data.adjacencyList;
-			ai = data.ai;
+			var playerId = data.playerId;
+			ai = createAIByName(data.ai, playerId);
 			break;
 		case 'startTurn':
-			state = data.state;
+			state = Gamestate.deserialize(data.state);
 			ai.startTurn(AIInterface());
 			break;
 		case 'attackResult':
-			state = data.state;
+			state = Gamestate.deserialize(data.state);
 			attackCallback(data.result);
 			break;
 	}
@@ -40,7 +53,7 @@ onmessage = function(e) {
 
 var AIInterface = function() {
 	return {
-		adjacentCountries: function(countryId) { return adjacencyList(countryId);},
+		adjacentCountries: function(countryId) { return adjacencyList[countryId];},
 		getState: function() { return state; },
 		attack: function(fromCountryId, toCountryId, callback) { 
 			attackCallback = callback;	

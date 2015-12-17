@@ -29,25 +29,25 @@
 		var window = {};
 	}
 
-	window.AI = window.AI || {};
-	window.AI.DoNothing = function (id){
+	var AI = AI || {};
+	AI.DoNothing = function (id){
 		
 	};
 	
 	// Factory method. Called when the AI is first started. Tells the AI its player number
 	// and the list of other players, so it can know who is human and where
 	// in the turn order this AI shows up.
-	window.AI.DoNothing.create = function(playerId, isHumanList) {
-		return new window.AI.DoNothing(playerId);
+	AI.DoNothing.create = function(playerId, isHumanList) {
+		return new AI.DoNothing(playerId);
 	};
 
-	window.AI.DoNothing.getName = function() {return "DoNothing";};
+	AI.DoNothing.getName = function() {return "DoNothing";};
 
 	// Called each time the AI has a turn.
-	window.AI.DoNothing.prototype.startTurn = function(interface) {
+	AI.DoNothing.prototype.startTurn = function(interface) {
 		interface.endTurn();
 	};
 
 	if (typeof module !== 'undefined' && module.exports) {
-		module.exports = window.AI.DoNothing;
+		module.exports = AI.DoNothing;
 	}

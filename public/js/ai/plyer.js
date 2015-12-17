@@ -7,20 +7,10 @@
 		var Hashes = require('../jshashes');
 		var Move = util.Move;
 		var Attack = util.Attack;
-		var window = {};
 	} else {
-		if (!window) {
-			window = {};
-		}
-		var util = window.AI.Util;
-		//var SHA1 = new Hashes.SHA1();
+		var util = AI.Util;
 	}
-	
-	var hashState = function(state) {
-		//return SHA1.hex(JSON.stringify(state));
-	};
-
-	
+		
 	
 	/*
 		Here is what the interface contains:
@@ -47,8 +37,8 @@
 			Called by the AI when its turn is over
 	*/
 
-	window.AI = window.AI || {};
-	window.AI.Plyer =  function (id, ply_depth, lookahead) {
+	var AI = AI || {};
+	AI.Plyer =  function (id, ply_depth, lookahead) {
 		
 		this._myId = id;
 		this._MAX_PLIES = ply_depth || 1;
@@ -56,19 +46,19 @@
 		this._interface = null;
 	};
 		
-	window.AI.Plyer.getName = function() {
+	AI.Plyer.getName = function() {
 		return "Plyer 1.0";
 	};
 		
 	// Factory method. Called when the AI is first started. Tells the AI its player number
 	// and the list of other players, so it can know who is human and where
 	// in the turn order this AI shows up.
-	window.AI.Plyer.create = function(playerId, isHumanList) {
-		return new window.AI.Plyer(playerId, 2, 1);
+	AI.Plyer.create = function(playerId, isHumanList) {
+		return new AI.Plyer(playerId, 2, 1);
 	};
 
 	// Called each time the AI has a turn.
-	window.AI.Plyer.prototype.startTurn = function(iface) {
+	AI.Plyer.prototype.startTurn = function(iface) {
 		Globals.debug("**STARTING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		var self = this;
 		self._interface = iface;
@@ -86,7 +76,7 @@
 		self.makeMoves(moveSequence);
 	};
 	
-	window.AI.Plyer.prototype.logEval = function(state) {
+	AI.Plyer.prototype.logEval = function(state) {
 		var self = this;
 		var scores = state.playerIds().map(function(playerId){
 			return util.evalPlayer(state, playerId);
@@ -95,7 +85,7 @@
 		Globals.debug("Player Scores: ", JSON.stringify(scores), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 	};
 			
-	window.AI.Plyer.prototype.makeMoves = function(move) {
+	AI.Plyer.prototype.makeMoves = function(move) {
 		var self = this;
 		var state = self._interface.getState();
 		
@@ -130,7 +120,7 @@
 		} 
 	};
 	
-	window.AI.Plyer.prototype.finishTurn = function() {
+	AI.Plyer.prototype.finishTurn = function() {
 		var self = this;
 		var state = self._interface.getState();
 		
@@ -146,7 +136,7 @@
 	};
 	
 	
-	window.AI.Plyer.prototype.bestMove = function(state, ply) {
+	AI.Plyer.prototype.bestMove = function(state, ply) {
 		var self = this;
 
 		var moves = self.findAllGreedyMoves(state, 10);
@@ -183,7 +173,7 @@
 
 	
 	// return a Move object
-	window.AI.Plyer.prototype.findBestGreedyMove = function(state, length) {
+	AI.Plyer.prototype.findBestGreedyMove = function(state, length) {
 		var self = this;
 		self.findAllGreedyMoves(state, length);
 		//Globals.ASSERT(self.foobar && self.foobar.length);
@@ -195,7 +185,7 @@
 	},
 	
 	// @moves: array of Move
-	window.AI.Plyer.prototype.pickBest = function(moves, state) {
+	AI.Plyer.prototype.pickBest = function(moves, state) {
 		if(!moves.length) {
 			return new Move();
 		}
@@ -207,7 +197,7 @@
 	},
 	
 	// return array of Move objects
-	window.AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
+	AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
 		length = length || 1;
 		var self = this;
 		var lookahead = state.currentPlayerId() == self._myId ? self._lookahead : 1;
@@ -238,6 +228,6 @@
 	};
 	
 	if (typeof module !== 'undefined' && module.exports) {
-		module.exports = window.AI.Plyer;
+		module.exports = AI.Plyer;
 	}
 	

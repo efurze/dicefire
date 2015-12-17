@@ -4,15 +4,11 @@ if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Gamestate = require('../game/gamestate.js');
 	var window = {};
-} else {
-	if (!window) {
-		window = {};
-	}
 }
 
 
-window.AI = window.AI || {};
-window.AI.Util =  {
+var AI = AI || {};
+AI.Util =  {
 	
 	iface: null,
 	
@@ -60,7 +56,7 @@ window.AI.Util =  {
 			var a = state.countryDice(attack.from());
 			var d = state.countryDice(attack.to());
 			Globals.ASSERT(a > 0 && d > 0);
-			var o = window.AI.Util.ODDS_ARRAY[a - 1][d - 1];
+			var o = AI.Util.ODDS_ARRAY[a - 1][d - 1];
 			//Globals.debug("Attack odds for " + a + " vs " + d + " = " + o, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
 			return o;
 		} else {
@@ -74,13 +70,13 @@ window.AI.Util =  {
 		var self = this;
 		var moves_ary = [];
 
-		var attacks = window.AI.Util.findAllAttacks(state);
+		var attacks = AI.Util.findAllAttacks(state);
 
 		attacks.forEach(function(attack) {
 			moves_ary.push(new Move(attack));
 			if (length > 1) {
 				// recurse
-				self.findAllMoves(window.AI.Util.applyAttack(attack, state, true), length-1).forEach(function(nextMove) {
+				self.findAllMoves(AI.Util.applyAttack(attack, state, true), length-1).forEach(function(nextMove) {
 					var move = new Move(attack);
 					move.push(nextMove);
 					moves_ary.push(move);
@@ -121,7 +117,7 @@ window.AI.Util =  {
 				Globals.ASSERT (state.countryOwner(neighbor) != state.currentPlayerId());
 				
 				var attack = new Attack(countryId, neighbor);
-				if (window.AI.Util.attackOdds(state, attack) >= threshold) {
+				if (AI.Util.attackOdds(state, attack) >= threshold) {
 					Globals.debug("possible attack found", attack.toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 					attacks.push(attack);
 				} else {
@@ -264,9 +260,9 @@ window.AI.Util =  {
 			// deep-copy move
 			move = move.clone();
 			var attack = move.pop();
-			var winState = window.AI.Util.applyAttack(attack, state, true);
-			var loseState = window.AI.Util.applyAttack(attack, state, false);
-			var winOdds = window.AI.Util.attackOdds(state, attack);
+			var winState = AI.Util.applyAttack(attack, state, true);
+			var loseState = AI.Util.applyAttack(attack, state, false);
+			var winOdds = AI.Util.attackOdds(state, attack);
 			// recurse
 			score = ((1 - winOdds) * self.evalPosition(loseState, evalfxn)) + (winOdds * self.evalMove(move, winState, evalfxn));
 		}
@@ -305,9 +301,9 @@ window.AI.Util =  {
 			return 0;
 		}
 		
-		var myCountryCount = window.AI.Util.totalCountries(playerId, state);
+		var myCountryCount = AI.Util.totalCountries(playerId, state);
 		var myContiguous = state.numContiguous(playerId);
-		var myDice = window.AI.Util.totalDice(playerId, state);
+		var myDice = AI.Util.totalDice(playerId, state);
 		
 		if (state.currentPlayerId() == playerId) {
 			// for current player, count on them getting their end-of-turn dice injection
@@ -437,7 +433,7 @@ Move.prototype.toString = function() {
 
 
 if (typeof module !== 'undefined' && module.exports) {
-	window.AI.Util.Move = Move;
-	window.AI.Util.Attack = Attack;
-	module.exports = window.AI.Util;
+	AI.Util.Move = Move;
+	AI.Util.Attack = Attack;
+	module.exports = AI.Util;
 }

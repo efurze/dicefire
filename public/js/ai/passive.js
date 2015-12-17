@@ -25,24 +25,24 @@
 			Called by the AI when its turn is over
 	*/
 
-	window.AI = window.AI || {};
-	window.AI.Passive = function(id) {
+	var AI = AI || {};
+	AI.Passive = function(id) {
 		
 	};
 	
-	window.AI.Passive.getName = function() {
+	AI.Passive.getName = function() {
 		return "Passive";
 	};
 	
 	// Factory method. Called when the AI is first started. Tells the AI its player number
 	// and the list of other players, so it can know who is human and where
 	// in the turn order this AI shows up.
-	window.AI.Passive.create = function(playerId, isHumanList) {
-		return new window.AI.Passive(playerId);
+	AI.Passive.create = function(playerId, isHumanList) {
+		return new AI.Passive(playerId);
 	};
 
 	// Called each time the AI has a turn.
-	window.AI.Passive.prototype.startTurn = function(interface, depth) {
+	AI.Passive.prototype.startTurn = function(interface, depth) {
 		depth = depth || 0;
 		var self = this;
 		var state = interface.getState();

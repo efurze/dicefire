@@ -36,7 +36,7 @@ $(function() {
 			}
 			
 			Game._engine = new Engine();
-			Game._engine.init(playerCode.map(function(pc){return pc;}));
+			Game._engine.init(playerCode.map(function(pc){return pc;}), Game.gameOver);
 			Game._engine.setup();
 			
 			Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerCode.map(function(pc) {
@@ -63,6 +63,10 @@ $(function() {
 			$('#forward_btn').click(Game._controller.historyForward.bind(Game._controller));
 			
 			Game._engine.startTurn(0);
+		},
+		
+		gameOver: function(winningAI, winningID) {
+			Game.redraw();
 		},
 		
 		mapUpdate: function() {

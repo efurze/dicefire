@@ -33,24 +33,24 @@
 		}
 	}
 	
-	window.AI = window.AI || {};
-	window.AI.Aggressive = function (id) {
+	var AI = AI || {};
+	AI.Aggressive = function (id) {
 		
 	};
 	
 	// Factory method. Called when the AI is first started. Tells the AI its player number
 	// and the list of other players, so it can know who is human and where
 	// in the turn order this AI shows up.
-	window.AI.Aggressive.create = function(playerId, isHumanList) {
-		return new window.AI.Aggressive(playerId);
+	AI.Aggressive.create = function(playerId, isHumanList) {
+		return new AI.Aggressive(playerId);
 	};
 
-	window.AI.Aggressive.getName = function() {
+	AI.Aggressive.getName = function() {
 		return "Aggressive";
 	};
 	
 	// Called each time the AI has a turn.
-	window.AI.Aggressive.prototype.startTurn = function(interface, depth) {
+	AI.Aggressive.prototype.startTurn = function(interface, depth) {
 		depth = depth || 0;
 		var self = this;
 		var state = interface.getState();
@@ -84,5 +84,5 @@
 	};
 	
 if (typeof module !== 'undefined' && module.exports) {
-	module.exports = window.AI.Aggressive;
+	module.exports = AI.Aggressive;
 }
