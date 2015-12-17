@@ -99,7 +99,7 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-		self.deserialize(initialState);
+		self.deserialize(JSON.parse(initialState));
 	} else {
 		// assign initial dice
 		self._players.forEach(function(player) {

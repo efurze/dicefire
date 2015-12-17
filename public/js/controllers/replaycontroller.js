@@ -32,7 +32,7 @@ Replaycontroller.prototype.ajaxDone = function(data) {
 	//console.log("Got ajax data: " + (data));
 	Globals.ASSERT(this._pendingIndex != -1);
 	
-	var state = Gamestate.deserialize(data.data);
+	var state = Gamestate.deserialize(JSON.parse(data.data));
 	this._engine.pushHistory(state);
 	this._historyLength = data.moveCount;
 	this._historyIndex = this._pendingIndex;
