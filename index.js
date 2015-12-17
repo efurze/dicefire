@@ -77,17 +77,10 @@ app.get('/thunderdome', function(req, res) {
     res.render("thunderdome", {layout: "thunderdome", title : "Welcome to Thunderdome"});
 });
 
-app.get('/loader', function(req, res) { 
-    res.render("loader", {title : "Replay Game"});
-});
 
 app.get('/replay', function(req, res) { 
 	var gameId = req.query['gameId'];
     res.render("replay", {'gameId' : gameId, layout: "replay"});
-});
-
-app.get('/simulator', function(req, res) {
-	res.render("simulator.hbs", {layout: "simulator", title : "Simulator"});
 });
 
 app.post('/uploadMap', function(req, res) { 
