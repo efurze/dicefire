@@ -28,7 +28,8 @@
     "passport-facebook": "^2.0.0",
     "passport-oauth": "^1.0.0",
     "redis": "latest",
-	  "socket.io": "latest"
+	"socket.io": "latest",
+	"sandbox": "latest"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var passport = require('passport');
 var passportConf = require('./config/passport');
 var path = require('path');
+var submissionHandler = require('./app/submit.js');
 
 
 // Redis
@@ -53,6 +54,11 @@ app.get('/client', function(req, res) {
 	res.render("client", {gameId: uuid.v1(), layout: "client"});
 });
 
+app.get('/submit', function(req, res) {
+	res.render("submit", {title: "AI Submission", layout: "submit"});
+});
+
+app.post('/submission', submissionHandler.submit);
 
 app.get('/data/*', function(req, res) { 
 	var filename = req.url.trim().split("/").slice(2).join("/");

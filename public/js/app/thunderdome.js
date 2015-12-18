@@ -44,9 +44,12 @@ GameRunner.prototype.start = function(gameOver_cb) {
 };
 
 GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
-	this._uploader.push(gamestate.clone());
+	var self = this;
+	self._uploader.push(gamestate.clone());
 	if (gamestate.attack()) {
-		this._engine.finishAttack(gamestate.attack());
+		window.setTimeout(function() {
+			self._engine.finishAttack(gamestate.attack());
+		}, 0);
 	}
 };
 
