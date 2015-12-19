@@ -9,7 +9,8 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-var Engine = function() {
+var Engine = function(trusted) {
+	this._trusted = (typeof trusted == 'undefined') ? true : trusted;
 	this._AIs = null;
 	this._currentPlayerId = 0;
 	this._gameOver = false;
@@ -89,7 +90,7 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	self._playerCode.forEach(function(elem, index) {
 		if (elem != "human") {
 			Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-			self._AIs[index] = new AIWrapper(elem, self, index, true);
+			self._AIs[index] = new AIWrapper(elem, self, index, self._trusted);
 			Globals.debug(JSON.stringify(self._AIs[index].getAI()), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		} else {
 			self._AIs[index] = "human";
