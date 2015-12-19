@@ -7,15 +7,27 @@ var uuid = require('node-uuid');
 module.exports = {
 
 	index: function(req, res) { 
-		res.render("index", {'gameId': uuid.v1()});	    
+		res.render("index", {
+			title: "Dicefire",
+			gameId: uuid.v1()
+		});	    
 	},
 
 	client: function(req, res) { 
-		res.render("client", {gameId: uuid.v1(), layout: "client"});
+		res.render("client", {
+			title: "Dicefire Client", 
+			gameId: uuid.v1(),
+			scripts: [
+				{ path: "/js/controllers/clientcontroller.js" },
+				{ path: "/js/app/client.js" }
+			]
+		});
 	},
 
 	submit: function(req, res) {
-		res.render("submit", {title: "AI Submission", layout: "submit"});
+		res.render("submit", {
+			title: "AI Submission"
+		});
 	},
 
 	data: function(req, res) { 
@@ -29,6 +41,7 @@ module.exports = {
 		});
 	},
 
+	// FIXME: This shouldn't work like this
 	unit: function(req, res) { 
 	    res.sendFile(__dirname + "/views/unittest.html");
 	},
@@ -44,12 +57,24 @@ module.exports = {
 	},
 
 	thunderdome: function(req, res) { 
-	    res.render("thunderdome", {layout: "thunderdome", title : "Welcome to Thunderdome"});
+	    res.render("thunderdome", {
+	    	title: "Welcome to Thunderdome",
+	    	scripts: [
+				{ path: "/node-uuid/uuid.js" },
+				{ path: "/js/app/thunderdome.js" }
+	    	]
+	    });
 	},
 
 	replay: function(req, res) { 
 		var gameId = req.query['gameId'];
-	    res.render("replay", {'gameId' : gameId, layout: "replay"});
+	    res.render("replay", {
+	    	'gameId' : gameId,
+	    	scripts: [
+	    		{ path: "/js/controllers/replaycontroller.js" },
+	    		{ path: "/js/app/replay.js" }
+	    	]
+	    });
 	},
 
 

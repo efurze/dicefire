@@ -5,17 +5,10 @@
 	<a href="/replay?&gameId={{gameId}}" target="_blank">click here to view this game</a>
 </div>
 <div id="game" style="display: none">
-	<canvas id="c" width="980px" height="580px">
-	</canvas>
-
-	<div style="display: block; height: 20px; margin-left:10px">
-		<div id="roll"><div id="leftroll"></div><div id="rightroll"></div></div>
-	</div>
-
-	<div id="players" style="margin-top:10px; margin-bottom:10px"></div>
-
-	{{>gamecontroller}}
-	
+	{{>canvas}}
+	{{>roll}}
+	{{>players}}	
+	{{>gamecontroller}}	
 </div> <!-- game --!>
 
 

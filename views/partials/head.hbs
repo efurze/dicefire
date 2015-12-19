@@ -6,6 +6,9 @@
     <meta http-equiv="Content-Language" content="en">
 
 	{{>includes}}
+	{{#list scripts}}
+		<script type="text/javascript" src="{{path}}"></script>
+	{{/list}}
 	<script type="text/javascript" src="/js/app/game.js"></script>
 	
 </head>
