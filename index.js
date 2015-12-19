@@ -1,7 +1,6 @@
 var express = require('express');
 var http = require('http');
 var app = express();
-var fs = require('fs');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var passportConf = require('./config/passport');
@@ -44,8 +43,9 @@ app.set('view engine', '.hbs');
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Routes
 
+
+// Routes
 app.get('/', gameController.index);
 app.get('/client', gameController.client);
 app.get('/submit', gameController.submit);
