@@ -41,9 +41,20 @@ module.exports = {
 		});
 	},
 
-	// FIXME: This shouldn't work like this
 	unit: function(req, res) { 
-	    res.sendFile(__dirname + "/views/unittest.html");
+		res.render("unittest", {
+			title: "Mocha",
+			scripts: [
+				{ path: "https://cdn.rawgit.com/Automattic/expect.js/0.3.1/index.js" },
+				{ path: "https://cdn.rawgit.com/mochajs/mocha/2.2.5/mocha.js" },
+				{ path: "http://chaijs.com/chai.js" },
+				{ path: "/data/testmaps/testmap" },
+				{ path: "/test/enginetests.js" }
+			],
+			csses: [
+				{ path: "https://cdn.rawgit.com/mochajs/mocha/2.2.5/mocha.css" }
+			]
+		});
 	},
 
 	test: function(req, res) { 
