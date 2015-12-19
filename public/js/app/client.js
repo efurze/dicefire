@@ -1,40 +1,40 @@
 "use strict"
 
-var History = function() {
-	this._array = [];
-};
-
-History.prototype.push = function(state) {
-	Globals.ASSERT(state instanceof Gamestate);
-	this._array.push(state);
-};
-
-History.prototype.length = function() {
-	return this._array.length;
-};
-
-History.prototype.getState = function(index) {
-	if (index >= 0 && index < this._array.length) {
-		return this._array[index];
-	} else {
-		return null;
-	}
-};
-
-History.prototype.getLatest = function() {
-	if (this._array.length) {
-		return this._array[this._array.length - 1];
-	} else {
-		return null;
-	}
-};
-
-History.prototype.currentPlayerId = function() {
-	return this._array[this._array.length-1].currentPlayerId();
-};
-
 
 $(function() {
+
+	var History = function() {
+		this._array = [];
+	};
+
+	History.prototype.push = function(state) {
+		Globals.ASSERT(state instanceof Gamestate);
+		this._array.push(state);
+	};
+
+	History.prototype.length = function() {
+		return this._array.length;
+	};
+
+	History.prototype.getState = function(index) {
+		if (index >= 0 && index < this._array.length) {
+			return this._array[index];
+		} else {
+			return null;
+		}
+	};
+
+	History.prototype.getLatest = function() {
+		if (this._array.length) {
+			return this._array[this._array.length - 1];
+		} else {
+			return null;
+		}
+	};
+
+	History.prototype.currentPlayerId = function() {
+		return this._array[this._array.length-1].currentPlayerId();
+	};
 
 	
 	window.Client = {
