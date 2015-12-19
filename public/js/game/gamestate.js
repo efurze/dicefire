@@ -2,7 +2,7 @@
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
-	var Hashes = require('../jshashes');
+	var Hashes = require('jshashes');
 }
 
 if (Hashes) {

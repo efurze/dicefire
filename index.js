@@ -14,20 +14,22 @@ var submissionHandler = require('./app/submit.js');
 var redis = require('redis');
 var redisClient = redis.createClient(); //6379, 'localhost', '');
 
-
 // Controllers
 var userController = require('./controllers/user');
+var gameController = require('./controllers/game');
 
 // Websockets
 var ss = require('./sockethandler.js')(app, 5001);
 
 app.set('port', (process.env.PORT || 5000));
 
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/public'));s
 app.use('/jquery', express.static(path.join(__dirname, '/node_modules/jquery/dist')));
+app.use('/jshashes', express.static(path.join(__dirname, '/node_modules/jshashes')));
 app.use('/node-uuid', express.static(path.join(__dirname, '/node_modules/node-uuid')));
+app.use('/socket.io-client', express.static(path.join(__dirname, '/node_modules/socket.io-client')));
 
-app.use( bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
+app.use(bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
@@ -45,134 +47,23 @@ app.use(passport.session());
 
 // Routes
 
-app.get('/', function(req, res) { 
-	res.render("index", {'gameId': uuid.v1()});
-    
-});
-
-app.get('/client', function(req, res) { 
-	res.render("client", {gameId: uuid.v1(), layout: "client"});
-});
-
-app.get('/submit', function(req, res) {
-	res.render("submit", {title: "AI Submission", layout: "submit"});
-});
+app.get('/', gameController.index);
+app.get('/client', gameController.client);
+app.get('/submit', gameController.submit);
+app.get('/data/*', gameController.data);
+app.get('/unit', gameController.unit);
+app.get('/test', gameController.test);
+app.get('/thunderdome', gameController.thunderdome);
+app.get('/replay', gameController.replay);
+app.post('/uploadMap', gameController.uploadMap);
+app.post('/uploadGameInfo', gameController.uploadGameInfo);
+app.get('/getGameInfo', gameController.getGameInfo);
+app.post('/uploadState', gameController.uploadState);
+app.get('/getMap', gameController.getMap);
+app.get('/getState', gameController.getState); 
 
 app.post('/submission', submissionHandler.submit);
 
-app.get('/data/*', function(req, res) { 
-	var filename = req.url.trim().split("/").slice(2).join("/");
-	fs.readFile(__dirname + "/public/" + filename + ".json", 'utf8', function (err, data) {
-		if (err) {
-			res.send({});
-		} else {
-	  		res.send("var MapData=" + data + ";");
-		}
-	});
-});
-
-app.get('/unit', function(req, res) { 
-    res.sendFile(__dirname + "/views/unittest.html");
-});
-
-app.get('/test', function(req, res) { 
-    res.render("ai_tester", {layout: "ai_tester", title : "AI Test"});
-});
-
-app.get('/thunderdome', function(req, res) { 
-    res.render("thunderdome", {layout: "thunderdome", title : "Welcome to Thunderdome"});
-});
-
-
-app.get('/replay', function(req, res) { 
-	var gameId = req.query['gameId'];
-    res.render("replay", {'gameId' : gameId, layout: "replay"});
-});
-
-app.post('/uploadMap', function(req, res) { 
-	var gameId = req.query['gameId'];
-	var mapData = JSON.stringify(req.body);
-	console.log("UploadMap for gameId " + gameId);
-	var filename = gameId + "/map.json";
-
-	redisClient.set(filename, mapData, function(err, reply) {
-		res.status(200).send("{}");
-	});
-});
-
-app.post('/uploadGameInfo', function(req, res) { 
-	var gameId = req.query['gameId'];
-	var resultsData = JSON.stringify(req.body);
-	console.log("UploadResults for gameId " + gameId);
-	var filename = gameId + "/game.json";
-
-	redisClient.set(filename, resultsData, function(err, reply) {
-		res.status(200).send("{}");
-	});
-});
-
-app.get('/getGameInfo', function(req, res) {
-	var gameId = req.query['gameId'];
-	var filename = gameId + '/game.json';
-
-	redisClient.get(filename, function(err, data) {
-		if (!data) {
-			res.status(404).send("No game file found for gameId " + gameId);
-		} else {
-			res.send(data);
-		}
-	});
-});
-
-app.post('/uploadState', function(req, res) { 
-	var moveId = req.query['moveId'];
-	var gameId = req.query['gameId'];
-	var stateData = JSON.stringify(req.body);
-	
-	var filename = gameId + "/state_" + moveId + ".json";
-	console.log("Saving state file " + filename);
-	redisClient.set(filename, stateData, function(err, reply) {
-		res.status(200).send("{}");
-	});
-
-});
-
-app.get('/getMap', function(req, res) {
-	var gameId = req.query['gameId'];
-	var filename = gameId + '/map.json';
-
-	redisClient.get(filename, function(err, data) {
-		if (!data) {
-			res.status(404).send("No map file found for gameId " + gameId);
-		} else {
-			res.send(data);
-		}
-	});
-});
-
-app.get('/getState', function(req, res) {
-	var gameId = req.query['gameId'];
-	var moveId = req.query['moveId'];
-
-	redisClient.keys(gameId + '*', function(err, reply) {
-		var filenames = reply;
-		console.log(filenames);
-		var moveCount = filenames.filter(function(name) {
-			return (name.indexOf("state_") != -1);
-		}).length;
-			
-		var filename =  gameId + '/state_' + moveId + '.json';
-		redisClient.get(filename, function(err, data) {
-			if (!data) {
-				res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
-			} else {
-				res.send({'data': data, 'moveCount': moveCount});
-			}
-		});
-
-	});
-
-});
 
 // User account routes
 /**

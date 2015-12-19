@@ -22,14 +22,15 @@
     "express-handlebars": "latest",
   	"body-parser": "latest",
     "jquery": "latest",
+    "jshashes": "latest",
     "lodash": "latest",
     "node-uuid": "latest",
     "passport": "0.3.0",
     "passport-facebook": "^2.0.0",
     "passport-oauth": "^1.0.0",
     "redis": "latest",
-	"socket.io": "latest",
-	"sandbox": "latest"
+	  "socket.io": "latest",
+	  "sandbox": "latest"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

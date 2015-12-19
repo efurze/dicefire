@@ -4,7 +4,7 @@
 		var Globals = require('../globals.js');
 		var Gamestate = require('../game/gamestate.js');
 		var util = require('./util.js');
-		var Hashes = require('../jshashes');
+		var Hashes = require('jshashes');
 		var Move = util.Move;
 		var Attack = util.Attack;
 	} else {
