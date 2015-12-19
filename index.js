@@ -2,12 +2,10 @@ var express = require('express');
 var http = require('http');
 var app = express();
 var fs = require('fs');
-var uuid = require('node-uuid');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var passportConf = require('./config/passport');
 var path = require('path');
-var submissionHandler = require('./app/submit.js');
 
 
 // Redis
@@ -17,13 +15,14 @@ var redisClient = redis.createClient(); //6379, 'localhost', '');
 // Controllers
 var userController = require('./controllers/user');
 var gameController = require('./controllers/game');
+var submissionController = require('./controllers/submission');
 
 // Websockets
 var ss = require('./sockethandler.js')(app, 5001);
 
 app.set('port', (process.env.PORT || 5000));
 
-app.use(express.static(__dirname + '/public'));s
+app.use(express.static(__dirname + '/public'));
 app.use('/jquery', express.static(path.join(__dirname, '/node_modules/jquery/dist')));
 app.use('/jshashes', express.static(path.join(__dirname, '/node_modules/jshashes')));
 app.use('/node-uuid', express.static(path.join(__dirname, '/node_modules/node-uuid')));
@@ -62,7 +61,7 @@ app.post('/uploadState', gameController.uploadState);
 app.get('/getMap', gameController.getMap);
 app.get('/getState', gameController.getState); 
 
-app.post('/submission', submissionHandler.submit);
+app.post('/submission', submissionController.submit);
 
 
 // User account routes

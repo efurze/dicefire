@@ -1,6 +1,7 @@
 var fs = require('fs');
 var redis = require('redis');
 var redisClient = redis.createClient(); //6379, 'localhost', '');
+var uuid = require('node-uuid');
 
 
 module.exports = {
