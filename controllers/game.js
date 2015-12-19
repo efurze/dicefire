@@ -34,7 +34,13 @@ module.exports = {
 	},
 
 	test: function(req, res) { 
-	    res.render("ai_tester", {layout: "ai_tester", title : "AI Test"});
+	    res.render("ai_tester", {
+	    	title: "AI Test",
+	    	scripts: [
+	    		{ path: "/js/app/ai_tester.js" },
+	    		{ path: "//www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['corechart']}]}" }
+	    	]
+	    });
 	},
 
 	thunderdome: function(req, res) { 
