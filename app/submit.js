@@ -1,63 +1,50 @@
 'use strict'
 
 var Sandbox = require('sandbox');
+var redis = require('redis');
+var redisClient = redis.createClient(); //6379, 'localhost', '');
 
-
-function validate(code) {
-	var ret = {
-		valid: false,
-		error: "",
-		ai: null
-	};
+function validate() {
 	
-	
-	code += "create";
+	var code = "replaceThis";
+	code += ";create";
 	
 	try {
-		//var js = eval("var create = function(){console.log('hello from create');};");
-		var create = eval(code);
-		console.log("eval produces:", create);
-		var ai = create();
-/*
-		if (!js.hasOwnProperty('create') || typeof js.create !== 'function') {
-			ret.error = "Submitted AI has no create() function";
-			return ret;
-		} 
-		var ai = js.create(0);
-		console.log(ai);
-*/	
+		
+		var createFn = eval(code);
+		var ai = createFn();
 		
 		if (!ai.hasOwnProperty('startTurn') || typeof ai.startTurn !== 'function') {
-			ret.error = "Submitted AI has no startTurn() function";
-			return ret;
+			return "Submitted AI has no startTurn() function";
 		}
-	
-		ret.ai = ai;
-		ret.valid = true;
 		
 	} catch (e) {
-		ret.error = "Your code threw an exception: " + e;
-		ret.valid = false;
+		return ("Your code threw an exception: " + e);
 	}
 	
-	return ret;
+	return true;
 };
-
-function hello(){var msg='foobar';return msg;};
 
 var SubmissionHandler = (function() {
 
 	return {
 		submit: function(req, res) {
 			var code = decodeURI(req.body.code).trim();
-			var result = validate(code);
 			
-			if (result.valid) {
-				res.send("Submission received!");
-			} else {
-				res.send("Invalid submission: " + result.error);
-			}
-			
+			var fnString = validate.toString();
+			fnString = fnString.replace("replaceThis", code);
+			fnString += ";validate()";
+
+			var s = new Sandbox();
+			s.run(fnString, function(result) {
+				console.log(result);
+				result = result.result;
+				if (result === 'true') {
+					res.send("Submission received!");
+				} else {
+					res.send("Invalid submission: " + JSON.stringify(result));
+				}
+			});
 		}
 	};
 	
