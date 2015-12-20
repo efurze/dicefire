@@ -152,12 +152,7 @@ $(function(){
 	
 			function renderAttackRoll(state) {
 				$('#lefttotal').html(fromRoll);
-	            $('#roll').css({
-	                "display": "inline-block"
-	            });
-	            $('#leftroll').css({
-	                "display": "inline-block"
-	            });
+	            $('#leftroll').show();
 
 				self._renderCountry(toCountry, state, true);
 	            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
@@ -166,9 +161,7 @@ $(function(){
 			function renderDefendRoll(state) {
 				Globals.debug("render defender", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 				$('#righttotal').html(toRoll);
-	            $('#rightroll').css({
-	                "display": "inline-block"
-	            });              
+	            $('#rightroll').show();
 	            window.setTimeout(function(){renderVerdict(state);}, timeout);
 			}
 			
@@ -227,16 +220,15 @@ $(function(){
 			Globals.ASSERT(state instanceof Gamestate);
 			
 			if (state.playerHasLost(playerId)) {
-				$('#player' + playerId).css({'display': 'none'});
-			} else {
-				
-				$('#player' + playerId).css({'display': 'inline-block'});
+				$('#player' + playerId).hide();
+			} else {				
+				$('#player' + playerId).show();
 				
 				// Highlight the player's status box
 				if (playerId == state.currentPlayerId()) {
-					$('#player' + playerId).css({'border': '3px double'});
+					$('#player' + playerId).addClass("current-player");
 				} else {
-					$('#player' + playerId).css({'border': '1px solid'});
+					$('#player' + playerId).removeClass("current-player");
 				}
 				
 				// update stats
@@ -317,18 +309,9 @@ $(function(){
 			var self = this
 	
 			// clear previous attack info
-			$('#roll').css({
-				"display": "none"
-	    	});
+	        $('#leftroll').hide();
+	        $('#rightroll').hide();
 
-	        $('#leftroll').css({
-	            "display": "none"
-	        });
-
-	        $('#rightroll').css({
-	            "display": "none"
-	        });
-	
 			if (!fromCountry || !toCountry || !fromRollArray || !toRollArray) {
 				return;
 			}
@@ -541,62 +524,20 @@ $(function(){
 			for (var id=0; id < playerCount; ++id) {
 				
 				$('#players').append(
-		    		"<div id='player" + id + "'><div id='colorblock" + id + "'></div>"
-					+ ((this._names && this._names[id]) ? ("<div id='name" + id + "'>" + this._names[id] + "</div>") : "")
-		    		+ "<div id='dice" + id + "'>1</div>"
-		    		+ "<div id='stored" + id + "'>0</div></div>"
-		    	);
-
-		    	$('#player' + id).css(
-		    		{
-		    			'font-family': 'sans-serif',
-		    			'display': 'inline-block',
-		    			'margin': '10px',
-		    			'padding': '10px',
-		    			'width': '120px',
-		    			'height': '20px',
-		    			'border': '1px solid black'
-
-		    		}
+		    		"<div id='player" + id + "' class='col-sm-2 player-box'><div id='colorblock" + id + "' class='color-block'></div>"
+					+ ((self._names && self._names[id]) ? ("<div id='name" + id + "' class='name-box'>" + self._names[id] + "</div>") : "")
+		    		+ "<div id='dice" + id + "' class='dice-box'>1</div>"
+		    		+ "<div id='stored" + id + "' class='stored-box'>0</div></div>"
 		    	);
 
 		    	$('#colorblock' + id).css( 
-			    	{
-			    		'display': 'inline-block',
-			    		'width': '20px',
-			    		'height': '20px',
+			    	{		
 			    		'background-color': self._playerColors[id]
-			    	}
-		    	);
-
-		    	$('#dice' + id).css(
-			    	{
-						'display': 'inline-block',
-						'margin-left': '12px',
-						'margin-top': '2px',
-						'vertical-align': 'top',
-						'text-align': 'center'
-			    	}
-		    	);
-		
-				$('#name' + id).css(
-			    	{
-						'display': 'inline-block',
-						'margin-left': '10px',
-						'margin-top': '2px',
-						'font-size': '8pt',
-						'vertical-align': 'top',
-						'text-align': 'center'
 			    	}
 		    	);
 
 				$('#stored' + id).css(
 			    	{
-						'display': 'inline-block',
-						'margin-left': '5px',
-						'margin-top': '2px',
-						'vertical-align': 'top',
-						'text-align': 'center',
 						'color': self._playerColors[id]
 			    	}
 		    	);
@@ -605,56 +546,23 @@ $(function(){
 		},
 		
 		_setupRollDivs: function() {
-
-            $('#roll').css({
-                "display": "none",
-                "vertical-align": "top",
-                "margin-top": "3px"
-            });
-
-            $('#leftroll').css({
-                "display": "inline-block",
-                "margin-left": "20px"
-            });
-
-            $('#rightroll').css({
-                "display": "inline-block",
-                "margin-left": "20px"                
-            });
+	        $('#leftroll').hide();
+	        $('#rightroll').hide();
 
             var diceDivIds = [];
             for (var i = 0; i < Globals.maxDice; i++) {
                 $('#leftroll').append(
-                    "<div id='leftdie" + i + "'>5</div>"
+                    "<div id='leftdie" + i + "' class='roll-die'>5</div>"
                 );
 
                 diceDivIds.push('#leftdie' + i);
 
                 $('#rightroll').append(
-                    "<div id='rightdie" + i + "'>5</div>"
+                    "<div id='rightdie" + i + "' class='roll-die'>5</div>"
                 );
 
                 diceDivIds.push('#rightdie' + i);
             }
-
-            diceDivIds.forEach(function(divId) {
-                $(divId).css({
-                    "display": "inline-block",
-                    "width": "20px",
-                    "height": "20px",
-                    "border": "1px solid black",
-                    "background-color": "red",
-                    "font-family": "sans-serif",
-                    "color": "white",
-                    "font-size": "14px",
-                    "text-align": "center",
-                    "padding-top": "2px",
-                    "padding-bottom": "0px",
-                    "vertical-align": "top",
-                    "font-weight": "bold",
-                    "margin-left": "5px"
-                });
-            });
 
 
 

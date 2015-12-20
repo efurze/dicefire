@@ -35,6 +35,7 @@
     "passport-facebook": "^2.0.0",
     "passport-oauth": "^1.0.0",
     "redis": "latest",
+    "serve-favicon": "latest",
 	  "socket.io": "latest",
 	  "sandbox": "latest"
   },

@@ -6,6 +6,7 @@ var passport = require('passport');
 var passportConf = require('./config/passport');
 var path = require('path');
 var secrets = require('./config/secrets');
+var favicon = require('serve-favicon');
 
 // Create the app.
 var app = express();
@@ -26,6 +27,7 @@ var ss = require('./sockethandler.js')(app, 5001);
 app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
+app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use('/jquery', express.static(path.join(__dirname, '/node_modules/jquery/dist')));
 app.use('/jshashes', express.static(path.join(__dirname, '/node_modules/jshashes')));
 app.use('/node-uuid', express.static(path.join(__dirname, '/node_modules/node-uuid')));
