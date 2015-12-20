@@ -22,7 +22,7 @@ User.findById = function(id, callback) {
             callback(err);
         } else {
             // This can exception technically.
-            callback(new User(JSON.parse(data)));
+            callback(null, new User(JSON.parse(data)));
         }
     });
 };
@@ -36,7 +36,6 @@ User.prototype.save = function(callback) {
         callback(err);
     });
 };
-
 
 
 module.exports = User;

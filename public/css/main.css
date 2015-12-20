@@ -1,0 +1,33 @@
+.nav-container {
+  margin: 0 50px;
+}
+/* Small Devices, Tablets */ 
+@media only screen and (max-width: 991px) {
+  .nav-container {
+    margin: 0 20px; 
+  }
+}
+.nav-container .navbar-brand {
+  line-height: 32px; 
+}
+.nav-container .navbar-nav img {
+  width: 30px;
+  height: 30px;
+  margin: -15px 15px -15px; 
+}
+.nav-container .navbar-nav > li {
+  min-height: 64px; 
+}
+.nav-container .navbar-nav > li > a {
+    line-height: 32px; 
+}
+.nav-container img.profile-image {
+  border-radius: 5px; 
+}
+.nav-container .navbar-toggle {
+  margin-top: 14px; 
+}
+
+.container {
+  margin-top: 70px;
+}

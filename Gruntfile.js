@@ -11,9 +11,9 @@ module.exports = function(grunt) {
     },
     concurrent: {
       dev: [
-      'watch',
-      'nodemon',
-      'shell'
+        'watch',
+        'nodemon',
+        'shell'
       ],
       options: {
       logConcurrentOutput: true
@@ -56,13 +56,13 @@ module.exports = function(grunt) {
     },
     watch: {
       files: ['<%= jshint.files %>', 'views/**/*.hbs'],
-      tasks: ['jshint', 'qunit']
+      tasks: []//['jshint', 'qunit']
     },
     nodemon: {
         dev: {
             script: 'index.js'
         }
-    }
+    },
   });
 
   grunt.loadNpmTasks('grunt-concurrent');

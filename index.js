@@ -1,15 +1,19 @@
 var express = require('express');
-var http = require('http');
-var app = express();
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var passportConf = require('./config/passport');
 var path = require('path');
+var secrets = require('./config/secrets');
 
+// Create the app.
+var app = express();
 
 // Redis
 var redis = require('redis');
 var redisClient = redis.createClient(); //6379, 'localhost', '');
+var RedisStore = require('connect-redis')(session);	// For storing sessions.
 
 // Controllers
 var userController = require('./controllers/user');
@@ -26,7 +30,11 @@ app.use('/jquery', express.static(path.join(__dirname, '/node_modules/jquery/dis
 app.use('/jshashes', express.static(path.join(__dirname, '/node_modules/jshashes')));
 app.use('/node-uuid', express.static(path.join(__dirname, '/node_modules/node-uuid')));
 app.use('/socket.io-client', express.static(path.join(__dirname, '/node_modules/socket.io-client')));
+app.use('/bootstrap', express.static(path.join(__dirname, '/node_modules/bootstrap/dist')));
+app.use('/bootstrap-social', express.static(path.join(__dirname, '/node_modules/bootstrap-social')));
+app.use('/font-awesome', express.static(path.join(__dirname, '/node_modules/font-awesome')));
 
+app.use(cookieParser());
 app.use(bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
@@ -39,10 +47,22 @@ var exphbs = require('express-handlebars');
 app.engine('.hbs', exphbs({defaultLayout: 'single', extname: '.hbs'}));
 app.set('view engine', '.hbs');
 
+app.use(session({
+    store: new RedisStore({ client: redisClient }),
+    secret: secrets.session.secret || 'keyboard cat',
+    resave: true,
+  	saveUninitialized: true
+}));
+
 // Turn on passport for auth.
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Store the user in locals for the template.
+app.use(function(req, res, next) {
+  res.locals.user = req.user;
+  next();
+});
 
 
 // Routes
