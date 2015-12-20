@@ -322,24 +322,28 @@ $(function(){
 			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
 	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
 	
-			// create a div for each die both countries have
+			// style a div for each die both countries have
 			for (var i = 0; i < Globals.maxDice; i++) {
 				$('#leftdie' + i).css({
-					'display': (i < fromNumDice ? 'inline-block' : 'none'),
 					'background-color': self._playerColors[state.countryOwner(fromCountry)]
 				});
 
 				if (i < fromNumDice) {
 					$('#leftdie' + i).html(fromRollArray[i]);
+					$('#leftdie' + i).show();
+				} else {
+					$('#leftdie' + i).hide();
 				}
 
 				$('#rightdie' + i).css({
-					'display': (i < toNumDice ? 'inline-block' : 'none'),
 					'background-color': self._playerColors[state.countryOwner(toCountry)]
 				});
 
 				if (i < fromNumDice) {
 					$('#rightdie' + i).html(toRollArray[i]);
+					$('#rightdie' + i).show();
+				} else {
+					$('#rightdie' + i).hide();
 				}
 	    	}
 		},
@@ -567,28 +571,13 @@ $(function(){
 
 
             $('#leftroll').append(
-                "<div id='lefttotal'>35</div>"                    
+                "<div id='lefttotal' class='roll-total'>35</div>"                    
             );
 
 
             $('#rightroll').append(
-                "<div id='righttotal'>35</div>"                    
+                "<div id='righttotal' class='roll-total'>35</div>"                    
             );
-
-            var totalDivIds = [];
-            totalDivIds.push('#lefttotal');
-            totalDivIds.push('#righttotal');
-            totalDivIds.forEach(function(divId) {
-                $(divId).css({
-                    "display": "inline-block",
-                    "vertical-align": "top",
-                    "font-family": "sans-serif",
-                    "font-size": "18px",
-                    "text-align": "center",
-                    "color": "black",
-                    "margin-left": "20px"
-                });
-            });
 
         }
 	};

@@ -7,6 +7,7 @@ var passportConf = require('./config/passport');
 var path = require('path');
 var secrets = require('./config/secrets');
 var favicon = require('serve-favicon');
+var flash = require('express-flash');
 
 // Create the app.
 var app = express();
@@ -49,6 +50,7 @@ var exphbs = require('express-handlebars');
 app.engine('.hbs', exphbs({defaultLayout: 'single', extname: '.hbs'}));
 app.set('view engine', '.hbs');
 
+app.use(flash());
 app.use(session({
     store: new RedisStore({ client: redisClient }),
     secret: secrets.session.secret || 'keyboard cat',
@@ -59,6 +61,7 @@ app.use(session({
 // Turn on passport for auth.
 app.use(passport.initialize());
 app.use(passport.session());
+
 
 // Store the user in locals for the template.
 app.use(function(req, res, next) {
