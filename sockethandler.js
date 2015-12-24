@@ -1,6 +1,8 @@
 "use strict"
 
 var sio = require('socket.io');
+var redis = require('redis');
+var redisClient = redis.createClient();
 
 var SocketHandler = function(app, port) {
 	var server = app.listen(port);
@@ -27,7 +29,7 @@ var AIs = [
 var Session = function(socket) {
 	this._socket = socket;
 	socket.on('error', this.socketError.bind(this));
-	socket.on('initialized', this.initialize.bind(this));
+	socket.on('create_game', this.create.bind(this));
 	socket.on('end_turn', this.endTurn.bind(this));
 	socket.on('attack', this.attack.bind(this));
 };
@@ -40,7 +42,7 @@ var Session = function(socket) {
 		players: [<string>, <string>...]
 	}
 */
-Session.prototype.initialize = function(data) {	
+Session.prototype.create = function(data) {	
 	try {
 		console.log("creating new game " + data.gameId);
 		var self = this;
@@ -59,11 +61,18 @@ Session.prototype.initialize = function(data) {
 
 		self._engine.init(playerCode.map(function(pc){return self._aiMap[pc];}));
 		self._engine.setup();
-
-		self._socket.emit("map", self._engine.map().serializeHexes());
-
-		self._engine.registerStateCallback(self.engineUpdate.bind(self));			
-		self._engine.startTurn(0);
+		
+		var filename = self._gameId + "/map.json";
+		redisClient.set(filename, self._engine.map().serializeHexes(), function(err, reply) {
+			if (err) {
+				console.log("ERROR saving map data to Redis:", err);
+			} else {
+				self._socket.emit("map");
+			}
+			
+			self._engine.registerStateCallback(self.engineUpdate.bind(self));			
+			self._engine.startTurn(0);
+		});
 		
 	} catch (err) {
 		console.log("Server error: " + err);
@@ -87,7 +96,7 @@ Session.prototype.attack = function(data) {
 		var self = this;
 		console.log("attack from ", data.from, "to", data.to);
 		self._engine.attack(parseInt(data.from), parseInt(data.to), function (success) {
-			self._socket.emit("attack_done", {result: success});
+			self._socket.emit("attack_result", {result: success});
 		});
 	} catch (err) {
 		console.log("Session::attack error", err);
@@ -103,7 +112,15 @@ Session.prototype.socketError = function(err) {
 Session.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
 	if (gamestate) {
-		self._socket.emit("state", gamestate.serialize());
+		var filename = self._gameId + "/state_" + stateId + ".json";
+		redisClient.set(filename, stateData, function(err, reply) {
+			if (err) {
+				console.log("ERROR saving engine state to Redis:", err);
+			} else {
+				self._socket.emit("state", stateId);
+			}
+		});
+		
 	}
 };
 

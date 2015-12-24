@@ -11,13 +11,27 @@ module.exports = {
 			gameId: uuid.v1()
 		});	    
 	},
+	
+	setup: function(req, res) {
+		res.render("setup", {
+			title: "Dicefice - New Game",
+			scripts: [
+				{ path: "/js/controllers/setupcontroller.js"},
+				{ path: "/node-uuid/uuid.js" },
+				{ path: "/js/app/creategame.js"}
+			]
+		})
+	},
 
+	
 	client: function(req, res) { 
+		var gameId = req.query['gameId'];
 		res.render("client", {
 			title: "Dicefire Client", 
-			gameId: uuid.v1(),
+			gameId: gameId,
 			scripts: [
 				{ path: "/js/controllers/clientcontroller.js" },
+				{ path: "/js/util/downloader.js" },
 				{ path: "/js/app/client.js" }
 			]
 		});

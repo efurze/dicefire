@@ -72,7 +72,7 @@ app.use(function(req, res, next) {
 
 // Routes
 app.get('/', gameController.index);
-app.get('/client', gameController.client);
+app.get('/play', gameController.client);
 app.get('/submit', gameController.submit);
 app.get('/data/*', gameController.data);
 app.get('/unit', gameController.unit);
@@ -85,6 +85,7 @@ app.get('/getGameInfo', gameController.getGameInfo);
 app.post('/uploadState', gameController.uploadState);
 app.get('/getMap', gameController.getMap);
 app.get('/getState', gameController.getState); 
+app.get('/setup', gameController.setup);
 
 app.post('/submission', submissionController.submit);
 
