@@ -22,16 +22,17 @@ $(function() {
 				
 		start: function(playerCode) {
 			var names = playerCode.map(function(p) {
-				if (p instanceof String) {
-					return p;
-				} else if (p.hasOwnProperty('getName')) {
+				if (p.hasOwnProperty('getName')) {
 					return p.getName();
+				} else {
+					return p;
 				}
 			});
 			var gameInfo = new Gameinfo(names);
+			var data = gameInfo.serialize();
 			// create game on server
-			$.post('/uploadGameInfo?gameId=' + Creategame._gameId, 
-					gameInfo.serialize()
+			$.post('/createGame?gameId=' + Creategame._gameId, 
+					data
 				).done(function(d) {
 					// redirect player to game
 					window.location.href = "/play?gameId=" + Creategame._gameId;		

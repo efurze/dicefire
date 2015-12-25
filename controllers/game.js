@@ -116,11 +116,14 @@ module.exports = {
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
 		var resultsData = JSON.stringify(req.body);
-		console.log("UploadResults for gameId " + gameId);
+		console.log("UploadGameInfo for gameId " + gameId);
 		var filename = gameId + "/game.json";
 
 		redisClient.set(filename, resultsData, function(err, reply) {
 			res.status(200).send("{}");
+			if (err) {
+				console.log("ERROR saving gameInfo to Redis:", err);
+			}
 		});
 	},
 

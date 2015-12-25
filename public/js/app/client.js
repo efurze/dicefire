@@ -80,6 +80,16 @@ $(function() {
 		gameInfoReceived: function(success, data) {
 			if (success) {
 				Client._playerNames = JSON.parse(data).players;
+				
+				// connect to server
+				if (!Client._socket) {
+					Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
+					Client._socket.on('map', Client.mapAvailable);
+					Client._socket.on('state', Client.engineUpdate);
+					Client._socket.on('attack_result', Client.attackResult);
+					Client._socket.on('error', Client.socketError);
+				}
+				
 				// request the map
 				Client._downloader.getMap(Client._gameId, Client.mapReceived);
 			} else {
@@ -95,7 +105,7 @@ $(function() {
 				if (!Client._map) {
 					Globals.debug("Got map from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 					Client._map = new Map();
-					Client._map.deserializeHexes(mapData);
+					Client._map.deserializeHexes(data);
 					Renderer.init(Client._playerNames.length, Client._canvas, Client._map, Client._playerNames);
 					
 					// replay doesn't get a map controller
@@ -119,7 +129,7 @@ $(function() {
 		stateReceived: function(success, stateData) {
 			if (success) {
 				Globals.debug("Got state data", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
-				var gamestate = Gamestate.deserialize(stateData);
+				var gamestate = Gamestate.deserialize(JSON.parse(stateData.data));
 				Client._history.push(gamestate);
 				if (Client._controller) {
 					Client._controller.update();
@@ -141,13 +151,7 @@ $(function() {
 
 			$('#game').css('display', 'block');
 			
-			Client._playerNames = playerCode.map(function(pc) {
-				if (pc == "human") {
-					return "human";
-				} else {
-					return pc.getName();
-				}
-			});
+			Client._playerNames = playerNames;
 			
 			if (Client._mode == Client.MODES.PLAY) {
 				Client._socket.emit("create_game", {gameId: Client._gameId, players: Client._playerNames});
