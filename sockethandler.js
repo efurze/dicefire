@@ -8,6 +8,7 @@ var SocketHandler = function() {
 
 	var sio = require('socket.io');
 	var io = null;
+	var sessions = {};
 	
 	return {
 		
@@ -19,11 +20,18 @@ var SocketHandler = function() {
 		
 		create: function(gameId) {
 			console.log("Listening for game " + gameId);
-			var gameIO = io.of("/" + gameId);
-			new Session(gameId, gameIO);
+			var socketNamespace = io.of("/" + gameId);
+			sessions[gameId] = new Session(gameId, socketNamespace);
+		},
+		
+		removeGame: function(gameId) {
+			if(sessions.hasOwnProperty(gameId)) {
+				sessions[gameId].close();
+				delete sessions[gameId];
+			}
 		}
 	};
-};
+}();
 
 
 /*========================================================================================================================================*/
@@ -43,10 +51,15 @@ AIs.forEach(function(ai) {
 });
 AIMap["human"] = "human";
 
-var Session = function(gameId, namespaced_listener) {
+var Session = function(gameId, namespace) {
 	var self = this;
 	self._gameId = gameId;
-	self._socket = null;
+	self._ns = namespace;
+	self._sockets = {};
+	self._connectionCount = 0;
+	self._expectedHumans = 0;
+	self._currentHumans = 0;
+	self._started = false;
 	
 	// get the game info
 	redisClient.get(gameId+"/game.json", function(err, data) {
@@ -58,6 +71,7 @@ var Session = function(gameId, namespaced_listener) {
 			self._engine = new Engine();
 			self._engine.init(JSON.parse(data)['players'].map(function(playerName) {
 				if (playerName === "human") {
+					self._expectedHumans ++;
 					return playerName;
 				} else if (AIMap.hasOwnProperty(playerName)) {
 					return AIMap[playerName];
@@ -77,25 +91,60 @@ var Session = function(gameId, namespaced_listener) {
 				self._engine.registerStateCallback(self.engineUpdate.bind(self));			
 				
 				// listen for client connections
-				namespaced_listener.on('connection', self.connect.bind(self));
+				namespace.on('connection', self.connect.bind(self));
 			});
 		}
 	});
 };
 
+Session.prototype.close = function() {
+	var self = this;
+	self._engine.registerStateCallback(null);
+	
+	Object.keys(self._sockets).forEach(function(id) {
+		self._sockets[id].disconnect;
+		delete self._sockets[id];
+	});
+
+};
+
 Session.prototype.connect = function(socket) {
 	console.log("Connected socket for game " + this._gameId);
 	var self = this;
-	self._socket = socket;
+	self._sockets[socket.id] = socket;
+	self._connectionCount ++;
+	self._currentHumans ++;
 	socket.on('error', this.socketError.bind(this));
+	socket.on('disconnect', this.disconnect.bind(this));
 	socket.on('end_turn', this.endTurn.bind(this));
 	socket.on('attack', this.attack.bind(this));
 	
 	socket.emit("map");
-	
-	self._engine.startTurn(0);
+	if (self._currentHumans == self._expectedHumans && !self._started) {
+		// everyone's here, start the game!
+		self._started = true;
+		self._engine.startTurn(0);
+	}
 };
 
+Session.prototype.disconnect = function(socket) {
+	var self = this;
+	self._connectionCount --;
+	self._currentHumans --;
+	
+	console.log('Disconnected. Current connectionCount', self._connectionCount);
+	
+	if (self._sockets.hasOwnProperty(socket.id)) {
+		delete self._sockets[socket.id];
+	}
+	
+	delete self._ns;
+	self._ns = null;
+	
+	if (self._connectionCount == 0) {
+		SocketHandler.removeGame(self._gameId);
+	}
+};
 
 // from socket
 Session.prototype.endTurn = function(data) {
@@ -114,7 +163,7 @@ Session.prototype.attack = function(data) {
 		var self = this;
 		console.log("attack from ", data.from, "to", data.to);
 		self._engine.attack(parseInt(data.from), parseInt(data.to), function (success) {
-			self._socket.emit("attack_result", {result: success});
+			self._ns.emit("attack_result", {result: success});
 		});
 	} catch (err) {
 		console.log("Session::attack error", err);
@@ -128,6 +177,7 @@ Session.prototype.socketError = function(err) {
 
 // from engine
 Session.prototype.engineUpdate = function(gamestate, stateId) {
+	console.log("engineUpdate", stateId);
 	var self = this;
 	if (gamestate) {
 		var filename = self._gameId + "/state_" + stateId + ".json";
@@ -136,7 +186,7 @@ Session.prototype.engineUpdate = function(gamestate, stateId) {
 			if (err) {
 				console.log("ERROR saving engine state to Redis:", err);
 			} else {
-				self._socket.emit("state", stateId);
+				self._ns.emit("state", stateId);
 			}
 		});
 		
@@ -146,4 +196,4 @@ Session.prototype.engineUpdate = function(gamestate, stateId) {
 
 /*========================================================================================================================================*/
 
-module.exports = SocketHandler();
+module.exports = SocketHandler;

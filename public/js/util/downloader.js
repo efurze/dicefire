@@ -9,6 +9,10 @@ var Downloader = function() {
 	this._timeout = 10;
 };
 
+Downloader.prototype.hasPending = function() {
+	return this._pending;
+};
+
 // @callback: function(success, msg) - if success == true, msg = http response. if success == false, msg = err
 Downloader.prototype.get = function(url, callback) {
 	this._array.push({url: url, cb: callback});
@@ -30,6 +34,11 @@ Downloader.prototype.getState = function(gameId, stateId, callback) {
 	this.get(url, callback);
 };
 
+Downloader.prototype.getStateCount = function(gameId, callback) {
+	var url = "/getStateCount?gameId="+gameId;
+	this.get(url, callback);
+};
+
 Downloader.prototype._doNext = function() {
 	var self = this;
 	if (!self._pending && self._array.length) {
@@ -38,6 +47,7 @@ Downloader.prototype._doNext = function() {
 		
 		window.setTimeout(function() {
 			var url = self._array[0].url;
+			console.log("requesting url", url);
 			$.get(url)
 			.done(function(d) {
 				self.ajaxDone(d);

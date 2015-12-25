@@ -168,25 +168,31 @@ module.exports = {
 	getState: function(req, res) {
 		var gameId = req.query['gameId'];
 		var moveId = req.query['moveId'];
+		
+		var filename =  gameId + '/state_' + moveId + '.json';
+		redisClient.get(filename, function(err, data) {
+			if (!data) {
+				res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
+			} else {
+				res.send({'data': data, 'id': moveId});
+			}
+		});
+	
+	},
+	
+	getStateCount: function(req, res) {
+		var gameId = req.query['gameId'];
 
 		redisClient.keys(gameId + '*', function(err, reply) {
 			var filenames = reply;
 			console.log(filenames);
-			var moveCount = filenames.filter(function(name) {
+			var stateCount = filenames.filter(function(name) {
 				return (name.indexOf("state_") != -1);
 			}).length;
-				
-			var filename =  gameId + '/state_' + moveId + '.json';
-			redisClient.get(filename, function(err, data) {
-				if (!data) {
-					res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
-				} else {
-					res.send({'data': data, 'moveCount': moveCount});
-				}
-			});
+
+			res.send({'stateCount': stateCount});
 
 		});
-
 	}
 
 };
