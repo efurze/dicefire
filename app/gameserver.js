@@ -22,10 +22,11 @@ var SocketHandler = function() {
 		
 		createGame: function(req, res) {
 			var gameId = req.query['gameId'];
-			var resultsData = JSON.stringify(req.body);
+			var resultsData = req.body;
+			resultsData.players = Globals.shuffleArray(resultsData.players);
 			Globals.debug("Create game", gameId, resultsData, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 			var filename = gameId + "/game.json";
-			redisClient.set(filename, resultsData, function(err, reply) {
+			redisClient.set(filename, JSON.stringify(resultsData), function(err, reply) {
 				if (err) {
 					Globals.debug("ERROR saving gameInfo to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 					res.status(500).send(JSON.stringify({err: err}));
@@ -72,6 +73,8 @@ var GameServer = function(gameId, namespace) {
 	self._gameId = gameId;
 	self._ns = namespace;
 	self._sockets = {};
+	self._gameInfo = null;
+	self._playerMap = {}; // playerID to socketID
 	self._connectionCount = 0;
 	self._expectedHumans = 0;
 	self._currentHumans = 0;
@@ -85,9 +88,10 @@ var GameServer = function(gameId, namespace) {
 				Globals.debug("No game file found for gameId " + gameId, Globals.LEVEL.WARN, Globals.CHANNEL.SERVER);
 			} else {
 				Globals.debug("Got game info: " + data, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+				self._gameInfo = JSON.parse(data);
 				// initialize the game engine
 				self._engine = new Engine();
-				self._engine.init(JSON.parse(data)['players'].map(function(playerName) {
+				self._engine.init(self._gameInfo['players'].map(function(playerName) {
 					if (playerName === "human") {
 						self._expectedHumans ++;
 						return playerName;
@@ -135,7 +139,17 @@ GameServer.prototype.connect = function(socket) {
 	}
 	self._watchdogTimerId = -1;
 	
-	socket.emit("map");
+	// find a slot for this player
+	var id = 0;
+	for (var i=0; i < self._gameInfo.players.length; i++) {
+		if (self._gameInfo.players[i] == 'human' && !self._playerMap.hasOwnProperty(i)) {
+			self._playerMap[i] = socket.id;
+			id = i;
+			break;
+		}
+	}
+	
+	socket.emit("map", {playerId: id});
 	if (self._currentHumans == self._expectedHumans && !self._started) {
 		// everyone's here, start the game!
 		self._started = true;
@@ -148,7 +162,7 @@ GameServer.prototype.disconnect = function(socket) {
 	self._connectionCount --;
 	self._currentHumans --;
 	
-	Globals.debug('Socket id' + socket.id + 'disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	Globals.debug('Socket ' + JSON.stringify(socket) + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	
 	if (self._connectionCount == 0) {
 		Globals.debug('No active connections, starting linger timer', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);

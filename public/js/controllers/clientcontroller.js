@@ -6,8 +6,9 @@
 	currentPlayerId()
 }
 */
-var Clientcontroller = function (history, end_cb) {
+var Clientcontroller = function (history, playerId, end_cb) {
 	this._history = history;
+	this._playerId = playerId;
 	this._viewingHistory = false;
 	this._endCb = end_cb;
 	this._historyIndex = 0;
@@ -36,8 +37,7 @@ Clientcontroller.prototype.update = function() {
 	$('#back_btn').prop('disabled', true);
 	$('#forward_btn').prop('disabled', true);
 	
-	//TODO: FIXME check for human and not just player 0
-	if (self._history.currentPlayerId() == 0) {	
+	if (self._history.currentPlayerId() == self._playerId) {	
 		if (self.viewingHistory()) {
 			// don't let player end their turn while they're looking at history
 			$('#end_turn').prop('disabled', true);

@@ -40,10 +40,12 @@ $(function() {
 		if (success) {
 			var gamestate = Gamestate.deserialize(JSON.parse(data.data));
 			var id = parseInt(data.id); // 0-based. First state is state 0.
-			Globals.ASSERT(id == this._array.length);
-			this._array.push(gamestate);
-			
-			Globals.debug("Downloaded state", id, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+			if (id == this._array.length) {
+				this._array.push(gamestate);
+				Globals.debug("Downloaded state", id, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+			} else {
+				Globals.debug("Unexpected state id received", id, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+			}
 			
 			var current = this._array.length;
 			if (current < this._stateCount) {
@@ -91,7 +93,7 @@ $(function() {
 		_controller: null,
 		_mapController: null,
 		_gameId: null,
-		_playerId: 0,
+		_playerId: -1,
 		_history: null,
 		_socket: null,
 		_map: null,
@@ -133,6 +135,7 @@ $(function() {
 				if (!Client._socket) {
 					Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
 					
+					Client._socket.on('map', Client.mapAvailable);
 					Client._socket.on('attack_result', Client.attackResult);
 					Client._socket.on('error', Client.socketError);
 					Client._socket.on('state', Client.engineUpdate);
@@ -171,7 +174,6 @@ $(function() {
 			} else {
 				// if we fail just assume that the server will send the map data via a socket push later
 				Globals.debug("Get Map error", data, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
-				Client._socket.on('map', Client.mapAvailable);
 			}
 			
 		},
@@ -200,7 +202,8 @@ $(function() {
 			Client._started = true;
 			$('#game').css('display', 'block');
 			
-			Client._controller = new Clientcontroller(Client._history, Client.endTurn);
+			Globals.ASSERT(Client._playerId >= 0);
+			Client._controller = new Clientcontroller(Client._history, Client._playerId, Client.endTurn);
 			
 			if (Client._mode == Client.MODES.PLAY) {
 				$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
@@ -216,8 +219,12 @@ $(function() {
 		},
 		
 		// push notification from server that the map is available
-		mapAvailable: function() {
+		mapAvailable: function(data) {
 			Globals.debug("Server map push", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			if (Client._playerId == -1) {
+				Client._playerId = data.playerId;
+				Globals.debug("Got player Id", data.playerId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+			}
 			if (!Client._map) {
 				// request the map
 				Client._downloader.getMap(Client._gameId, Client.mapReceived);
