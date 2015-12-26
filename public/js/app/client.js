@@ -3,8 +3,55 @@
 
 $(function() {
 
-	var History = function() {
+	// @callback: function()
+	var History = function(gameId, callback) {
 		this._array = [];
+		this._gameId = gameId;
+		this._cb = callback;
+		this._downloader = new Downloader;
+		this._stateCount = 0;
+	};
+		
+	History.prototype.fetchHistory = function() {
+		this._downloader.getStateCount(this._gameId, this.gotStateCount.bind(this));
+	};
+	
+	History.prototype.gotStateCount = function(success, data) {
+		if (success) {
+			this.updateStateCount(data['stateCount']);
+		} else {
+			Globals.debug("error getting stateCount", data, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+		}
+	};
+	
+	History.prototype.updateStateCount = function(count) {
+		if (count > this._stateCount) {
+			Globals.debug("StateCount updated to", count, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+			this._stateCount = count;
+		}
+		
+		var current = this._array.length;
+		if (current < this._stateCount && !this._downloader.hasPending()) {
+			this._downloader.getState(this._gameId, current, this.gotState.bind(this));
+		}
+	}
+	
+	History.prototype.gotState = function(success, data) {
+		if (success) {
+			var gamestate = Gamestate.deserialize(JSON.parse(data.data));
+			var id = parseInt(data.id); // 0-based. First state is state 0.
+			Globals.ASSERT(id == this._array.length);
+			this._array.push(gamestate);
+			
+			Globals.debug("Downloaded state", id, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+			
+			var current = this._array.length;
+			if (current < this._stateCount) {
+				this._downloader.getState(this._gameId, current, this.gotState.bind(this));
+			} else if (this._cb) {
+				this._cb();
+			}
+		}
 	};
 
 	History.prototype.push = function(state) {
@@ -40,6 +87,7 @@ $(function() {
 	window.Client = {
 		
 		_canvas: document.getElementById("c"),
+		_downloader: null,
 		_controller: null,
 		_mapController: null,
 		_gameId: null,
@@ -51,49 +99,108 @@ $(function() {
 		_mcAttackCallback: null,
 		_lastRenderedState: -1,
 		_playerNames: [],
+		_started: false,
+		
+		MODES: {PLAY: 1, WATCH:2},
+		_mode: 0,
 		
 		
 		currentPlayer: function() { return Engine.currentPlayer(); },
 		
-		init: function (gameId) {
-			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+		init: function (gameId, replay) {
 			Client._gameId = gameId;
-			$('#setup').css('display', 'block');
-			$('#game').css('display', 'none');
+			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 			
-			$('#start_game').click(Setupcontroller.startGame);
-			Setupcontroller.init(Client.start);
+			if (replay) {
+				Client._mode = Client.MODES.WATCH;	
+			} else {
+				Client._mode = Client.MODES.PLAY;
+			}
 			
-			Client._history = new History();
+			// grab game info
+			Client._downloader = new Downloader();
+			Client._downloader.getGameInfo(gameId, Client.gameInfoReceived);
 			
-			Client._socket = io.connect(window.location.hostname + ":5001");
-			Client._socket.on('map', Client.mapLoad);
-			Client._socket.on('state', Client.engineUpdate);
-			Client._socket.on('attack_done', Client.attackDone);
-			Client._socket.on('error', Client.socketError);
+			Client._history = new History(gameId, Client.stateUpdate);
+		},
+
+		// HTTP request callback
+		gameInfoReceived: function(success, data) {
+			if (success) {
+				Client._playerNames = JSON.parse(data).players;
+				
+				// connect to server
+				if (!Client._socket) {
+					Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
+					
+					Client._socket.on('attack_result', Client.attackResult);
+					Client._socket.on('error', Client.socketError);
+					Client._socket.on('state', Client.engineUpdate);
+				}
+				
+				// request the map
+				Client._downloader.getMap(Client._gameId, Client.mapReceived);
+			} else {
+				// TODO: FIXME: redirect user to an error page
+				Globals.debug("GetGameInfo error", data, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+			}
 		},
 		
-		socketError: function(err) {
-			Globals.debug("Socket ERROR:", err, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+		// HTTP request callback		
+		mapReceived: function(success, data) {
+			
+			if (success) {
+				if (!Client._map) {
+					Globals.debug("Got map from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+					Client._map = new Map();
+					Client._map.deserializeHexes(data);
+					Renderer.init(Client._playerNames.length, Client._canvas, Client._map, Client._playerNames);
+					
+					// replay doesn't get a map controller
+					if (Client._mode == Client.MODES.PLAY) {
+						Client._mapController = new Mapcontroller(Client.mapUpdate, Client._canvas, Client._map, Client.mapConInterface);
+					}
+					
+					// download any existing state data
+					Client._history.fetchHistory();
+					
+					
+				} else {
+					Globals.debug("Got map when we already had one", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+				}
+			} else {
+				// if we fail just assume that the server will send the map data via a socket push later
+				Globals.debug("Get Map error", data, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+				Client._socket.on('map', Client.mapAvailable);
+			}
+			
 		},
 		
-		start: function(playerCode) {
-			
-			$('#setup').css('display', 'none');
+		// from History
+		stateUpdate: function() {
+			if (Client._history.length() > 0) {
+				if (!Client._started) {
+					Client.start();
+					Client.redraw(Client._history.length()-1);
+				}
+				
+				Globals.debug("Got state data", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+				
+				if (!Client.upToDate()) {
+					Client.redraw(Client._lastRenderedState + 1);
+				}
+				
+				if (Client._controller) {
+					Client._controller.update();
+				}
+			} 
+		},
+		
+		start: function() {
+			Client._started = true;
 			$('#game').css('display', 'block');
 			
-			Client._playerNames = playerCode.map(function(pc) {
-				if (pc == "human") {
-					return "human";
-				} else {
-					return pc.getName();
-				}
-			});
-			
-			Client._socket.emit("initialized", {gameId: Client._gameId, players: Client._playerNames});
-			
 			Client._controller = new Clientcontroller(Client._history, Client.endTurn);
-			
 			
 			$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
 			$('#back_btn').click(Client._controller.historyBack.bind(Client._controller));
@@ -104,33 +211,28 @@ $(function() {
 			return (Client._lastRenderedState == (Client._history.length()-1));
 		},
 		
-		// from server
-		mapLoad: function(mapData) {
+		// push notification from server that the map is available
+		mapAvailable: function() {
+			Globals.debug("Server map push", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			if (!Client._map) {
-				Globals.debug("Got map from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-				Client._map = new Map();
-				Client._map.deserializeHexes(mapData);
-				Renderer.init(Client._playerNames.length, Client._canvas, Client._map, Client._playerNames);
-				Client._mapController = new Mapcontroller(Client.mapUpdate, Client._canvas, Client._map, Client.mapConInterface);
+				// request the map
+				Client._downloader.getMap(Client._gameId, Client.mapReceived);
 			}
 		},
 
-		// from server
-		engineUpdate: function(stateData) {
-			Globals.debug("Got state update from server", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
-			var gamestate = Gamestate.deserialize(stateData);
-			Client._history.push(gamestate);
-			if (Client._controller) {
-				Client._controller.update();
-			}
-			if (!Client.upToDate()) {
-				Client.redraw(Client._lastRenderedState + 1);
-			}
+		// push notification from server that a new state is available
+		// @stateId: 0-based counter. First state is 0.
+		engineUpdate: function(stateId) {
+			Globals.debug("Got state push from server for stateId " + stateId, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+			Client._history.updateStateCount(stateId+1);
 		},
 		
 		// from server
-		attackDone: function(data) {
+		attackResult: function(data) {
+			// TODO: FIXME: Is this fxn necessary? I think we can just rely on the engineUpdate() event
 			if (Client._mcAttackCallback) {
+				// tell the map controller to reset its 'selected country' states 
+				// (and re-enable the 'end turn' button)
 				Client._mcAttackCallback(data.result);
 			}
 		},
@@ -194,9 +296,15 @@ $(function() {
 			}
 		},
 		
+		socketError: function(err) {
+			Globals.debug("Socket ERROR:", err, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+		},
+		
+		// So the MapController can call back into us
 		mapConInterface: {
 			currentPlayerId: function() {
-				return Client._history.getLatest().currentPlayerId();
+				var state = Client._history.getLatest();
+				return state ? state.currentPlayerId() : -1;
 			},
 			
 			attack: function(from, to, callback) {

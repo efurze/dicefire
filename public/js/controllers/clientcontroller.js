@@ -8,11 +8,13 @@
 */
 var Clientcontroller = function (history, end_cb) {
 	this._history = history;
+	this._viewingHistory = false;
 	this._endCb = end_cb;
 	this._historyIndex = 0;
 	this._historyLength = 0;
 	this._isAttacking = false;
 };
+
 
 $(function(){
 
@@ -79,6 +81,7 @@ Clientcontroller.prototype.historyBack = function (event) {
 	var self = this;
 	if (self._historyIndex > 0) {
 		self._historyIndex --;
+		self._viewingHistory = true;
 	}
 	
 	self.renderHistory(self._history.getState(self._historyIndex));			
@@ -91,6 +94,10 @@ Clientcontroller.prototype.historyForward = function (event) {
 		if (self._historyIndex < (self._history.length()-1)) {
 			self._historyIndex ++;
 		} 
+		
+		if (self._historyIndex == (self._history.length()-1)) {
+			self._viewingHistory = false;
+		}
 					
 		self.renderHistory(self._history.getState(self._historyIndex));
 		self.update();
@@ -104,7 +111,7 @@ Clientcontroller.prototype.renderHistory = function (state) {
 
 Clientcontroller.prototype.viewingHistory = function () {
 	var self = this;
-	return self._historyIndex < (self._history.length()-1);
+	return self._viewingHistory;
 };
 
 });

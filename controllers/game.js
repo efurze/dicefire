@@ -11,13 +11,27 @@ module.exports = {
 			gameId: uuid.v1()
 		});	    
 	},
+	
+	setup: function(req, res) {
+		res.render("setup", {
+			title: "Dicefice - New Game",
+			scripts: [
+				{ path: "/js/controllers/setupcontroller.js"},
+				{ path: "/node-uuid/uuid.js" },
+				{ path: "/js/app/creategame.js"}
+			]
+		})
+	},
 
+	
 	client: function(req, res) { 
+		var gameId = req.query['gameId'];
 		res.render("client", {
 			title: "Dicefire Client", 
-			gameId: uuid.v1(),
+			gameId: gameId,
 			scripts: [
 				{ path: "/js/controllers/clientcontroller.js" },
+				{ path: "/js/util/downloader.js" },
 				{ path: "/js/app/client.js" }
 			]
 		});
@@ -102,11 +116,14 @@ module.exports = {
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
 		var resultsData = JSON.stringify(req.body);
-		console.log("UploadResults for gameId " + gameId);
+		console.log("UploadGameInfo for gameId " + gameId);
 		var filename = gameId + "/game.json";
 
 		redisClient.set(filename, resultsData, function(err, reply) {
 			res.status(200).send("{}");
+			if (err) {
+				console.log("ERROR saving gameInfo to Redis:", err);
+			}
 		});
 	},
 
@@ -151,25 +168,31 @@ module.exports = {
 	getState: function(req, res) {
 		var gameId = req.query['gameId'];
 		var moveId = req.query['moveId'];
+		
+		var filename =  gameId + '/state_' + moveId + '.json';
+		redisClient.get(filename, function(err, data) {
+			if (!data) {
+				res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
+			} else {
+				res.send({'data': data, 'id': moveId});
+			}
+		});
+	
+	},
+	
+	getStateCount: function(req, res) {
+		var gameId = req.query['gameId'];
 
 		redisClient.keys(gameId + '*', function(err, reply) {
 			var filenames = reply;
 			console.log(filenames);
-			var moveCount = filenames.filter(function(name) {
+			var stateCount = filenames.filter(function(name) {
 				return (name.indexOf("state_") != -1);
 			}).length;
-				
-			var filename =  gameId + '/state_' + moveId + '.json';
-			redisClient.get(filename, function(err, data) {
-				if (!data) {
-					res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
-				} else {
-					res.send({'data': data, 'moveCount': moveCount});
-				}
-			});
+
+			res.send({'stateCount': stateCount});
 
 		});
-
 	}
 
 };
