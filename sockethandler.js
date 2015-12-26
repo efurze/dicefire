@@ -1,5 +1,7 @@
 "use strict"
 
+var GAME_LINGER_TIMEOUT = 100000000; // milliseconds
+
 
 var redis = require('redis');
 var redisClient = redis.createClient();
@@ -63,6 +65,7 @@ var Session = function(gameId, namespace) {
 	self._expectedHumans = 0;
 	self._currentHumans = 0;
 	self._started = false;
+	self._watchdogTimerId = -1;
 	
 	// get the game info
 	redisClient.get(gameId+"/game.json", function(err, data) {
@@ -116,6 +119,11 @@ Session.prototype.connect = function(socket) {
 	socket.on('end_turn', this.endTurn.bind(this));
 	socket.on('attack', this.attack.bind(this));
 	
+	if (self._watchdogTimerId >= 0) {
+		clearTimeout(self._watchdogTimerId);
+	}
+	self._watchdogTimerId = -1;
+	
 	socket.emit("map");
 	if (self._currentHumans == self._expectedHumans && !self._started) {
 		// everyone's here, start the game!
@@ -132,8 +140,12 @@ Session.prototype.disconnect = function(socket) {
 	Globals.debug('Socket id' + socket.id + 'disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	
 	if (self._connectionCount == 0) {
-		Globals.debug('No active connections, cleaning up game', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
-		SocketHandler.removeGame(self._gameId);
+		Globals.debug('No active connections, starting linger timer', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+		self._watchdogTimerId = setTimeout(function() {
+			Globals.debug('Timeout expired, cleaning up game', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+			SocketHandler.removeGame(self._gameId);
+			self._watchdogTimerId = -1;
+		}, GAME_LINGER_TIMEOUT);
 	}
 };
 
