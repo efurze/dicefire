@@ -4,10 +4,10 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 var AIInterface = function(aiwrapper) {
-	var engine = aiwrapper._engine;
+	var controller = aiwrapper._controller;
 	return {
-		adjacentCountries: function(countryId) { return engine.map().adjacentCountries(countryId);},
-		getState: function() { return engine.getState(); },
+		adjacentCountries: function(countryId) { return controller.map().adjacentCountries(countryId);},
+		getState: function() { return controller.getState(); },
 		attack: function(fromCountryId, toCountryId, callback) { 	
 			aiwrapper.attack(fromCountryId, toCountryId, callback);
 		},
@@ -17,26 +17,38 @@ var AIInterface = function(aiwrapper) {
 	};
 };
 
+var ControllerInterface = {
+	getMap: function(){},
+	getState: function(){},
+	endTurn: function(){},
+	attack: function(from, to, callback){} // callback: function(success){}
+};
+
 //--------------------------------------------------------------------------------------
-//	AIWrapper
+//	AIWrapper - implements Engine::PlayerInterface
+// 
+// @controller: must implement ControllerInterface above
 //--------------------------------------------------------------------------------------
-var AIWrapper = function(ai, engine, playerId, trusted) {
+var AIWrapper = function(ai, controller, playerId, trusted) {
 	this._trusted = (typeof trusted == undefined) ? false : trusted;
 	this._isMyTurn = false;
-	this._engine = engine;
+	this._controller = controller
 	
 	if (this._trusted) {
 		this._ai = ai.create(playerId);
 	} else {
 		this._worker = new Worker("/js/game/aiworker.js");
 		this._worker.onmessage = this.callback.bind(this);
-		this._worker.postMessage({command: 'init', adjacencyList: engine.map().adjacencyList(), ai: ai.getName(), playerId: playerId});
+		this._worker.postMessage({command: 'init', adjacencyList: this._controller.getMap().adjacencyList(), ai: ai.getName(), playerId: playerId});
 	}
 };
 
-
 AIWrapper.prototype.getAI = function() {
 	return this._ai;
+};
+
+AIWrapper.prototype.isHuman = function() {
+	return false;
 };
 
 // from engine
@@ -63,7 +75,7 @@ AIWrapper.prototype.attackDone = function(success) {
 	if (this._trusted) {
 		this._aiCallback(success);
 	} else {
-		this._worker.postMessage({command: 'attackResult', result: success, state: this._engine.getState().serialize()})
+		this._worker.postMessage({command: 'attackResult', result: success, state: this._getState().serialize()})
 	}
 };
 
@@ -81,13 +93,13 @@ AIWrapper.prototype.loses = function() {
 AIWrapper.prototype.endTurn = function() {
 	Globals.ASSERT(this._isMyTurn);
 	this._isMyTurn = false;
-	this._engine.endTurn();
+	this._controller.endTurn();
 };
 
 // from AI
 AIWrapper.prototype.attack = function(from, to, callback) {
 	this._aiCallback = callback;
-	this._engine.attack(this._engine.map().getCountry(from), this._engine.map().getCountry(to), this.attackDone.bind(this));
+	this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
 }
 
 // from AIWorker
@@ -99,11 +111,11 @@ AIWrapper.prototype.callback = function(e) {
 		case 'attack':
 			var from = parseInt(data.from);
 			var to = parseInt(data.to);
-			this._engine.attack(this._engine.map().getCountry(from), this._engine.map().getCountry(to), this.attackDone.bind(this));
+			this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
 			break;
 		case 'endTurn':
 			this._isMyTurn = false;
-			this._engine.endTurn();
+			this._controller.endTurn();
 			break;
 	}
 };

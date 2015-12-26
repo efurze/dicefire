@@ -9,6 +9,14 @@ if (typeof module !== 'undefined' && module.exports) {
 	var AIWrapper = require('./aiwrapper.js');
 }
 
+var PlayerInterface = {
+	getAI: function(){return null;},
+	isHuman: function(){return true;},
+	stop: function(){},
+	startTurn: function(){},
+	attackDone: function(success){},
+	loses: function(){}
+};
 
 var Engine = function(trusted) {
 	this._trusted = (typeof trusted == 'undefined') ? true : trusted;
@@ -38,10 +46,18 @@ Engine.prototype.setCurrentPlayer = function(id) {
 	this._currentPlayerId = id;
 };
 
+// @playerCode = EITHER array[string] of player names OR array[object] of PlayerWrappers
 // @callback = function(winningAI, winningID), called when game is over
 Engine.prototype.init = function(playerCode, callback) {
 	console.time("DICEFIRE");
 	var self = this;
+	
+	if (typeof playerCode !== 'undefined') {
+		if (typeof playerCode == 'function') {
+			callback = playerCode;
+			playerCode = null;
+		}
+	}
 	
 	self._history = [];
 	self.setCurrentPlayer(0);
@@ -59,8 +75,14 @@ Engine.prototype.init = function(playerCode, callback) {
 	self._AIs.length = playerCode.length;
 	
 	self._players = [];
-	for (var i=0; i < playerCode.length; i++) {
-		self._players.push(new Player(i));
+	if (playerCode) {
+		for (var i=0; i < playerCode.length; i++) {
+			self._players.push(new Player(i));
+			if (typeof playerCode[i] == 'object') {
+				// it's a PlayerInterface
+				self._AIs[i] = playerCode[i];
+			}
+		}
 	}
 	
 	self._initialized = true;	
@@ -71,6 +93,7 @@ Engine.prototype.registerStateCallback = function(cb) {
 	this._stateCallback = cb;
 };
 
+// @AIs (optional): array of AIWrapper
 Engine.prototype.setup = function(initialMap, initialState) {
 	var self = this;
 	
@@ -86,18 +109,19 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	
 	self._map.assignCountries(self._players);
 	
-	// initialize AIs
-	var isHumanList = self._playerCode.map(function(elem) { return elem == "human"; });
-	self._playerCode.forEach(function(elem, index) {
-		if (elem != "human") {
-			Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-			self._AIs[index] = new AIWrapper(elem, self, index, self._trusted);
-			Globals.debug(JSON.stringify(self._AIs[index].getAI()), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-		} else {
-			self._AIs[index] = "human";
-		}
-	});
-
+	if (typeof self._playerCode[0] == 'string') {
+		// initialize AIs
+		var isHumanList = self._playerCode.map(function(elem) { return elem == "human"; });
+		self._playerCode.forEach(function(elem, index) {
+			if (elem != "human") {
+				Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+				self._AIs[index] = new AIWrapper(elem, self, index, self._trusted);
+				Globals.debug(JSON.stringify(self._AIs[index].getAI()), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+			} else {
+				self._AIs[index] = PlayerInterface;
+			}
+		});
+	}
 	
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
@@ -162,7 +186,7 @@ Engine.prototype.addDiceToPlayer = function(player, num) {
 };
 
 Engine.prototype.isHuman = function(playerId) {
-	return this._AIs[playerId] == "human";
+	return this._AIs[playerId].isHuman();
 };
 
 Engine.prototype.startTurn = function(playerId, callback) {

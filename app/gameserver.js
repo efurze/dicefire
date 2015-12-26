@@ -50,11 +50,38 @@ var SocketHandler = function() {
 
 
 /*========================================================================================================================================*/
+// PlayerWrapper: implements Engine::PlayerInterface
+/*========================================================================================================================================*/
+var PlayerWrapper = function () {
+	this._socket = null;
+};
+
+PlayerWrapper.prototype.setSocket = function(socket) {this._socket = socket;};
+PlayerWrapper.prototype.hasSocket = function() {return (this._socket != null);};
+
+PlayerWrapper.prototype.getAI = function() {return null;};
+PlayerWrapper.prototype.isHuman = function() {return true;};
+PlayerWrapper.prototype.stop = function() {
+	
+};
+PlayerWrapper.prototype.startTurn = function() {
+	
+};
+PlayerWrapper.prototype.attackDone = function(success) {
+	
+};
+PlayerWrapper.prototype.loses = function() {
+	
+};
+
+
+/*========================================================================================================================================*/
 
 var Engine = require('../public/js/game/engine.js');
 var Plyer = require('../public/js/ai/plyer.js');
 var Greedy = require('../public/js/ai/greedy.js');
 var Aggressive = require('../public/js/ai/aggressive.js');
+var AIWrapper = require('../public/js/game/aiwrapper.js');
 var AIs = [
 	Plyer,
 	Greedy,
@@ -74,7 +101,7 @@ var GameServer = function(gameId, namespace) {
 	self._ns = namespace;
 	self._sockets = {};
 	self._gameInfo = null;
-	self._playerMap = {}; // playerID to socketID
+	self._playerMap = {}; // playerID to PlayerInterface
 	self._connectionCount = 0;
 	self._expectedHumans = 0;
 	self._currentHumans = 0;
@@ -89,18 +116,29 @@ var GameServer = function(gameId, namespace) {
 			} else {
 				Globals.debug("Got game info: " + data, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 				self._gameInfo = JSON.parse(data);
-				// initialize the game engine
+				
 				self._engine = new Engine();
-				self._engine.init(self._gameInfo['players'].map(function(playerName) {
+				
+				//initialize the AIs
+				var players = [];
+				self._gameInfo['players'].forEach(function(playerName, id) {
 					if (playerName === "human") {
 						self._expectedHumans ++;
-						return playerName;
+						var pw = new PlayerWrapper();
+						players.push(pw);
+						self._playerMap[id] = pw;
 					} else if (AIMap.hasOwnProperty(playerName)) {
-						return AIMap[playerName];
+						var ai = new AIWrapper(AIMap[playerName], self._engine, id, true);
+						players.push(ai);
+						self._playerMap[id] = ai;
 					} else {
-						return null;
+						Globals.debug("Unexpected player name:", playerName, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 					}
-				}));
+				});
+				
+				
+				// initialize the game engine
+				self._engine.init(players);
 				self._engine.setup();
 
 				// push the map data to redis
@@ -142,8 +180,8 @@ GameServer.prototype.connect = function(socket) {
 	// find a slot for this player
 	var id = 0;
 	for (var i=0; i < self._gameInfo.players.length; i++) {
-		if (self._gameInfo.players[i] == 'human' && !self._playerMap.hasOwnProperty(i)) {
-			self._playerMap[i] = socket.id;
+		if (self._playerMap[i].isHuman() && !self._playerMap[i].hasSocket()) {
+			self._playerMap[i].setSocket(socket.id);
 			id = i;
 			break;
 		}
@@ -162,7 +200,7 @@ GameServer.prototype.disconnect = function(socket) {
 	self._connectionCount --;
 	self._currentHumans --;
 	
-	Globals.debug('Socket ' + JSON.stringify(socket) + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	Globals.debug('Socket ' + socket.id + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	
 	if (self._connectionCount == 0) {
 		Globals.debug('No active connections, starting linger timer', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
