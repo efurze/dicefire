@@ -46,6 +46,8 @@ var AIs = [
 	Aggressive
 ];
 var AIMap = {};
+
+// initialize the AI name-to-class mapping
 AIs.forEach(function(ai) {
 	AIMap[ai.getName()] = ai;
 });
@@ -163,6 +165,7 @@ Session.prototype.attack = function(data) {
 		var self = this;
 		console.log("attack from ", data.from, "to", data.to);
 		self._engine.attack(parseInt(data.from), parseInt(data.to), function (success) {
+			console.log("sending attack result, success:", success);
 			self._ns.emit("attack_result", {result: success});
 		});
 	} catch (err) {
@@ -186,6 +189,7 @@ Session.prototype.engineUpdate = function(gamestate, stateId) {
 			if (err) {
 				console.log("ERROR saving engine state to Redis:", err);
 			} else {
+				console.log("sending state update, stateId", stateId);
 				self._ns.emit("state", stateId);
 			}
 		});

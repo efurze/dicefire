@@ -3,6 +3,7 @@
 
 $(function() {
 
+	// @callback: function()
 	var History = function(gameId, callback) {
 		this._array = [];
 		this._gameId = gameId;
@@ -10,7 +11,7 @@ $(function() {
 		this._downloader = new Downloader;
 		this._stateCount = 0;
 	};
-	
+		
 	History.prototype.fetchHistory = function() {
 		this._downloader.getStateCount(this._gameId, this.gotStateCount.bind(this));
 	};
@@ -38,9 +39,11 @@ $(function() {
 	History.prototype.gotState = function(success, data) {
 		if (success) {
 			var gamestate = Gamestate.deserialize(JSON.parse(data.data));
-			var id = parseInt(data.id);
+			var id = parseInt(data.id); // 0-based. First state is state 0.
 			Globals.ASSERT(id == this._array.length);
 			this._array.push(gamestate);
+			
+			Globals.debug("Downloaded state", id, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			
 			var current = this._array.length;
 			if (current < this._stateCount) {
@@ -183,6 +186,10 @@ $(function() {
 				
 				Globals.debug("Got state data", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 				
+				if (!Client.upToDate()) {
+					Client.redraw(Client._lastRenderedState + 1);
+				}
+				
 				if (Client._controller) {
 					Client._controller.update();
 				}
@@ -214,15 +221,18 @@ $(function() {
 		},
 
 		// push notification from server that a new state is available
+		// @stateId: 0-based counter. First state is 0.
 		engineUpdate: function(stateId) {
 			Globals.debug("Got state push from server for stateId " + stateId, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
-			Client._history.updateStateCount(stateId);
+			Client._history.updateStateCount(stateId+1);
 		},
 		
 		// from server
 		attackResult: function(data) {
 			// TODO: FIXME: Is this fxn necessary? I think we can just rely on the engineUpdate() event
 			if (Client._mcAttackCallback) {
+				// tell the map controller to reset its 'selected country' states 
+				// (and re-enable the 'end turn' button)
 				Client._mcAttackCallback(data.result);
 			}
 		},
