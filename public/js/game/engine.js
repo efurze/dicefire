@@ -287,7 +287,11 @@ Engine.prototype.finishAttack = function(attack) {
 	var self = this;
 	
 	if (self._watchdogTimerID >= 0) {
-		window.clearTimeout(self._watchdogTimerID);
+		if (typeof module !== 'undefined' && module.exports) {
+			clearTimeout(self._watchdogTimerID);
+		} else {
+			window.clearTimeout(self._watchdogTimerID);
+		}
 	}
 	self._watchdogTimerID = -1;
 	
