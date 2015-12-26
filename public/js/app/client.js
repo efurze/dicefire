@@ -85,6 +85,19 @@ $(function() {
 		return this._array[this._array.length-1].currentPlayerId();
 	};
 
+	/*========================================================================================================================================*/
+	// initialize the AI name-to-class mapping
+	var AIs = [
+		AI.Plyer,
+		AI.Greedy,
+		AI.Aggressive
+	];
+	var AIMap = {};
+	AIs.forEach(function(ai) {
+		AIMap[ai.getName()] = ai;
+	});
+	
+	/*========================================================================================================================================*/
 	
 	window.Client = {
 		
@@ -98,10 +111,12 @@ $(function() {
 		_socket: null,
 		_map: null,
 		_isAttacking: false,
-		_mcAttackCallback: null,
-		_lastRenderedState: -1,
+		_attackCallback: null,
+		_currentState: -1,
+		_currentPlayer: -1,
 		_playerNames: [],
 		_started: false,
+		_bots: {}, // map from playerId to AIWrapper
 		
 		MODES: {PLAY: 1, WATCH:2},
 		_mode: 0,
@@ -139,6 +154,7 @@ $(function() {
 					Client._socket.on('attack_result', Client.attackResult);
 					Client._socket.on('error', Client.socketError);
 					Client._socket.on('state', Client.engineUpdate);
+					Client._socket.on('create_bot', Client.createBot);
 				}
 				
 				// request the map
@@ -183,13 +199,15 @@ $(function() {
 			if (Client._history.length() > 0) {
 				if (!Client._started) {
 					Client.start();
-					Client.redraw(Client._history.length()-1);
+					// this will coerce processNextState to handle the most recent state
+					Client._currentState = Client._history.length()-2;
+					Client.processNextState();
 				}
 				
 				Globals.debug("Got state data", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 				
 				if (!Client.upToDate()) {
-					Client.redraw(Client._lastRenderedState + 1);
+					Client.processNextState();
 				}
 				
 				if (Client._controller) {
@@ -203,7 +221,12 @@ $(function() {
 			$('#game').css('display', 'block');
 			
 			Globals.ASSERT(Client._playerId >= 0);
-			Client._controller = new Clientcontroller(Client._history, Client._playerId, Client.endTurn);
+			Client._controller = new Clientcontroller(Client._history, Client._playerId, Client.endTurnClicked);
+			
+			// startup the AIs
+			Object.keys(Client._bots).forEach(function(id) {
+				Client._bots[id].start();
+			});
 			
 			if (Client._mode == Client.MODES.PLAY) {
 				$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
@@ -215,7 +238,7 @@ $(function() {
 		},
 		
 		upToDate: function() {
-			return (Client._lastRenderedState == (Client._history.length()-1));
+			return (Client._currentState == (Client._history.length()-1));
 		},
 		
 		// push notification from server that the map is available
@@ -239,25 +262,44 @@ $(function() {
 		},
 		
 		// from server
+		// @data: {result: [true | false]}
 		attackResult: function(data) {
 			// TODO: FIXME: Is this fxn necessary? I think we can just rely on the engineUpdate() event
-			if (Client._mcAttackCallback) {
+			if (Client._attackCallback) {
 				// tell the map controller to reset its 'selected country' states 
 				// (and re-enable the 'end turn' button)
-				Client._mcAttackCallback(data.result);
+				Client._attackCallback(data.result);
+			}
+		},
+		
+		// from server
+		// @data: {name: AI.getName(), playerId: <int>}
+		createBot: function(data) {
+			var aiName = data['name'];
+			if (AIMap.hasOwnProperty(aiName)) {
+				var id = parseInt(data['playerId']);
+				Globals.debug("Initializing new bot", aiName, "with playerId:", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+				if (!Client._bots.hasOwnProperty(id)) {
+					Client._bots[id] = new AIWrapper(AIMap[aiName], Client, id, false);
+				} else {
+					Globals.debug("Already have a player", id, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+				}
+				
+			} else {
+				Globals.debug("Unknown AI requested:", aiName, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
 			}
 		},
 		
 		// from mapController
 		mapUpdate: function() {
 			if (!Client._controller.viewingHistory() && !Client._isAttacking && Client.upToDate()) {
-				Client.redraw(Client._lastRenderedState);
+				Client.redraw();
 			}
 		},
 		
 		// from controller
-		endTurn: function() {
-			Client._socket.emit("end_turn", {playerId: 0});
+		endTurnClicked: function() {
+			Client._socket.emit("end_turn", {playerId: Client._currentPlayer});
 		},
 		
 		// from renderer
@@ -266,12 +308,31 @@ $(function() {
 			Client._isAttacking = false;
 			Client._controller.setIsAttacking(false);
 			if (!Client.upToDate()) {
-				Client.redraw(Client._lastRenderedState + 1);
+				Client.processNextState();
 			}
 		},
 		
+		processNextState: function() {
+			if (Client._currentState < 0) {
+				Client._currentState = 0;
+			} else if (Client._currentState < (Client._history.length() - 1)){
+				Client._currentState ++;
+			}
+			
+			var state = Client._history.getState(Client._currentState);
+			if (state.currentPlayerId() != Client._currentPlayer) {
+				Client._currentPlayer = state.currentPlayerId();
+				if (Client._bots.hasOwnProperty(Client._currentPlayer)) {
+					// this is the equivalent of Engine::startTurn(). It prompts the bot
+					// to begin its turn
+					Client._bots[Client._currentPlayer].startTurn(state);
+				}
+			}
+			
+			Client.redraw();
+		},
 		
-		redraw: function(stateNum) {
+		redraw: function() {
 			
 			// only render if we're not currently in the process of animating
 			// some previous attack
@@ -281,7 +342,7 @@ $(function() {
 				return;
 			}
 			
-			var gamestate = Client._history.getState(stateNum);
+			var gamestate = Client._history.getState(Client._currentState);
 			if (gamestate) {
 				if (gamestate.attack()) {
 					Client._isAttacking = true;
@@ -292,16 +353,16 @@ $(function() {
 					Client._map.setState(gamestate);
 				}
 				
-				Client._lastRenderedState = stateNum;
-				Globals.debug("Rendering state", stateNum, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+				Globals.debug("Rendering state", Client._currentState, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 				Renderer.render(gamestate, Client.renderAttackDone);
 				if (Client._controller) {
 					Client._controller.update();
 				}
 				
 				if (!Client._isAttacking && !Client.upToDate()) {
+					// TODO: FIXME: is there a race here with socket state updates?
 					window.setTimeout(function() {
-						Client.redraw(Client._lastRenderedState + 1);
+						Client.processNextState();
 					}, 0);
 				}
 			}
@@ -311,6 +372,29 @@ $(function() {
 			Globals.debug("Socket ERROR:", err, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 		},
 		
+		/*========================================================================================================================================*/
+		// Implementing the AIController interface
+		/*========================================================================================================================================*/
+		map: function() {
+			return Client._map;
+		},
+		
+		getState: function() {
+			return Client._history.getState(Client._currentState);
+		},
+		
+		endTurn: function(){
+			Client.endTurnClicked();
+		},
+		
+		// @callback: function(success){}
+		attack: function(from, to, callback){
+			Client._attackCallback = callback;
+			Client._socket.emit('attack', {from: from.id(), to: to.id()});
+		}, 
+		/*========================================================================================================================================*/
+		
+		
 		// So the MapController can call back into us
 		mapConInterface: {
 			currentPlayerId: function() {
@@ -319,7 +403,7 @@ $(function() {
 			},
 			
 			attack: function(from, to, callback) {
-				Client._mcAttackCallback = callback;
+				Client._attackCallback = callback;
 				Client._socket.emit('attack', {from: from.id(), to: to.id()});
 			},
 			

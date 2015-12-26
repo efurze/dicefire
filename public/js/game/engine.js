@@ -10,8 +10,9 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 var PlayerInterface = {
-	getAI: function(){return null;},
+	getName: function(){return "human";},
 	isHuman: function(){return true;},
+	start: function(){},
 	stop: function(){},
 	startTurn: function(){},
 	attackDone: function(success){},
@@ -116,12 +117,16 @@ Engine.prototype.setup = function(initialMap, initialState) {
 			if (elem != "human") {
 				Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 				self._AIs[index] = new AIWrapper(elem, self, index, self._trusted);
-				Globals.debug(JSON.stringify(self._AIs[index].getAI()), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+				self._AIs[index].start();
 			} else {
 				self._AIs[index] = PlayerInterface;
 			}
 		});
 	}
+	
+	//self._AIs.forEach(function(ai) {
+	//	Globals.ASSERT(Globals.implements(ai, PlayerInterface));
+	//});
 	
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
@@ -384,7 +389,7 @@ Engine.prototype.gameOver = function(winner) {
 		});
 	
 		if (self._gameCallback) {
-			self._gameCallback(self._AIs[winner.id()].getAI(), winner.id());
+			self._gameCallback(self._AIs[winner.id()].getName(), winner.id());
 		}
 	}
 };

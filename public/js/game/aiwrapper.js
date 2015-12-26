@@ -18,7 +18,7 @@ var AIInterface = function(aiwrapper) {
 };
 
 var ControllerInterface = {
-	getMap: function(){},
+	map: function(){},
 	getState: function(){},
 	endTurn: function(){},
 	attack: function(from, to, callback){} // callback: function(success){}
@@ -30,25 +30,33 @@ var ControllerInterface = {
 // @controller: must implement ControllerInterface above
 //--------------------------------------------------------------------------------------
 var AIWrapper = function(ai, controller, playerId, trusted) {
+	Globals.ASSERT(Globals.implements(controller, ControllerInterface));
 	this._trusted = (typeof trusted == undefined) ? false : trusted;
 	this._isMyTurn = false;
-	this._controller = controller
+	this._controller = controller;
+	this._name = ai.getName();
+	this._id = playerId;
 	
 	if (this._trusted) {
 		this._ai = ai.create(playerId);
-	} else {
-		this._worker = new Worker("/js/game/aiworker.js");
-		this._worker.onmessage = this.callback.bind(this);
-		this._worker.postMessage({command: 'init', adjacencyList: this._controller.getMap().adjacencyList(), ai: ai.getName(), playerId: playerId});
 	}
 };
 
-AIWrapper.prototype.getAI = function() {
-	return this._ai;
+AIWrapper.prototype.getName = function() {
+	return this._name;
 };
 
 AIWrapper.prototype.isHuman = function() {
 	return false;
+};
+
+// from engine
+AIWrapper.prototype.start = function() {
+	if (!this._trusted) {
+		this._worker = new Worker("/js/game/aiworker.js");
+		this._worker.onmessage = this.callback.bind(this);
+		this._worker.postMessage({command: 'init', adjacencyList: this._controller.map().adjacencyList(), ai: this._name, playerId: this._id});
+	}
 };
 
 // from engine
@@ -75,7 +83,7 @@ AIWrapper.prototype.attackDone = function(success) {
 	if (this._trusted) {
 		this._aiCallback(success);
 	} else {
-		this._worker.postMessage({command: 'attackResult', result: success, state: this._getState().serialize()})
+		this._worker.postMessage({command: 'attackResult', result: success, state: this._controller.getState().serialize()})
 	}
 };
 

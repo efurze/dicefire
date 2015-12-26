@@ -23,6 +23,7 @@ var SocketHandler = function() {
 		createGame: function(req, res) {
 			var gameId = req.query['gameId'];
 			var resultsData = req.body;
+			// randomize the player order
 			resultsData.players = Globals.shuffleArray(resultsData.players);
 			Globals.debug("Create game", gameId, resultsData, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 			var filename = gameId + "/game.json";
@@ -52,27 +53,43 @@ var SocketHandler = function() {
 /*========================================================================================================================================*/
 // PlayerWrapper: implements Engine::PlayerInterface
 /*========================================================================================================================================*/
-var PlayerWrapper = function () {
+var PlayerWrapper = function (id) {
 	this._socket = null;
+	this._id = id;
 };
 
+PlayerWrapper.prototype.id = function() {return this._id};
 PlayerWrapper.prototype.setSocket = function(socket) {this._socket = socket;};
 PlayerWrapper.prototype.hasSocket = function() {return (this._socket != null);};
+PlayerWrapper.prototype.socket = function() {return this._socket;};
 
-PlayerWrapper.prototype.getAI = function() {return null;};
+PlayerWrapper.prototype.getName = function() {return "human";};
 PlayerWrapper.prototype.isHuman = function() {return true;};
-PlayerWrapper.prototype.stop = function() {
-	
+PlayerWrapper.prototype.stop = function() {};
+PlayerWrapper.prototype.startTurn = function() {};
+PlayerWrapper.prototype.attackDone = function(success) {};
+PlayerWrapper.prototype.loses = function() {};
+
+/*========================================================================================================================================*/
+// AISocketWrapper: implements Engine::PlayerInterface
+/*========================================================================================================================================*/
+var AISocketWrapper = function (AI, id) {
+	this._socket = null;
+	this._name = AI.getName();
+	this._id = id;
 };
-PlayerWrapper.prototype.startTurn = function() {
-	
-};
-PlayerWrapper.prototype.attackDone = function(success) {
-	
-};
-PlayerWrapper.prototype.loses = function() {
-	
-};
+
+AISocketWrapper.prototype.id = function() {return this._id};
+AISocketWrapper.prototype.setSocket = function(socket) {this._socket = socket;};
+AISocketWrapper.prototype.hasSocket = function() {return (this._socket != null);};
+AISocketWrapper.prototype.socket = function() {return this._socket;};
+
+AISocketWrapper.prototype.getName = function() {return this._name;};
+AISocketWrapper.prototype.isHuman = function() {return false;};
+AISocketWrapper.prototype.stop = function() {};
+AISocketWrapper.prototype.startTurn = function() {};
+AISocketWrapper.prototype.attackDone = function(success) {};
+AISocketWrapper.prototype.loses = function() {};
 
 
 /*========================================================================================================================================*/
@@ -101,7 +118,7 @@ var GameServer = function(gameId, namespace) {
 	self._ns = namespace;
 	self._sockets = {};
 	self._gameInfo = null;
-	self._playerMap = {}; // playerID to PlayerInterface
+	self._playerMap = []; // array of PlayerInterface
 	self._connectionCount = 0;
 	self._expectedHumans = 0;
 	self._currentHumans = 0;
@@ -124,17 +141,23 @@ var GameServer = function(gameId, namespace) {
 				self._gameInfo['players'].forEach(function(playerName, id) {
 					if (playerName === "human") {
 						self._expectedHumans ++;
-						var pw = new PlayerWrapper();
+						var pw = new PlayerWrapper(id);
+						Globals.debug("Inserted human at position " + pw.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 						players.push(pw);
-						self._playerMap[id] = pw;
+						self._playerMap.push(pw);
 					} else if (AIMap.hasOwnProperty(playerName)) {
-						var ai = new AIWrapper(AIMap[playerName], self._engine, id, true);
+						var ai = new AISocketWrapper(AIMap[playerName], id);
 						players.push(ai);
-						self._playerMap[id] = ai;
+						self._playerMap.push(ai);
 					} else {
 						Globals.debug("Unexpected player name:", playerName, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 					}
 				});
+				
+				Globals.debug("Players for game " + gameId + ":", Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+				Object.keys(self._playerMap).forEach(function(id) {
+					Globals.debug(JSON.stringify(self._playerMap[id]), Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+				})
 				
 				
 				// initialize the game engine
@@ -181,7 +204,8 @@ GameServer.prototype.connect = function(socket) {
 	var id = 0;
 	for (var i=0; i < self._gameInfo.players.length; i++) {
 		if (self._playerMap[i].isHuman() && !self._playerMap[i].hasSocket()) {
-			self._playerMap[i].setSocket(socket.id);
+			Globals.debug('Assigning socket ' + socket.id + ' to player ' + i, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+			self._playerMap[i].setSocket(socket);
 			id = i;
 			break;
 		}
@@ -190,8 +214,7 @@ GameServer.prototype.connect = function(socket) {
 	socket.emit("map", {playerId: id});
 	if (self._currentHumans == self._expectedHumans && !self._started) {
 		// everyone's here, start the game!
-		self._started = true;
-		self._engine.startTurn(0);
+		self.startGame();
 	}
 };
 
@@ -210,6 +233,44 @@ GameServer.prototype.disconnect = function(socket) {
 			self._watchdogTimerId = -1;
 		}, GAME_LINGER_TIMEOUT);
 	}
+};
+
+GameServer.prototype.startGame = function() {
+	var self = this;
+	
+	// farm out the AIs to various players
+	var bots = self._playerMap.filter(function(player, id) {
+		return !player.isHuman();
+	});
+	
+	bots.forEach(function(bot) {
+		Globals.ASSERT(bot instanceof AISocketWrapper);
+		if (!bot.hasSocket()) {
+			self.assignBot(bot)
+		}
+	});
+	
+	self._started = true;
+	self._engine.startTurn(0);
+};
+
+// @bot: AISocketWrapper
+GameServer.prototype.assignBot = function(bot, player) {
+	var self = this;
+	var humans = [];
+	Object.keys(self._playerMap).forEach(function(id) {
+		var player = self._playerMap[id];
+		if (player.isHuman()) {
+			humans.push(player);
+		}
+	});
+
+	// randomly pick a player to assign it to
+	var index = Math.round(Math.random() * (humans.length - 1));
+	var human = humans[index];
+	Globals.ASSERT(human instanceof PlayerWrapper);
+	Globals.debug('Assigning Bot ' + bot.getName() + ' at position ' + bot.id() + ' to player ' + human.id(), Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	human.socket().emit('create_bot', {name: bot.getName(), playerId: bot.id()});
 };
 
 GameServer.prototype.close = function() {
@@ -270,6 +331,7 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 				Globals.debug("ERROR saving engine state to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 			} else {
 				Globals.debug("sending state update, stateId", stateId, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+				// brodcast to all
 				self._ns.emit("state", stateId);
 			}
 		});

@@ -117,6 +117,17 @@ Globals.shuffleArray = function(inArray) {
     return array;
 };
 
+Globals.implements = function(obj, iface) {
+	for (var func in iface) {
+		if (typeof iface[func] === 'function') {
+			if ((!obj.hasOwnProperty(func) && !obj.__proto__.hasOwnProperty(func)) || typeof obj[func] !== 'function') {
+				return false;
+			}
+		}
+	}
+	return true;
+};
+
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Globals;
