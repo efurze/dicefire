@@ -202,7 +202,11 @@ $(function() {
 			
 			Client._controller = new Clientcontroller(Client._history, Client.endTurn);
 			
-			$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
+			if (Client._mode == Client.MODES.PLAY) {
+				$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
+			} else {
+				$('#end_turn').css('display', 'none');
+			}
 			$('#back_btn').click(Client._controller.historyBack.bind(Client._controller));
 			$('#forward_btn').click(Client._controller.historyForward.bind(Client._controller));
 		},

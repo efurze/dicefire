@@ -29,6 +29,7 @@ module.exports = {
 		res.render("client", {
 			title: "Dicefire Client", 
 			gameId: gameId,
+			replay: false,
 			scripts: [
 				{ path: "/js/controllers/clientcontroller.js" },
 				{ path: "/js/util/downloader.js" },
@@ -92,13 +93,16 @@ module.exports = {
 
 	replay: function(req, res) { 
 		var gameId = req.query['gameId'];
-	    res.render("replay", {
-	    	'gameId' : gameId,
-	    	scripts: [
-	    		{ path: "/js/controllers/replaycontroller.js" },
-	    		{ path: "/js/app/replay.js" }
-	    	]
-	    });
+		res.render("client", {
+			title: "Dicefire Game Viewer", 
+			gameId: gameId,
+			replay: true,
+			scripts: [
+				{ path: "/js/controllers/clientcontroller.js" },
+				{ path: "/js/util/downloader.js" },
+				{ path: "/js/app/client.js" }
+			]
+		});
 	},
 
 
