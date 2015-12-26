@@ -5,32 +5,43 @@ var GAME_LINGER_TIMEOUT = 100000000; // milliseconds
 
 var redis = require('redis');
 var redisClient = redis.createClient();
-var Globals = require('./public/js/globals.js');
+var Globals = require('..//public/js/globals.js');
 
 var SocketHandler = function() {
 
 	var sio = require('socket.io');
 	var io = null;
-	var sessions = {};
+	var games = {};
 	
 	return {
 		
 		listen: function(app, port) {
 			var server = app.listen(port);
 			io = require('socket.io').listen(server);
-			
 		},
 		
-		create: function(gameId) {
-			Globals.debug("Listening for game " + gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
-			var socketNamespace = io.of("/" + gameId);
-			sessions[gameId] = new Session(gameId, socketNamespace);
+		createGame: function(req, res) {
+			var gameId = req.query['gameId'];
+			var resultsData = JSON.stringify(req.body);
+			Globals.debug("Create game", gameId, resultsData, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+			var filename = gameId + "/game.json";
+			redisClient.set(filename, resultsData, function(err, reply) {
+				if (err) {
+					Globals.debug("ERROR saving gameInfo to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
+					res.status(500).send(JSON.stringify({err: err}));
+				} else {
+					Globals.debug("Listening for game " + gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+					var socketNamespace = io.of("/" + gameId);
+					games[gameId] = new GameServer(gameId, socketNamespace);
+					res.status(200).send("{}");
+				}
+			});
 		},
 		
 		removeGame: function(gameId) {
-			if(sessions.hasOwnProperty(gameId)) {
-				sessions[gameId].close();
-				delete sessions[gameId];
+			if(games.hasOwnProperty(gameId)) {
+				games[gameId].close();
+				delete games[gameId];
 			}
 		}
 	};
@@ -39,10 +50,10 @@ var SocketHandler = function() {
 
 /*========================================================================================================================================*/
 
-var Engine = require('./public/js/game/engine.js');
-var Plyer = require('./public/js/ai/plyer.js');
-var Greedy = require('./public/js/ai/greedy.js');
-var Aggressive = require('./public/js/ai/aggressive.js');
+var Engine = require('../public/js/game/engine.js');
+var Plyer = require('../public/js/ai/plyer.js');
+var Greedy = require('../public/js/ai/greedy.js');
+var Aggressive = require('../public/js/ai/aggressive.js');
 var AIs = [
 	Plyer,
 	Greedy,
@@ -56,7 +67,7 @@ AIs.forEach(function(ai) {
 });
 AIMap["human"] = "human";
 
-var Session = function(gameId, namespace) {
+var GameServer = function(gameId, namespace) {
 	var self = this;
 	self._gameId = gameId;
 	self._ns = namespace;
@@ -108,7 +119,7 @@ var Session = function(gameId, namespace) {
 };
 
 
-Session.prototype.connect = function(socket) {
+GameServer.prototype.connect = function(socket) {
 	Globals.debug("Connected socket id " + socket.id + " for game " + this._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	var self = this;
 	self._sockets[socket.id] = socket;
@@ -132,7 +143,7 @@ Session.prototype.connect = function(socket) {
 	}
 };
 
-Session.prototype.disconnect = function(socket) {
+GameServer.prototype.disconnect = function(socket) {
 	var self = this;
 	self._connectionCount --;
 	self._currentHumans --;
@@ -149,9 +160,9 @@ Session.prototype.disconnect = function(socket) {
 	}
 };
 
-Session.prototype.close = function() {
+GameServer.prototype.close = function() {
 	var self = this;
-	Globals.debug('Session::close', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	Globals.debug('GameServer::close', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	self._engine.registerStateCallback(null);
 	
 	Object.keys(self._sockets).forEach(function(id) {
@@ -166,18 +177,18 @@ Session.prototype.close = function() {
 };
 
 // from socket
-Session.prototype.endTurn = function(data) {
+GameServer.prototype.endTurn = function(data) {
 	try {
 		Globals.debug("Player " + data.playerId + " ending turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 		var self = this;
 		self._engine.endTurn();
 	} catch (err) {
-		Globals.debug("Session::endTurn error", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
+		Globals.debug("GameServer::endTurn error", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 	}
 };
 
 // from socket
-Session.prototype.attack = function(data) {
+GameServer.prototype.attack = function(data) {
 	try {
 		var self = this;
 		Globals.debug("attack from ", data.from, "to", data.to, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
@@ -186,17 +197,17 @@ Session.prototype.attack = function(data) {
 			self._ns.emit("attack_result", {result: success});
 		});
 	} catch (err) {
-		Globals.debug("Session::attack error", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
+		Globals.debug("GameServer::attack error", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 	}
 };
 
 // from socket
-Session.prototype.socketError = function(err) {
+GameServer.prototype.socketError = function(err) {
 	Globals.debug("Socket error: " + err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 };
 
 // from engine
-Session.prototype.engineUpdate = function(gamestate, stateId) {
+GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 	Globals.debug("engineUpdate", stateId, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 	var self = this;
 	if (gamestate) {

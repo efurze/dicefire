@@ -22,9 +22,9 @@ var userController = require('./controllers/user');
 var gameController = require('./controllers/game');
 var submissionController = require('./controllers/submission');
 
-// Websockets
-var socketHandler = require('./sockethandler.js');
-socketHandler.listen(app, 5001);
+// Game Server
+var gameServer = require('./app/gameserver.js');
+gameServer.listen(app, 5001);
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -90,23 +90,7 @@ app.get('/getStateCount', gameController.getStateCount);
 app.get('/setup', gameController.setup);
 app.post('/submission', submissionController.submit);
 
-app.post('/createGame', function(req, res) {
-	var gameId = req.query['gameId'];
-	var resultsData = JSON.stringify(req.body);
-	console.log("Create game", gameId, resultsData);
-	var filename = gameId + "/game.json";
-	redisClient.set(filename, resultsData, function(err, reply) {
-		
-		if (err) {
-			console.log("ERROR saving gameInfo to Redis:", err);
-			res.status(500).send(JSON.stringify({err: err}));
-		} else {
-			console.log("Saved game info");
-			socketHandler.create(gameId);
-			res.status(200).send("{}");
-		}
-	});
-});
+app.post('/createGame', gameServer.createGame);
 
 
 // User account routes
