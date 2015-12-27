@@ -113,7 +113,6 @@ AIWrapper.prototype.attack = function(from, to, callback) {
 // from AIWorker
 AIWrapper.prototype.callback = function(e) {
 	Globals.ASSERT(this._isMyTurn);
-	console.log("Got message from worker", e);
 	var data = e.data;
 	switch (data.command) {
 		case 'attack':

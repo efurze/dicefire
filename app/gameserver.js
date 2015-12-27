@@ -91,7 +91,44 @@ AISocketWrapper.prototype.startTurn = function() {};
 AISocketWrapper.prototype.attackDone = function(success) {};
 AISocketWrapper.prototype.loses = function() {};
 
+/*========================================================================================================================================*/
+// SocketWrapper: wraps a Socket.IO socket
+/*========================================================================================================================================*/
+var SocketWrapper = function(socket) {
+	this._socket = socket;
+	this._id = socket.id;
+	this._callbacks = {};
+};
 
+SocketWrapper.prototype.id = function() {return this._id;}
+
+SocketWrapper.prototype.on = function(event, callback) {
+	var self = this;
+	self._socket.on(event, function() {
+		Globals.debug("Got socket event", event, JSON.stringify(arguments), self._id, Globals.LEVEL.TRACE, Globals.CHANNEL.SERVER);
+		var args = [];
+		args.push(self);
+		var count = Object.keys(arguments).length;
+		for (var i=0; i < count; i++) {
+			args.push(arguments[i]);
+		}
+		callback.apply(null, args);
+	});
+};
+
+SocketWrapper.prototype.emit = function(event, data) {
+	this._socket.emit(event, data);
+};
+
+SocketWrapper.prototype.disconnect = function() {
+	var self = this;
+	self._socket.disconnect();
+	delete self._socket;
+	self._socket = null;
+}
+
+/*========================================================================================================================================*/
+// GameServer - one of these for each active game
 /*========================================================================================================================================*/
 
 var Engine = require('../public/js/game/engine.js');
@@ -187,13 +224,14 @@ var GameServer = function(gameId, namespace) {
 GameServer.prototype.connect = function(socket) {
 	Globals.debug("Connected socket id " + socket.id + " for game " + this._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	var self = this;
-	self._sockets[socket.id] = socket;
+	var sock = new SocketWrapper(socket);
+	self._sockets[sock.id()] = sock;
 	self._connectionCount ++;
 	self._currentHumans ++;
-	socket.on('error', this.socketError.bind(this));
-	socket.on('disconnect', this.disconnect.bind(this));
-	socket.on('end_turn', this.endTurn.bind(this));
-	socket.on('attack', this.attack.bind(this));
+	sock.on('error', this.socketError.bind(this));
+	sock.on('disconnect', this.disconnect.bind(this));
+	sock.on('end_turn', this.endTurn.bind(this));
+	sock.on('attack', this.attack.bind(this));
 	
 	if (self._watchdogTimerId >= 0) {
 		clearTimeout(self._watchdogTimerId);
@@ -204,26 +242,26 @@ GameServer.prototype.connect = function(socket) {
 	var id = 0;
 	for (var i=0; i < self._gameInfo.players.length; i++) {
 		if (self._playerMap[i].isHuman() && !self._playerMap[i].hasSocket()) {
-			Globals.debug('Assigning socket ' + socket.id + ' to player ' + i, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
-			self._playerMap[i].setSocket(socket);
+			Globals.debug('Assigning socket ' + sock.id() + ' to player ' + i, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+			self._playerMap[i].setSocket(sock);
 			id = i;
 			break;
 		}
 	}
 	
-	socket.emit("map", {playerId: id});
+	sock.emit("map", {playerId: id});
 	if (self._currentHumans == self._expectedHumans && !self._started) {
 		// everyone's here, start the game!
 		self.startGame();
 	}
 };
 
-GameServer.prototype.disconnect = function(socket) {
+GameServer.prototype.disconnect = function(socketWrapper) {
 	var self = this;
 	self._connectionCount --;
 	self._currentHumans --;
 	
-	Globals.debug('Socket ' + socket.id + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	Globals.debug('Socket ' + socketWrapper.id() + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	
 	if (self._connectionCount == 0) {
 		Globals.debug('No active connections, starting linger timer', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
@@ -279,8 +317,9 @@ GameServer.prototype.close = function() {
 	self._engine.registerStateCallback(null);
 	
 	Object.keys(self._sockets).forEach(function(id) {
-		self._sockets[id].disconnect;
+		self._sockets[id].disconnect();
 		delete self._sockets[id];
+		self._sockets[id] = null;
 	});
 	
 	self._sockets.length = 0;
@@ -290,7 +329,7 @@ GameServer.prototype.close = function() {
 };
 
 // from socket
-GameServer.prototype.endTurn = function(data) {
+GameServer.prototype.endTurn = function(socketWrapper, data) {
 	try {
 		Globals.debug("Player " + data.playerId + " ending turn", Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 		var self = this;
@@ -301,10 +340,10 @@ GameServer.prototype.endTurn = function(data) {
 };
 
 // from socket
-GameServer.prototype.attack = function(data) {
+GameServer.prototype.attack = function(socketWrapper, data) {
 	try {
 		var self = this;
-		Globals.debug("attack from ", data.from, "to", data.to, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+		Globals.debug("Got attack msg", socketWrapper.id(), JSON.stringify(data), Globals.LEVEL.TRACE, Globals.CHANNEL.SERVER);
 		self._engine.attack(parseInt(data.from), parseInt(data.to), function (success) {
 			Globals.debug("sending attack result, success:", success, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 			self._ns.emit("attack_result", {result: success});
@@ -315,7 +354,7 @@ GameServer.prototype.attack = function(data) {
 };
 
 // from socket
-GameServer.prototype.socketError = function(err) {
+GameServer.prototype.socketError = function(socketWrapper, err) {
 	Globals.debug("Socket error: " + err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 };
 
