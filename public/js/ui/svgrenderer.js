@@ -3,6 +3,44 @@
 var SVG = false;
 
 $(function(){
+	
+	var Hexagon = function(upperLeft, color) {
+		this._color = color;
+		this._points = [];
+		this._edges = [];
+		this._edgeColor = "black";
+		
+		this._points.push([upperLeft[0] - Hex.FUDGE, upperLeft[1] - Hex.FUDGE, 0]);
+		this._points.push([upperLeft[0] + Hex.EDGE_LENGTH + Hex.FUDGE, upperLeft[1] - Hex.FUDGE, 0]); 
+		this._points.push([upperLeft[0] + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeft[1] + Hex.HEIGHT / 2, 0]);
+        this._points.push([upperLeft[0] + Hex.EDGE_LENGTH + Hex.FUDGE, upperLeft[1] + Hex.HEIGHT + Hex.FUDGE, 0]);
+        this._points.push([upperLeft[0] - Hex.FUDGE, upperLeft[1] + Hex.HEIGHT + Hex.FUDGE, 0]);
+        this._points.push([upperLeft[0] - Hex.EDGE_LENGTH / 2, upperLeft[1] + Hex.HEIGHT / 2, 0]);
+        this._points.push([upperLeft[0] - Hex.FUDGE, upperLeft[1] - Hex.FUDGE, 0]);
+	};
+
+	Hexagon.prototype.color = function() {
+		return this._color;
+	};
+	
+	Hexagon.prototype.points = function() {
+		return JSON.parse(JSON.stringify(this._points));
+	};
+	
+	Hexagon.prototype.setEdges = function(edges, color) {
+		this._edges = edges;
+		this._edgeColor = color;
+	};
+	
+	Hexagon.prototype.getEdges = function() {
+		return this._edges;
+	};
+	
+	Hexagon.prototype.edgeColor = function() {
+		return this._edgeColor;
+	};
+	
+	
 	window.SVGrenderer = {
 		
 		_svg: null,
@@ -29,6 +67,7 @@ $(function(){
 		_lastMouseY: -1,
 		_lastState: null,
 		_lastRenderTime: -1,
+		_mapGraph: [],
 		
 		init: function(playerCount, canvas, map, playerNames) {
 			if (!Globals.suppress_ui) {
@@ -41,10 +80,14 @@ $(function(){
 				this._context = canvas.getContext('2d');
 				
 				if (SVG) {
+					$('#canvas_div').css('display', 'none');
+					$('#svgcanvas').css('display', 'block');
 					$('#svgcanvas').on('mousedown', SVGrenderer.mouseDown.bind(this));
 					$('#svgcanvas').on('mouseup', SVGrenderer.mouseUp.bind(this));
 					$('#svgcanvas').on('mousemove', SVGrenderer.mouseMove.bind(this));
 				} else {
+					$('#svgcanvas').css('display', 'none');
+					$('#canvas_div').css('display', 'block');
 					$('#c').on('mousedown', SVGrenderer.mouseDown.bind(this));
 					$('#c').on('mouseup', SVGrenderer.mouseUp.bind(this));
 					$('#c').on('mousemove', SVGrenderer.mouseMove.bind(this));
@@ -84,6 +127,8 @@ $(function(){
 		
 		mouseUp: function() {
 			this._mouseDown = false;
+			this._lastMouseX = -1;
+			this._lastMouseY = -1;
 		},
 		
 		render: function(state, attackCallback) {
@@ -96,27 +141,36 @@ $(function(){
 				return;
 			} 
 			
-			this._renderMap(state);
+			if (state != this._lastRenderedState) {
+				this._mapGraph = [];
+				this._drawMap(state);
+			}
+			
+			this._renderMap();
 			this._lastState = state;
 			this._lastRenderTime = Date.now();
 		},
 		
-		_renderMap: function(state) {
+		_renderMap: function() {
+			var self = this;
+			self._context.clearRect(0,0,2000,2000);
+			self._renderScene();
+		},
+		
+		_drawMap: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			Globals.debug("renderMap", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
+			
 			var self = this;
-			
-			self._context.clearRect(0,0,2000,2000);
-			
 			state.countryIds().forEach(function(countryId) {
-				self._renderCountry(countryId, state)
+				self._drawCountry(countryId, state)
 			});
 		},
 		
-		_renderCountry: function (countryId, state, isFighting) {
+		_drawCountry: function (countryId, state, isFighting) {
 			if (Globals.suppress_ui || !this._initialized) {
 	        	return;
 			}
@@ -125,19 +179,19 @@ $(function(){
 			//	return;
 			//}
 			
-			Globals.debug("renderCountry " + countryId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			Globals.debug("drawCountry " + countryId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			
 			var self = this;
 			isFighting = isFighting || false;
 			
 	        self._map.countryHexes(countryId).forEach(function(hexId) {
-	            self._renderHex(self._map.getHex(hexId), state, isFighting);
+	            self._drawHex(self._map.getHex(hexId), state, isFighting);
 	        });
 	
-			//self._renderHex(self._map.getHex(self._map.countryHexes(countryId)[0]), state, isFighting);
-			//self._renderHex(self._map.getHex(self._map.countryHexes(countryId)[1]), state, isFighting);
-			//self._renderHex(self._map.getHex(self._map.countryHexes(countryId)[2]), state, isFighting);
 
+			if (!SVG) {
+				//self._renderDice(countryId, state);
+			}
 	        //self._renderNumberBox(countryId, state);
 
 			// number boxes can overlap between adjacent countries. Redraw
@@ -147,7 +201,94 @@ $(function(){
 			//});
 		},
 		
-		_renderHex: function(hex, state, isFighting) {
+		_renderScene: function() {
+			var self = this;
+			
+			self._mapGraph.forEach(function(hex) {
+				
+				var points = hex.points();
+				points = self.rotateX(points, [490, 290, 0], self._angleX);
+				points = self.rotateY(points, [490, 290, 0], self._angleY);
+			
+				var color = hex.color();
+			
+				if (SVG) {
+					
+					var pointFunction = d3.svg.line()
+											.x(function(point) { return point[0]; })
+											.y(function(point) { return point[1]; })
+											.interpolate("linear");
+									
+					self._svg.append("path")
+								.attr("d", pointFunction(points))
+								.attr("stroke", color)
+								.attr("stroke-width", 1)
+								.attr("fill", color);
+				} else {
+		
+					var path = new Path2D();
+			        path.moveTo(points[0][0], points[0][1]);
+			        path.lineTo(points[1][0], points[1][1]);
+			        path.lineTo(points[2][0], points[2][1]);
+			        path.lineTo(points[3][0], points[3][1]);
+			        path.lineTo(points[4][0], points[4][1]);
+			        path.lineTo(points[5][0], points[5][1]);
+			        path.lineTo(points[6][0], points[6][1]);
+			        path.closePath();
+				
+					self._context.fillStyle = color;
+					self._context.fill(path);
+				}
+				
+				hex.getEdges().forEach(function(edge) {
+					var indices = [];
+					switch(edge) {
+						case Dir.obj.N:
+							indices = [0,1];
+							break;
+						case Dir.obj.NE:
+							indices = [1,2];
+							break;
+						case Dir.obj.SE:
+							indices = [2,3];
+							break;
+						case Dir.obj.S:
+							indices = [3,4];
+							break;
+						case Dir.obj.SW:
+							indices = [4,5];
+							break;
+						case Dir.obj.NW:
+							indices = [5,6];
+							break;
+					}
+
+					var p1 = points[indices[0]];
+					var p2 = points[indices[1]];
+
+					if (SVG) {
+						self._svg.append("path")
+									.attr("d", pointFunction([p1, p2]))
+									.attr("stroke", hex.edgeColor())
+									.attr("stroke-width", 1);
+					} else {
+						var edgePath = new Path2D();
+						edgePath.moveTo(p1[0], p1[1]);
+						edgePath.lineTo(p2[0], p2[1]);
+						edgePath.closePath();
+
+						self._context.strokeStyle = hex.edgeColor();
+		                self._context.lineWidth = hex.BORDER_THICKNESS;
+		                self._context.stroke(edgePath);
+					} 
+				});
+			});
+			
+			
+			
+		},
+		
+		_drawHex: function(hex, state, isFighting) {
 			var self = this;		
 			var countryId = hex.countryId();
 			var country = self._map.getCountry(countryId);	
@@ -158,47 +299,12 @@ $(function(){
 	            color = hex._color;
 	        }
 			
-			var points = [];
-			points.push([start[0] - Hex.FUDGE, start[1] - Hex.FUDGE, 0]);
-			points.push([start[0] + Hex.EDGE_LENGTH + Hex.FUDGE, start[1] - Hex.FUDGE, 0]); 
-			points.push([start[0] + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, start[1] + Hex.HEIGHT / 2, 0]);
-	        points.push([start[0] + Hex.EDGE_LENGTH + Hex.FUDGE, start[1] + Hex.HEIGHT + Hex.FUDGE, 0]);
-	        points.push([start[0] - Hex.FUDGE, start[1] + Hex.HEIGHT + Hex.FUDGE, 0]);
-	        points.push([start[0] - Hex.EDGE_LENGTH / 2, start[1] + Hex.HEIGHT / 2, 0]);
-	        points.push([start[0] - Hex.FUDGE, start[1] - Hex.FUDGE, 0]);
+			var h = new Hexagon(start, color);
+			h.setEdges(hex.countryEdgeDirections(), isFighting ? "red" : "black");
+			self._mapGraph.push(h);
 
-			points = self.rotateX(points, [490, 290, 0], self._angleX);
-			points = self.rotateY(points, [490, 290, 0], self._angleY);
-			
-			if (SVG) {
-				var pointFunction = d3.svg.line()
-										.x(function(point) { return point[0]; })
-										.y(function(point) { return point[1]; })
-										.interpolate("linear");
-									
-				self._svg.append("path")
-							.attr("d", pointFunction(points))
-							.attr("stroke", color)
-							.attr("stroke-width", 1)
-							.attr("fill", color);
-			} else {
-				var upperLeft = hex.upperLeft();
-		        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
-		
-				var path = new Path2D();
-		        path.moveTo(points[0][0], points[0][1]);
-		        path.lineTo(points[1][0], points[1][1]);
-		        path.lineTo(points[2][0], points[2][1]);
-		        path.lineTo(points[3][0], points[3][1]);
-		        path.lineTo(points[4][0], points[4][1]);
-		        path.lineTo(points[5][0], points[5][1]);
-		        path.lineTo(points[6][0], points[6][1]);
-		        path.closePath();
-				
-				self._context.fillStyle = color;
-				self._context.fill(path);
-			}
-			
+					
+			/*
 			var edgeColor = isFighting ? "red" : "black";
 			hex.countryEdgeDirections().forEach(function(edge) {
 				var indices = [];
@@ -242,7 +348,80 @@ $(function(){
 	                self._context.stroke(edgePath);
 				} 
 			});
-
+			*/
+		},
+		
+		_renderDice: function (countryId, state) {
+			if (Globals.suppress_ui || !this._initialized) {
+				return;
+			}
+			
+			var self = this;
+			var edgeLength = Hex.EDGE_LENGTH * 1.5;
+			var r = edgeLength / 2;
+			var ctr = self._map.countryCenter(countryId);
+			
+			var bottomFace = [
+				[ctr[0] - r, ctr[1] - r, 0], // upper left
+				[ctr[0] + r, ctr[1] - r, 0], // upper right
+				[ctr[0] + r, ctr[1] + r, 0],
+				[ctr[0] - r, ctr[1] + r, 0],
+			];
+			
+			var topFace = [
+				[ctr[0] - r, ctr[1] - r, edgeLength], // upper left (northwest)
+				[ctr[0] + r, ctr[1] - r, edgeLength], // upper right (northeast)
+				[ctr[0] + r, ctr[1] + r, edgeLength], // lower right (southeast)
+				[ctr[0] - r, ctr[1] + r, edgeLength], // lower left (southwest)
+			];
+			
+			bottomFace = self.rotateX(bottomFace, [490, 290, 0], self._angleX);
+			bottomFace = self.rotateY(bottomFace, [490, 290, 0], self._angleY);
+			topFace = self.rotateX(topFace, [490, 290, 0], self._angleX);
+			topFace = self.rotateY(topFace, [490, 290, 0], self._angleY);
+			
+			var edgePath;
+			self._context.strokeStyle = "black";
+			self._context.lineWidth = 1;
+						
+			var COLORS = ['white', 'blue', 'red', 'green'];
+			var FACE = {'NORTH':0, 'EAST':1, 'SOUTH':2, 'WEST':3};
+			var CORNER = {'NORTHWEST': 0, 'NORTHEAST':1, 'SOUTHEAST':2, 'SOUTHWEST':3};
+			
+			var drawSouth = true;
+			if (topFace[CORNER.NORTHWEST][2] < topFace[CORNER.SOUTHWEST][2]) {
+				drawSouth = false;
+			}
+			var drawEast = true;
+			if (topFace[CORNER.NORTHWEST][2] < topFace[CORNER.NORTHEAST][2]) {
+				drawEast = false;
+			}
+			
+			// draw faces
+			for (var i=0; i < 4; i++) {
+				edgePath = new Path2D();
+				edgePath.moveTo(bottomFace[i][0], bottomFace[i][1]);
+				edgePath.lineTo(bottomFace[(i+1) % 4][0], bottomFace[(i+1) % 4][1]);
+				edgePath.lineTo(topFace[(i+1) % 4][0], topFace[(i+1) % 4][1]);
+				edgePath.lineTo(topFace[i][0], topFace[i][1]);
+				edgePath.closePath();
+	            self._context.stroke(edgePath);
+				self._context.fillStyle = 'gray';
+				self._context.fill(edgePath);
+			}
+			
+			// draw top
+			edgePath = new Path2D();
+			edgePath.moveTo(topFace[0][0], topFace[0][1]);
+			edgePath.lineTo(topFace[1][0], topFace[1][1]);
+			edgePath.lineTo(topFace[2][0], topFace[2][1]);
+			edgePath.lineTo(topFace[3][0], topFace[3][1]);
+			edgePath.lineTo(topFace[0][0], topFace[0][1]);
+			edgePath.closePath();
+            self._context.stroke(edgePath)
+			self._context.fillStyle = "gray";
+			self._context.fill(edgePath);
+			
 		},
 		
 		_renderNumberBox: function (countryId, state) {
