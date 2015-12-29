@@ -43,7 +43,7 @@ Mapper.prototype.map = function(data, fn, callback) {
 	// parse fn body
 	ser = ser.substr(ser.indexOf('{'));
 	
-	var batchSize = 10;
+	var batchSize = 100;
 	
 	var workerId = 0;
 	var batch = [];
@@ -52,6 +52,7 @@ Mapper.prototype.map = function(data, fn, callback) {
 		if (batch.length >= batchSize || idx == data.length-1) {
 			if (self._workers[workerId]) {
 				self._workers[workerId].postMessage({command: 'batch', data: batch, id: req.id});
+				batch = [];
 			}
 			workerId ++;
 			workerId = workerId % self._workers.length;
