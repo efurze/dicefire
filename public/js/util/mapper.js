@@ -14,7 +14,8 @@ var MapRequest = function(id, data, callback) {
 var Mapper = function(threads) {
 	this._threads = threads || 4;
 	this._workers = [];
-	this._reqs = [];
+	this._reqs = {};
+	this._nextReqId = 0;
 	
 	for (var i=0; i < this._threads; i++) {
 		this._workers.push(new Worker("/js/util/worker.js"));
@@ -27,8 +28,8 @@ var Mapper = function(threads) {
 Mapper.prototype.map = function(data, fn, callback) {
 	var self = this;
 	
-	var req = new MapRequest(self._reqs.length, data, callback);
-	self._reqs.push(req);
+	var req = new MapRequest(self._nextReqId++, data, callback);
+	self._reqs[req.id] = req;
 	
 	// serialize the fn
 	var ser = fn.toString();
@@ -42,15 +43,20 @@ Mapper.prototype.map = function(data, fn, callback) {
 	// parse fn body
 	ser = ser.substr(ser.indexOf('{'));
 	
+	var batchSize = 10;
 	
 	var workerId = 0;
-	data.forEach(function(datum, idx) {
-		if (self._workers[workerId]) {
-			self._workers[workerId].postMessage({command: 'compute', data: datum, fn: ser, args: args, data_id: idx, id: req.id});
+	var batch = [];
+	for (var idx=0; idx < data.length; idx++) {
+		batch.push({command: 'compute', data: data[idx], fn: ser, args: args, data_id: idx, id: req.id});
+		if (batch.length >= batchSize || idx == data.length-1) {
+			if (self._workers[workerId]) {
+				self._workers[workerId].postMessage({command: 'batch', data: batch, id: req.id});
+			}
+			workerId ++;
+			workerId = workerId % self._workers.length;
 		}
-		workerId ++;
-		workerId = workerId % self._workers.length;
-	});
+	}
 };
 
 Mapper.prototype.stop = function() {
@@ -61,24 +67,33 @@ Mapper.prototype.stop = function() {
 	this._workers.length = 0;
 };
 
-// @msg.data = {command: 'result', id: , data_id: , result}
-Mapper.prototype._callback = function(msg) {
+// @e.data = {command: 'result', id: , data_id: , result}
+Mapper.prototype._callback = function(e) {
 	var self = this;
 	
-	var data = msg.data;
-	var req = self._reqs[data.id];
-	if (data.command == 'result') {
-	
-		req.results[data.data_id] = data.result;
-		req.resultsCount ++;
-		if (req.resultsCount == req.dataCount) {
-			//self.stop();
-			if (req.cb) {
-				req.cb(req.results);
-			}
+	var msg = e.data;
+	var req = self._reqs[msg.id];
+	if (req) {
+		if (msg.command == 'result') {
+			self.receiveResult(req, msg);
+		} else if (msg.command == 'batch_result') {
+			msg.result.forEach(function(result) {
+				self.receiveResult(req, result);
+			});
+		} else if (msg.command == 'error') {
+			req.cb(msg.msg);
 		}
-	} else if (data.command == 'error') {
-		//self.stop();
-		req.cb(data.msg);
+	}
+};
+
+Mapper.prototype.receiveResult = function(req, msg) {
+	var self = this;
+	req.results[msg.data_id] = msg.result;
+	req.resultsCount ++;
+	if (req.resultsCount == req.dataCount) {
+		delete self._reqs[req.id];
+		if (req.cb) {
+			req.cb(req.results);
+		}
 	}
 };
