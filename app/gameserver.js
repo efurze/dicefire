@@ -227,7 +227,6 @@ GameServer.prototype.connect = function(socket) {
 	var sock = new SocketWrapper(socket);
 	self._sockets[sock.id()] = sock;
 	self._connectionCount ++;
-	self._currentHumans ++;
 	sock.on('error', this.socketError.bind(this));
 	sock.on('disconnect', this.disconnect.bind(this));
 	sock.on('end_turn', this.endTurn.bind(this));
@@ -238,11 +237,13 @@ GameServer.prototype.connect = function(socket) {
 	}
 	self._watchdogTimerId = -1;
 	
+	// TODO: FIXME: don't do this if the client is a watcher
 	// find a slot for this player
 	var id = 0;
 	for (var i=0; i < self._gameInfo.players.length; i++) {
 		if (self._playerMap[i].isHuman() && !self._playerMap[i].hasSocket()) {
 			Globals.debug('Assigning socket ' + sock.id() + ' to player ' + i, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+			self._currentHumans ++; 
 			self._playerMap[i].setSocket(sock);
 			id = i;
 			break;
@@ -276,6 +277,8 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 GameServer.prototype.startGame = function() {
 	var self = this;
 	
+	Globals.debug('startGame', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	
 	// farm out the AIs to various players
 	var bots = self._playerMap.filter(function(player, id) {
 		return !player.isHuman();
@@ -288,6 +291,7 @@ GameServer.prototype.startGame = function() {
 		}
 	});
 	
+	Globals.debug('Game started', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	self._started = true;
 	self._engine.startTurn(0);
 };
@@ -295,20 +299,17 @@ GameServer.prototype.startGame = function() {
 // @bot: AISocketWrapper
 GameServer.prototype.assignBot = function(bot, player) {
 	var self = this;
-	var humans = [];
-	Object.keys(self._playerMap).forEach(function(id) {
-		var player = self._playerMap[id];
-		if (player.isHuman()) {
-			humans.push(player);
-		}
+	var socketIds = [];
+	Object.keys(self._sockets).forEach(function(socketId) {
+		socketIds.push(socketId);
 	});
 
-	// randomly pick a player to assign it to
-	var index = Math.round(Math.random() * (humans.length - 1));
-	var human = humans[index];
-	Globals.ASSERT(human instanceof PlayerWrapper);
-	Globals.debug('Assigning Bot ' + bot.getName() + ' at position ' + bot.id() + ' to player ' + human.id(), Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
-	human.socket().emit('create_bot', {name: bot.getName(), playerId: bot.id()});
+	// randomly pick a socket to assign it to
+	var index = Math.round(Math.random() * (socketIds.length - 1));
+	var socket = self._sockets[socketIds[index]];
+	Globals.ASSERT(socket instanceof SocketWrapper);
+	Globals.debug('Assigning Bot ' + bot.getName() + ' at position ' + bot.id() + ' to socket ' + socket.id(), Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	socket.emit('create_bot', {name: bot.getName(), playerId: bot.id()});
 };
 
 GameServer.prototype.close = function() {
