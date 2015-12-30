@@ -48,7 +48,7 @@ $(function() {
 				}
 			});
 			//Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
-			SVGrenderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
+			SVGrenderer.init(playerCode.length, Game._engine.map(), playerNames);
 			
 			if (Globals.uploadGame && Game._gameId) {
 				// upload game info to server
