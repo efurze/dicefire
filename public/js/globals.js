@@ -88,8 +88,8 @@ Globals.channels = [
 	0, //"AI.PLYER"
 	0, //"RENDERER",
 	0, //"GREEDY",
-	0, //"CLIENT",
-	0, //"SERVER"
+	5, //"CLIENT",
+	5, //"SERVER"
 ];
 
 

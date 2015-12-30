@@ -41,8 +41,51 @@ $(function(){
 	};
 	
 	
+	
+	var Cube = function(ctr, color) {
+		this._color = color;
+		this._center = ctr;
+		
+		var r = Cube.EDGE_LENGTH / 2;
+		
+		this._bottomFace = [
+			[ctr[0] - r, ctr[1] - r, 0], // upper left
+			[ctr[0] + r, ctr[1] - r, 0], // upper right
+			[ctr[0] + r, ctr[1] + r, 0],
+			[ctr[0] - r, ctr[1] + r, 0],
+		];
+		
+		this._topFace = [
+			[ctr[0] - r, ctr[1] - r, Cube.EDGE_LENGTH], // upper left (northwest)
+			[ctr[0] + r, ctr[1] - r, Cube.EDGE_LENGTH], // upper right (northeast)
+			[ctr[0] + r, ctr[1] + r, Cube.EDGE_LENGTH], // lower right (southeast)
+			[ctr[0] - r, ctr[1] + r, Cube.EDGE_LENGTH], // lower left (southwest)
+		];
+		
+	};
+	
+	Cube.EDGE_LENGTH = Hex.EDGE_LENGTH * 1.5;
+	Cube.EDGE_COLOR = "black";
+	// North == -y direction
+	// East == +x direction
+	Cube.FACE = {'NORTH':0, 'EAST':1, 'SOUTH':2, 'WEST':3};
+	Cube.CORNER = {'NORTHWEST': 0, 'NORTHEAST':1, 'SOUTHEAST':2, 'SOUTHWEST':3};
+	
+	Cube.prototype.bottomFace = function() {
+		return JSON.parse(JSON.stringify(this._bottomFace));
+	};
+	
+	Cube.prototype.topFace = function() {
+		return JSON.parse(JSON.stringify(this._topFace));
+	};
+	
+	Cube.prototype.color = function() {
+		return this._color;
+	};
+	
 	window.SVGrenderer = {
 		
+		X: 0, Y:1, Z: 2,
 		_svg: null,
 		_context: null,
 		_initialized: false,
@@ -67,7 +110,8 @@ $(function(){
 		_lastMouseY: -1,
 		_lastState: null,
 		_lastRenderTime: -1,
-		_mapGraph: [],
+		_mapGraph: [],  // array of Hexagon
+		_diceGraph: [], // array of Cube
 		
 		init: function(playerCount, canvas, map, playerNames) {
 			if (!Globals.suppress_ui) {
@@ -142,7 +186,6 @@ $(function(){
 			} 
 			
 			if (state != this._lastRenderedState) {
-				this._mapGraph = [];
 				this._drawMap(state);
 			}
 			
@@ -151,11 +194,6 @@ $(function(){
 			this._lastRenderTime = Date.now();
 		},
 		
-		_renderMap: function() {
-			var self = this;
-			self._context.clearRect(0,0,2000,2000);
-			self._renderScene();
-		},
 		
 		_drawMap: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
@@ -165,6 +203,8 @@ $(function(){
 			Globals.ASSERT(state instanceof Gamestate);
 			
 			var self = this;
+			self._mapGraph = [];
+			self._diceGraph = [];
 			state.countryIds().forEach(function(countryId) {
 				self._drawCountry(countryId, state)
 			});
@@ -190,7 +230,7 @@ $(function(){
 	
 
 			if (!SVG) {
-				//self._renderDice(countryId, state);
+				self._drawDice(countryId, state);
 			}
 	        //self._renderNumberBox(countryId, state);
 
@@ -201,9 +241,9 @@ $(function(){
 			//});
 		},
 		
-		_renderScene: function() {
+		_renderMap: function() {
 			var self = this;
-			
+			self._context.clearRect(0,0,2000,2000);
 			self._mapGraph.forEach(function(hex) {
 				
 				var points = hex.points();
@@ -284,7 +324,9 @@ $(function(){
 				});
 			});
 			
-			
+			if (!SVG) {
+				self._renderDice();
+			}
 			
 		},
 		
@@ -302,102 +344,58 @@ $(function(){
 			var h = new Hexagon(start, color);
 			h.setEdges(hex.countryEdgeDirections(), isFighting ? "red" : "black");
 			self._mapGraph.push(h);
-
-					
-			/*
-			var edgeColor = isFighting ? "red" : "black";
-			hex.countryEdgeDirections().forEach(function(edge) {
-				var indices = [];
-				switch(edge) {
-					case Dir.obj.N:
-						indices = [0,1];
-						break;
-					case Dir.obj.NE:
-						indices = [1,2];
-						break;
-					case Dir.obj.SE:
-						indices = [2,3];
-						break;
-					case Dir.obj.S:
-						indices = [3,4];
-						break;
-					case Dir.obj.SW:
-						indices = [4,5];
-						break;
-					case Dir.obj.NW:
-						indices = [5,6];
-						break;
-				}
-				
-				var p1 = points[indices[0]];
-				var p2 = points[indices[1]];
-				
-				if (SVG) {
-					self._svg.append("path")
-								.attr("d", pointFunction([p1, p2]))
-								.attr("stroke", edgeColor)
-								.attr("stroke-width", 1);
-				} else {
-					var edgePath = new Path2D();
-					edgePath.moveTo(p1[0], p1[1]);
-					edgePath.lineTo(p2[0], p2[1]);
-					edgePath.closePath();
-					
-					self._context.strokeStyle = edgeColor
-	                self._context.lineWidth = hex.BORDER_THICKNESS;
-	                self._context.stroke(edgePath);
-				} 
-			});
-			*/
 		},
 		
-		_renderDice: function (countryId, state) {
+		
+		_drawDice: function (countryId, state) {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
 			
 			var self = this;
-			var edgeLength = Hex.EDGE_LENGTH * 1.5;
-			var r = edgeLength / 2;
 			var ctr = self._map.countryCenter(countryId);
 			
-			var bottomFace = [
-				[ctr[0] - r, ctr[1] - r, 0], // upper left
-				[ctr[0] + r, ctr[1] - r, 0], // upper right
-				[ctr[0] + r, ctr[1] + r, 0],
-				[ctr[0] - r, ctr[1] + r, 0],
-			];
+			self._diceGraph.push(new Cube(ctr, "gray"));
+		},
+		
+		_renderDice: function() {
+			var self = this;
+			self._diceGraph.forEach(function(die) {
+				self._renderDie(die);
+			});
+		},
+		
+		_renderDie: function(die) {
+			var self = this;
 			
-			var topFace = [
-				[ctr[0] - r, ctr[1] - r, edgeLength], // upper left (northwest)
-				[ctr[0] + r, ctr[1] - r, edgeLength], // upper right (northeast)
-				[ctr[0] + r, ctr[1] + r, edgeLength], // lower right (southeast)
-				[ctr[0] - r, ctr[1] + r, edgeLength], // lower left (southwest)
-			];
+			var bottomFace = die.bottomFace();
+			var topFace = die.topFace();
 			
 			bottomFace = self.rotateX(bottomFace, [490, 290, 0], self._angleX);
 			bottomFace = self.rotateY(bottomFace, [490, 290, 0], self._angleY);
 			topFace = self.rotateX(topFace, [490, 290, 0], self._angleX);
 			topFace = self.rotateY(topFace, [490, 290, 0], self._angleY);
 			
-			var edgePath;
-			self._context.strokeStyle = "black";
+			self._context.strokeStyle = Cube.EDGE_COLOR;
 			self._context.lineWidth = 1;
 						
 			var COLORS = ['white', 'blue', 'red', 'green'];
-			var FACE = {'NORTH':0, 'EAST':1, 'SOUTH':2, 'WEST':3};
-			var CORNER = {'NORTHWEST': 0, 'NORTHEAST':1, 'SOUTHEAST':2, 'SOUTHWEST':3};
 			
-			var drawSouth = true;
-			if (topFace[CORNER.NORTHWEST][2] < topFace[CORNER.SOUTHWEST][2]) {
-				drawSouth = false;
-			}
-			var drawEast = true;
-			if (topFace[CORNER.NORTHWEST][2] < topFace[CORNER.NORTHEAST][2]) {
-				drawEast = false;
-			}
+			// returns corner with largest z-value
+			var topCorner = function() {
+				var topCorner = Cube.CORNER.NORTHWEST;
+				var z = 0;
+				Cube.CORNER.forEach(function(corner) {
+					if (topFace[corner][Z] > z) {
+						z = topFace[corner][Z];
+						topCorner = corner;
+					}
+				});
+				return topCorner;
+			};
 			
 			// draw faces
+			var edgePath;
 			for (var i=0; i < 4; i++) {
 				edgePath = new Path2D();
 				edgePath.moveTo(bottomFace[i][0], bottomFace[i][1]);

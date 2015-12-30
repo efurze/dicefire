@@ -1,5 +1,6 @@
 "use strict"
 
+var square = function(x){return x*x;};
 
 $(function() {
 
@@ -46,8 +47,8 @@ $(function() {
 					return pc.getName();
 				}
 			});
-			Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
-			
+			//Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
+			SVGrenderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
 			
 			if (Globals.uploadGame && Game._gameId) {
 				// upload game info to server
@@ -91,7 +92,8 @@ $(function() {
 		
 		redraw: function(gamestate) {
 			gamestate = gamestate || Game._engine.getState();
-			Renderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
+			//Renderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
+			SVGrenderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
 			if (Game._controller) {
 				Game._controller.update();
 			}
