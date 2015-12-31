@@ -126,7 +126,7 @@ $(function(){
                         }
                     } else {
                         // Attacks.
-						self._mcInterface.attack(self.selectedCountry(), country, function(result) {
+						self._mcInterface.attack(self.selectedCountry(), country, function() {
                             var prevCountry = self.selectedCountry();
                             self.setSelectedCountry(null);
                             $('#end_turn').prop('disabled', false);

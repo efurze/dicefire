@@ -66,7 +66,12 @@ PlayerWrapper.prototype.socket = function() {return this._socket;};
 PlayerWrapper.prototype.getName = function() {return "human";};
 PlayerWrapper.prototype.isHuman = function() {return true;};
 PlayerWrapper.prototype.stop = function() {};
-PlayerWrapper.prototype.startTurn = function() {};
+PlayerWrapper.prototype.startTurn = function(state) {
+	Globals.debug("startTurn", this._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+	if (this._socket) {
+		this._socket.emit('start_turn', {playerId: this._id, stateId: state.stateId()});
+	}
+};
 PlayerWrapper.prototype.attackDone = function(success) {};
 PlayerWrapper.prototype.loses = function() {};
 
@@ -87,7 +92,13 @@ AISocketWrapper.prototype.socket = function() {return this._socket;};
 AISocketWrapper.prototype.getName = function() {return this._name;};
 AISocketWrapper.prototype.isHuman = function() {return false;};
 AISocketWrapper.prototype.stop = function() {};
-AISocketWrapper.prototype.startTurn = function() {};
+AISocketWrapper.prototype.startTurn = function(state) {
+	Globals.debug("startTurn", this._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+	if (this._socket) {
+		Globals.debug("Sending startTurn for player", this._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+		this._socket.emit('start_turn', {playerId: this._id, stateId: state.stateId()});
+	}
+};
 AISocketWrapper.prototype.attackDone = function(success) {};
 AISocketWrapper.prototype.loses = function() {};
 
@@ -309,6 +320,7 @@ GameServer.prototype.assignBot = function(bot, player) {
 	var socket = self._sockets[socketIds[index]];
 	Globals.ASSERT(socket instanceof SocketWrapper);
 	Globals.debug('Assigning Bot ' + bot.getName() + ' at position ' + bot.id() + ' to socket ' + socket.id(), Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	bot.setSocket(socket);
 	socket.emit('create_bot', {name: bot.getName(), playerId: bot.id()});
 };
 
@@ -345,10 +357,7 @@ GameServer.prototype.attack = function(socketWrapper, data) {
 	try {
 		var self = this;
 		Globals.debug("Got attack msg", socketWrapper.id(), JSON.stringify(data), Globals.LEVEL.TRACE, Globals.CHANNEL.SERVER);
-		self._engine.attack(parseInt(data.from), parseInt(data.to), function (success) {
-			Globals.debug("sending attack result, success:", success, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
-			self._ns.emit("attack_result", {result: success});
-		});
+		self._engine.attack(parseInt(data.from), parseInt(data.to), null);
 	} catch (err) {
 		Globals.debug("GameServer::attack error", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 	}

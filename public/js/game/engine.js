@@ -14,7 +14,7 @@ var PlayerInterface = {
 	isHuman: function(){return true;},
 	start: function(){},
 	stop: function(){},
-	startTurn: function(){},
+	startTurn: function(state){},
 	attackDone: function(success){},
 	loses: function(){}
 };
@@ -141,8 +141,6 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	self._players.forEach(function(player) {
 		player.updateStatus(self._map);
 	});
-	
-	Globals.debug("Initial gamestate: " + this.getState().toString(), Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
 };
 
 // @attack (optional):  {
@@ -151,15 +149,17 @@ Engine.prototype.setup = function(initialMap, initialState) {
 //	fromRollArray: fromRollArray,
 //	toRollArray: toRollArray
 // } 
-Engine.prototype.pushHistory = function(state, attack){
+Engine.prototype.pushHistory = function(attack){
 	var self = this;
+	var stateId = self._history.length;
+	var state = new Gamestate(self._players, self._map._countryArray, self._currentPlayerId, stateId);
 	if (attack) {
 		state.setAttack(attack);
 	}
-	var len = self._history.length;
+	
 	self._history.push(state);
 	if (self._stateCallback) {
-		self._stateCallback(state, len);
+		self._stateCallback(state, stateId);
 	}
 };
 
@@ -198,7 +198,7 @@ Engine.prototype.startTurn = function(playerId, callback) {
 	Globals.debug("Player " + playerId + " starting turn", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	var self = this;
 	self.setCurrentPlayer(playerId);
-	self.pushHistory(self.getState());
+	self.pushHistory();
 
 	if (!self.isHuman(self._currentPlayerId)) {
 		self._timeout(function() {
@@ -301,7 +301,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	// finishAttack() when the attack rendering is done. The pushHistory() here informs Game, via
 	// the stateCallback that an attack needs to be rendered
 	
-	self.pushHistory(self.getState(), attack);
+	self.pushHistory(attack);
 
 	if (typeof module !== 'undefined' && module.exports) {
 		self.finishAttack(attack);
@@ -365,7 +365,7 @@ Engine.prototype.finishAttack = function(attack) {
 	}
 	
 	// attack is done, save to history
-	self.pushHistory(self.getState());
+	self.pushHistory();
 	if (self._attackCallback) {
 		var temp = self._attackCallback;
 		self._attackCallback = null;
@@ -420,7 +420,11 @@ Engine.prototype.getHistory = function(index) {
 };
 	
 Engine.prototype.getState = function() {
-	return new Gamestate(this._players, this._map._countryArray, this._currentPlayerId);
+	if (this._history.length) {
+		return this._history[this._history.length-1];
+	} else {
+		return null;
+	}
 };
 
 Engine.prototype.setState = function(gamestate) {

@@ -10,14 +10,29 @@ $(function() {
 		this._cb = callback;
 		this._downloader = new Downloader;
 		this._stateCount = 0;
+		this._stateCallbacks = {}; // stateId to array of callbacks
 	};
 		
+	History.prototype.onStateReceived = function(stateId, cb) {	
+		var self = this;
+		if (stateId < self._array.length && self._array[stateId]) {
+			cb(self._array[stateId]);
+		} else {
+			if (!self._stateCallbacks.hasOwnProperty(stateId)) {
+				self._stateCallbacks[stateId] = [];
+			}
+		
+			self._stateCallbacks[stateId].push(cb);
+		}
+	};
+	
 	History.prototype.fetchHistory = function() {
 		this._downloader.getStateCount(this._gameId, this.gotStateCount.bind(this));
 	};
 	
 	History.prototype.gotStateCount = function(success, data) {
 		if (success) {
+			Globals.debug("gotStateCount:", JSON.stringify(data), Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			this.updateStateCount(data['stateCount']);
 		} else {
 			Globals.debug("error getting stateCount", data, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
@@ -32,26 +47,35 @@ $(function() {
 		
 		var current = this._array.length;
 		if (current < this._stateCount && !this._downloader.hasPending()) {
+			Globals.debug('Requesting state', current, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			this._downloader.getState(this._gameId, current, this.gotState.bind(this));
 		}
 	}
 	
 	History.prototype.gotState = function(success, data) {
+		var self = this;
 		if (success) {
 			var gamestate = Gamestate.deserialize(JSON.parse(data.data));
 			var id = parseInt(data.id); // 0-based. First state is state 0.
-			if (id == this._array.length) {
-				this._array.push(gamestate);
+			if (id == self._array.length) {
+				self._array.push(gamestate);
 				Globals.debug("Downloaded state", id, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+				
+				// inform everyone who's waiting for this state
+				if (self._stateCallbacks.hasOwnProperty(id)) {
+					var cbs = self._stateCallbacks[id];
+					delete self._stateCallbacks[id];
+					cbs.forEach(function(cb) { cb(gamestate); });
+				}
 			} else {
 				Globals.debug("Unexpected state id received", id, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 			}
 			
-			var current = this._array.length;
-			if (current < this._stateCount) {
-				this._downloader.getState(this._gameId, current, this.gotState.bind(this));
-			} else if (this._cb) {
-				this._cb();
+			var current = self._array.length;
+			if (current < self._stateCount) {
+				self._downloader.getState(self._gameId, current, self.gotState.bind(self));
+			} else if (self._cb) {
+				self._cb();
 			}
 		}
 	};
@@ -139,6 +163,7 @@ $(function() {
 			Client._downloader.getGameInfo(gameId, Client.gameInfoReceived);
 			
 			Client._history = new History(gameId, Client.stateUpdate);
+			Client._controller = new Clientcontroller(Client._history, Client._playerId, Client.endTurnClicked);
 		},
 
 		// HTTP request callback
@@ -151,7 +176,6 @@ $(function() {
 					Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
 					
 					Client._socket.on('map', Client.mapAvailable);
-					Client._socket.on('attack_result', Client.attackResult);
 					Client._socket.on('error', Client.socketError);
 					Client._socket.on('state', Client.engineUpdate);
 					Client._socket.on('create_bot', Client.createBot);
@@ -198,10 +222,10 @@ $(function() {
 		stateUpdate: function() {
 			if (Client._history.length() > 0) {
 				if (!Client._started) {
-					Client.start();
 					// this will coerce processNextState to handle the most recent state
 					Client._currentState = Client._history.length()-2;
 					Client.processNextState();
+					Client.start();
 				}
 				
 				Globals.debug("Got state data", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
@@ -221,12 +245,6 @@ $(function() {
 			$('#game').css('display', 'block');
 			
 			Globals.ASSERT(Client._playerId >= 0);
-			Client._controller = new Clientcontroller(Client._history, Client._playerId, Client.endTurnClicked);
-			
-			// startup the AIs
-			Object.keys(Client._bots).forEach(function(id) {
-				Client._bots[id].start();
-			});
 			
 			if (Client._mode == Client.MODES.PLAY) {
 				$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
@@ -235,6 +253,19 @@ $(function() {
 			}
 			$('#back_btn').click(Client._controller.historyBack.bind(Client._controller));
 			$('#forward_btn').click(Client._controller.historyForward.bind(Client._controller));
+			
+			// startup the AIs
+			Object.keys(Client._bots).forEach(function(id) {
+				Client._bots[id].start();
+			});
+			
+			
+			if (Client._bots[0]) {
+				// if player 0 is a bot, tell it to start
+				Globals.debug("Calling startTurn for player 0", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+				Client._bots[0].startTurn(Client._history.getState(0));
+			}
+			Client._socket.on('start_turn', Client.startTurn);
 		},
 		
 		upToDate: function() {
@@ -246,6 +277,7 @@ $(function() {
 			Globals.debug("Server map push", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			if (Client._playerId == -1) {
 				Client._playerId = data.playerId;
+				Client._controller.setPlayerId(data.playerId);
 				Globals.debug("Got player Id", data.playerId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 			}
 			if (!Client._map) {
@@ -260,18 +292,7 @@ $(function() {
 			Globals.debug("Got state push from server for stateId " + stateId, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			Client._history.updateStateCount(stateId+1);
 		},
-		
-		// from server
-		// @data: {result: [true | false]}
-		attackResult: function(data) {
-			// TODO: FIXME: Is this fxn necessary? I think we can just rely on the engineUpdate() event
-			if (Client._attackCallback) {
-				// tell the map controller to reset its 'selected country' states 
-				// (and re-enable the 'end turn' button)
-				Client._attackCallback(data.result);
-			}
-		},
-		
+				
 		// from server
 		// @data: {name: AI.getName(), playerId: <int>}
 		createBot: function(data) {
@@ -290,6 +311,17 @@ $(function() {
 			}
 		},
 		
+		// from server - for the bots
+		startTurn: function(data) {
+			Globals.debug("startTurn event", JSON.stringify(data), Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			if (Client._started && Client._bots[data['playerId']]) {
+				Client._history.onStateReceived(data['stateId'], function(state) {
+					Globals.debug("Calling startTurn for player", data['playerId'], Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+					Client._bots[data['playerId']].startTurn(state);
+				});
+			}
+		},
+		
 		// from mapController
 		mapUpdate: function() {
 			if (!Client._controller.viewingHistory() && !Client._isAttacking && Client.upToDate()) {
@@ -299,7 +331,7 @@ $(function() {
 		
 		// from controller
 		endTurnClicked: function() {
-			Client._socket.emit("end_turn", {playerId: Client._currentPlayer});
+			Client._socket.emit("end_turn", {playerId: Client._playerId});
 		},
 		
 		// from renderer
@@ -319,14 +351,11 @@ $(function() {
 				Client._currentState ++;
 			}
 			
-			var state = Client._history.getState(Client._currentState);
-			if (state.currentPlayerId() != Client._currentPlayer) {
-				Client._currentPlayer = state.currentPlayerId();
-				if (Client._bots.hasOwnProperty(Client._currentPlayer)) {
-					// this is the equivalent of Engine::startTurn(). It prompts the bot
-					// to begin its turn
-					Client._bots[Client._currentPlayer].startTurn(state);
-				}
+			Client._currentPlayer = Client.getState().currentPlayerId();
+			
+			if (Client._attackCallback) {
+				Client._attackCallback();
+				Client._attackCallback = null;
 			}
 			
 			Client.redraw();

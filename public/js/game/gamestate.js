@@ -9,11 +9,12 @@ if (Hashes) {
 	var SHA1 = new Hashes.SHA1();
 }
 
-var Gamestate = function(players, countries, currentPlayerId, attack) {
+var Gamestate = function(players, countries, currentPlayerId, stateId, attack) {
 	var self = this;
 	self._currentPlayerId = typeof currentPlayerId === 'undefined' ? -1 : currentPlayerId;
 	self._players = {};
 	self._countries = {};
+	self._stateId = stateId;
 	self._attack = null;
 	if (players) {
 		players.forEach(function(player) {
@@ -52,6 +53,7 @@ Gamestate.deserialize = function(state) {
 Gamestate.prototype.clone = function() {
 	var copy = new Gamestate();
 	copy._currentPlayerId = this._currentPlayerId;
+	copy._stateId = this._stateId;
 	copy._players = JSON.parse(JSON.stringify(this._players));
 	copy._countries = JSON.parse(JSON.stringify(this._countries));
 	copy._attack = this._attack ? JSON.parse(JSON.stringify(this._attack)) : null;
@@ -91,6 +93,8 @@ Gamestate.prototype.playerCountries = function(playerId) {
 
 Gamestate.prototype.playerIds = function() {return Object.keys(this._players);};
 Gamestate.prototype.players = function() {return this._players;};
+
+Gamestate.prototype.stateId = function() {return this._stateId;};
 
 Gamestate.prototype.currentPlayerId = function() {return this._currentPlayerId;};
 Gamestate.prototype.setCurrentPlayerId = function(id) {this._currentPlayerId = id;};

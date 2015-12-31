@@ -47,7 +47,7 @@ Downloader.prototype._doNext = function() {
 		
 		window.setTimeout(function() {
 			var url = self._array[0].url;
-			console.log("requesting url", url);
+			//console.log("requesting url", url);
 			$.get(url)
 			.done(function(d) {
 				self.ajaxDone(d);

@@ -16,6 +16,9 @@ var Clientcontroller = function (history, playerId, end_cb) {
 	this._isAttacking = false;
 };
 
+Clientcontroller.prototype.setPlayerId = function(id) {
+	this._playerId = id;
+};
 
 $(function(){
 

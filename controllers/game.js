@@ -189,7 +189,6 @@ module.exports = {
 
 		redisClient.keys(gameId + '*', function(err, reply) {
 			var filenames = reply;
-			console.log(filenames);
 			var stateCount = filenames.filter(function(name) {
 				return (name.indexOf("state_") != -1);
 			}).length;
