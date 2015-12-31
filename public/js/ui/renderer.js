@@ -339,7 +339,7 @@ $(function(){
 					'background-color': self._playerColors[state.countryOwner(toCountry)]
 				});
 
-				if (i < fromNumDice) {
+				if (i < toNumDice) {
 					$('#rightdie' + i).html(toRollArray[i]);
 					$('#rightdie' + i).show();
 				} else {
