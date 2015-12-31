@@ -65,6 +65,7 @@ PlayerWrapper.prototype.socket = function() {return this._socket;};
 
 PlayerWrapper.prototype.getName = function() {return "human";};
 PlayerWrapper.prototype.isHuman = function() {return true;};
+PlayerWrapper.prototype.start = function() {};
 PlayerWrapper.prototype.stop = function() {};
 PlayerWrapper.prototype.startTurn = function(state) {
 	Globals.debug("startTurn", this._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
@@ -91,6 +92,7 @@ AISocketWrapper.prototype.socket = function() {return this._socket;};
 
 AISocketWrapper.prototype.getName = function() {return this._name;};
 AISocketWrapper.prototype.isHuman = function() {return false;};
+AISocketWrapper.prototype.start = function() {};
 AISocketWrapper.prototype.stop = function() {};
 AISocketWrapper.prototype.startTurn = function(state) {
 	Globals.debug("startTurn", this._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
@@ -146,11 +148,13 @@ var Engine = require('../public/js/game/engine.js');
 var Plyer = require('../public/js/ai/plyer.js');
 var Greedy = require('../public/js/ai/greedy.js');
 var Aggressive = require('../public/js/ai/aggressive.js');
+var Human = require('../public/js/ai/human.js');
 var AIWrapper = require('../public/js/game/aiwrapper.js');
 var AIs = [
 	Plyer,
 	Greedy,
-	Aggressive
+	Aggressive,
+	Human
 ];
 var AIMap = {};
 
@@ -158,7 +162,6 @@ var AIMap = {};
 AIs.forEach(function(ai) {
 	AIMap[ai.getName()] = ai;
 });
-AIMap["human"] = "human";
 
 var GameServer = function(gameId, namespace) {
 	var self = this;

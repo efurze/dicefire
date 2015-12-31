@@ -40,11 +40,7 @@ $(function() {
 			Game._engine.setup();
 			
 			var playerNames = playerCode.map(function(pc) {
-				if (pc == "human") {
-					return "human";
-				} else {
-					return pc.getName();
-				}
+				return pc.getName();
 			});
 			Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
 			
@@ -60,8 +56,6 @@ $(function() {
 			Game._engine.registerStateCallback(Game.engineUpdate);
 			Game._controller = new Gamecontroller(Game._engine);
 			Game._mapController = new Mapcontroller(Game.mapUpdate, Game._canvas, Game._engine.map(), Game.mapConInterface);
-
-			Game.redraw();
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
@@ -91,7 +85,9 @@ $(function() {
 		
 		redraw: function(gamestate) {
 			gamestate = gamestate || Game._engine.getState();
-			Renderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
+			if (gamestate) {
+				Renderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
+			}
 			if (Game._controller) {
 				Game._controller.update();
 			}

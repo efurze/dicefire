@@ -349,6 +349,7 @@ $(function() {
 				Client._currentState = 0;
 			} else if (Client._currentState < (Client._history.length() - 1)){
 				Client._currentState ++;
+				Globals.debug("process state", Client._currentState, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			}
 			
 			Client._currentPlayer = Client.getState().currentPlayerId();

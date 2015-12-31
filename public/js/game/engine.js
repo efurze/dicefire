@@ -51,6 +51,7 @@ Engine.prototype.setCurrentPlayer = function(id) {
 // @callback = function(winningAI, winningID), called when game is over
 Engine.prototype.init = function(playerCode, callback) {
 	console.time("DICEFIRE");
+	Globals.debug("Engine init", JSON.stringify(playerCode), callback, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	var self = this;
 	
 	if (typeof playerCode !== 'undefined') {
@@ -79,8 +80,9 @@ Engine.prototype.init = function(playerCode, callback) {
 	if (playerCode) {
 		for (var i=0; i < playerCode.length; i++) {
 			self._players.push(new Player(i));
-			if (typeof playerCode[i] == 'object') {
+			if (Globals.implements(playerCode[i], PlayerInterface)) {
 				// it's a PlayerInterface
+				Globals.debug("Player " + i + " is a PlayerInterface", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 				self._AIs[i] = playerCode[i];
 			}
 		}
@@ -96,6 +98,7 @@ Engine.prototype.registerStateCallback = function(cb) {
 
 // @AIs (optional): array of AIWrapper
 Engine.prototype.setup = function(initialMap, initialState) {
+	Globals.debug("Engine setup", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	var self = this;
 	
 	self._map = new Map();
@@ -110,17 +113,18 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	
 	self._map.assignCountries(self._players);
 	
-	if (typeof self._playerCode[0] == 'string') {
+	if (typeof self._playerCode[0] == 'function') {
 		// initialize AIs
 		var isHumanList = self._playerCode.map(function(elem) { return elem == "human"; });
 		self._playerCode.forEach(function(elem, index) {
-			if (elem != "human") {
+			if (elem.getName() == "human") {
+				Globals.debug("Player " + index + " is human", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+				self._AIs[index] = PlayerInterface;
+			} else {
 				Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 				self._AIs[index] = new AIWrapper(elem, self, index, self._trusted);
 				self._AIs[index].start();
-			} else {
-				self._AIs[index] = PlayerInterface;
-			}
+			} 
 		});
 	}
 	
