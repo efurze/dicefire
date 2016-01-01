@@ -292,7 +292,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 		}
 	}
 	
-	sock.emit("map", {playerId: id});
+	sock.emit("map", {playerId: id, waitingFor: self._expectedHumans - self._currentHumans});
 	if (self._currentHumans == self._expectedHumans && !self._started) {
 		// everyone's here, start the game!
 		self.startGame();
@@ -302,7 +302,6 @@ GameServer.prototype.connectPlayer = function(socket) {
 // checks to see if we've seen this IP address before, and if so
 // attempts to reconnect socket to same player
 GameServer.prototype.reconnect = function(socketWrapper) {
-	console.log("reconnect");
 	var self = this;
 	var humanAssignedTo = -1;
 	if (self._ipMap.hasOwnProperty(socketWrapper.ip())) {
@@ -363,6 +362,7 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 		}
 	} else {
 		// a watcher left
+		Globals.debug('Watcher socket ' + socketWrapper.id() + ' disconnected.', Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 	}
 };
 

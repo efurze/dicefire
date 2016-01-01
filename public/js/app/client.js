@@ -248,7 +248,11 @@ $(function() {
 		
 		start: function() {
 			Client._started = true;
+			$('#wait_message').css('display', 'none');
 			$('#game').css('display', 'block');
+			if (Client._mode == Client.MODES.PLAY) {
+				$('#view_link').css('display', 'block');
+			}
 			
 			if (Client._mode == Client.MODES.PLAY) {
 				$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
@@ -277,11 +281,17 @@ $(function() {
 		
 		// push notification from server that the map is available
 		mapAvailable: function(data) {
-			Globals.debug("Server map push", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			Globals.debug("Server map push", data, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			if (Client._playerId == -1) {
 				Client._playerId = data.playerId;
 				Client._controller.setPlayerId(data.playerId);
 				Globals.debug("Got player Id", data.playerId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+				
+				var playersToJoin = data['waitingFor'];
+				if (playersToJoin > 0) {
+					Globals.debug("Waiting for " + playersToJoin + " to join", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+					$('#wait_message').css('display', 'block');
+				}
 			}
 			if (!Client._map) {
 				// request the map
@@ -348,12 +358,14 @@ $(function() {
 		},
 		
 		processNextState: function() {
+			Globals.debug("processNextState. Current state is", Client._currentState, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			if (Client._currentState < 0) {
 				Client._currentState = 0;
 			} else if (Client._currentState < (Client._history.length() - 1)){
 				Client._currentState ++;
-				Globals.debug("process state", Client._currentState, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			}
+			
+			Globals.debug("process state", Client._currentState, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			
 			Client._currentPlayer = Client.getState().currentPlayerId();
 			
@@ -366,6 +378,8 @@ $(function() {
 			
 			if (!Client._isAttacking && !Client.upToDate()) {
 				Client.processNextState();
+			} else {
+				Globals.debug("Client is up to date. Most recent state we have is", Client._history.length()-1, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			}
 		},
 		
