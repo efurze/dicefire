@@ -163,7 +163,7 @@ $(function() {
 			Client._downloader.getGameInfo(gameId, Client.gameInfoReceived);
 			
 			Client._history = new History(gameId, Client.stateUpdate);
-			Client._controller = new Clientcontroller(Client._history, Client._playerId, Client.endTurnClicked);
+			Client._controller = new Clientcontroller(Client._history, Client._playerId, replay, Client.endTurnClicked);
 		},
 
 		// HTTP request callback
@@ -173,12 +173,18 @@ $(function() {
 				
 				// connect to server
 				if (!Client._socket) {
-					Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
 					
-					Client._socket.on('map', Client.mapAvailable);
-					Client._socket.on('error', Client.socketError);
-					Client._socket.on('state', Client.engineUpdate);
-					Client._socket.on('create_bot', Client.createBot);
+					if (Client._mode == Client.MODES.PLAY) {
+						Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
+						Client._socket.on('map', Client.mapAvailable);
+						Client._socket.on('error', Client.socketError);
+						Client._socket.on('state', Client.engineUpdate);
+						Client._socket.on('create_bot', Client.createBot);
+						Client._socket.on('start_turn', Client.startTurn);
+					} else {
+						Client._socket = io.connect(window.location.hostname + ":5001/watch/" + Client._gameId);
+						Client._socket.on('state', Client.engineUpdate);
+					}
 				}
 				
 				// request the map
@@ -263,7 +269,6 @@ $(function() {
 				Globals.debug("Calling startTurn for player 0", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				Client._bots[0].startTurn(Client._history.getState(0));
 			}
-			Client._socket.on('start_turn', Client.startTurn);
 		},
 		
 		upToDate: function() {

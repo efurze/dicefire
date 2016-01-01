@@ -174,6 +174,7 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 	var self = this;
 	self._gameId = gameId;
 	self._ns = namespace;
+	self._watchersNs = watchNamespace;
 	self._sockets = {};
 	self._socketMap = {}; // socketId to array of playerIds
 	self._ipMap = {}; // IP address to array of playerIds
@@ -233,8 +234,10 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 
 					self._engine.registerStateCallback(self.engineUpdate.bind(self));			
 				
-					// listen for client connections
-					namespace.on('connection', self.connect.bind(self));
+					// listen for player connections
+					namespace.on('connection', self.connectPlayer.bind(self));
+					// listen for watcher connections
+					watchNamespace.on('connection', self.connectWatcher.bind(self));
 				});
 			}
 		} catch (err) {
@@ -244,8 +247,16 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 };
 
 
-GameServer.prototype.connect = function(socket) {
-	Globals.debug("Connected socket id " + socket.id + " at " + socket.handshake.address + " for game " + this._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+GameServer.prototype.connectWatcher = function(socket) {
+	Globals.debug("Connected watcher socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	var self = this;
+	var sock = new SocketWrapper(socket);
+	self._sockets[sock.id()] = sock;
+	
+}
+
+GameServer.prototype.connectPlayer = function(socket) {
+	Globals.debug("Connected player socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	var self = this;
 	var sock = new SocketWrapper(socket);
 	self._sockets[sock.id()] = sock;
@@ -260,7 +271,6 @@ GameServer.prototype.connect = function(socket) {
 	}
 	self._watchdogTimerId = -1;
 	
-	// TODO: FIXME: don't do this if the client is a watcher
 	// find a slot for this player
 	var id = self.reconnect(sock);
 	
@@ -328,12 +338,12 @@ GameServer.prototype.reconnect = function(socketWrapper) {
 
 GameServer.prototype.disconnect = function(socketWrapper) {
 	var self = this;
-	self._connectionCount --;
-	self._currentHumans --;
-	
-	Globals.debug('Socket ' + socketWrapper.id() + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 		
 	if (self._socketMap.hasOwnProperty(socketWrapper.id())) {
+		self._connectionCount --;
+		self._currentHumans --;
+		Globals.debug('Socket ' + socketWrapper.id() + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+		
 		var playerIds = self._socketMap[socketWrapper.id()];
 		playerIds.forEach(function(playerId) {
 			if (self._playerMap[playerId]) {
@@ -342,16 +352,17 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 			}
 		});
 		delete self._socketMap[socketWrapper.id()];
-	}
-	
-	
-	if (self._connectionCount == 0) {
-		Globals.debug('No active connections, starting linger timer', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
-		self._watchdogTimerId = setTimeout(function() {
-			Globals.debug('Timeout expired, cleaning up game', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
-			SocketHandler.removeGame(self._gameId);
-			self._watchdogTimerId = -1;
-		}, GAME_LINGER_TIMEOUT);
+		
+		if (self._connectionCount == 0) {
+			Globals.debug('No active connections, starting linger timer', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+			self._watchdogTimerId = setTimeout(function() {
+				Globals.debug('Timeout expired, cleaning up game', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+				SocketHandler.removeGame(self._gameId);
+				self._watchdogTimerId = -1;
+			}, GAME_LINGER_TIMEOUT);
+		}
+	} else {
+		// a watcher left
 	}
 };
 
@@ -418,6 +429,9 @@ GameServer.prototype.close = function() {
 
 	delete self._ns;
 	self._ns = null;
+	
+	delete self._watchersNs;
+	self._watchersNs = null;
 };
 
 // from socket
@@ -461,6 +475,7 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 				Globals.debug("sending state update, stateId", stateId, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 				// brodcast to all
 				self._ns.emit("state", stateId);
+				self._watchersNs.emit("state", stateId);
 			}
 		});
 		
