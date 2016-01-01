@@ -257,8 +257,8 @@ $(function() {
 				Client._bots[id].start();
 			});
 			
-			
-			if (Client._bots[0]) {
+			// the length check is to see if we're reconnecting to a game already under way
+			if (Client._bots[0] && Client._history.length() == 1) {
 				// if player 0 is a bot, tell it to start
 				Globals.debug("Calling startTurn for player 0", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				Client._bots[0].startTurn(Client._history.getState(0));
@@ -328,8 +328,8 @@ $(function() {
 		},
 		
 		// from controller
-		endTurnClicked: function() {
-			Client._socket.emit("end_turn", {playerId: Client._playerId});
+		endTurnClicked: function(currentPlayerId) {
+			Client._socket.emit("end_turn", {playerId: currentPlayerId});
 		},
 		
 		// from renderer
@@ -358,6 +358,10 @@ $(function() {
 			}
 			
 			Client.redraw();
+			
+			if (!Client._isAttacking && !Client.upToDate()) {
+				Client.processNextState();
+			}
 		},
 		
 		redraw: function() {
@@ -386,13 +390,6 @@ $(function() {
 				if (Client._controller) {
 					Client._controller.update();
 				}
-				
-				if (!Client._isAttacking && !Client.upToDate()) {
-					// TODO: FIXME: is there a race here with socket state updates?
-					window.setTimeout(function() {
-						Client.processNextState();
-					}, 0);
-				}
 			}
 		},
 		
@@ -411,8 +408,8 @@ $(function() {
 			return Client._history.getState(Client._currentState);
 		},
 		
-		endTurn: function(){
-			Client.endTurnClicked();
+		endTurn: function(playerId){
+			Client.endTurnClicked(playerId);
 		},
 		
 		// @callback: function(success){}

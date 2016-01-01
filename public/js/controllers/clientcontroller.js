@@ -76,7 +76,7 @@ Clientcontroller.prototype.endTurn = function() {
 	var self = this;
 	self._historyIndex = self._history.length() - 1;
 	if (self._endCb) {
-		self._endCb();
+		self._endCb(self._playerId);
 	}
 };
 

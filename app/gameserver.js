@@ -34,7 +34,8 @@ var SocketHandler = function() {
 				} else {
 					Globals.debug("Listening for game " + gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 					var socketNamespace = io.of("/" + gameId);
-					games[gameId] = new GameServer(gameId, socketNamespace);
+					var watchNamespace = io.of("/watch/" + gameId);
+					games[gameId] = new GameServer(gameId, socketNamespace, watchNamespace);
 					res.status(200).send("{}");
 				}
 			});
@@ -169,7 +170,7 @@ AIs.forEach(function(ai) {
 	AIMap[ai.getName()] = ai;
 });
 
-var GameServer = function(gameId, namespace) {
+var GameServer = function(gameId, namespace, watchNamespace) {
 	var self = this;
 	self._gameId = gameId;
 	self._ns = namespace;
@@ -315,13 +316,11 @@ GameServer.prototype.reconnect = function(socketWrapper) {
 						self._playerMap[playerId].startTurn(self._engine.getState());
 					}
 				}
-			} else {
-				console.log("can't find a player to reconnect with");
 			}
 		});
 		
 	} else {
-		console.log("haven't seen this IP before");
+		Globals.debug("haven't seen this IP before", Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 	}
 	
 	return humanAssignedTo;
