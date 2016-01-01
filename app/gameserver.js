@@ -115,6 +115,12 @@ var SocketWrapper = function(socket) {
 
 SocketWrapper.prototype.id = function() {return this._id;}
 
+SocketWrapper.prototype.ip= function() {
+	if (this._socket) {
+		return this._socket.handshake.address;
+	} 
+}
+
 SocketWrapper.prototype.on = function(event, callback) {
 	var self = this;
 	self._socket.on(event, function() {
@@ -168,6 +174,8 @@ var GameServer = function(gameId, namespace) {
 	self._gameId = gameId;
 	self._ns = namespace;
 	self._sockets = {};
+	self._socketMap = {}; // socketId to array of playerIds
+	self._ipMap = {}; // IP address to array of playerIds
 	self._gameInfo = null;
 	self._playerMap = []; // array of PlayerInterface
 	self._connectionCount = 0;
@@ -236,7 +244,7 @@ var GameServer = function(gameId, namespace) {
 
 
 GameServer.prototype.connect = function(socket) {
-	Globals.debug("Connected socket id " + socket.id + " for game " + this._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+	Globals.debug("Connected socket id " + socket.id + " at " + socket.handshake.address + " for game " + this._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	var self = this;
 	var sock = new SocketWrapper(socket);
 	self._sockets[sock.id()] = sock;
@@ -253,14 +261,23 @@ GameServer.prototype.connect = function(socket) {
 	
 	// TODO: FIXME: don't do this if the client is a watcher
 	// find a slot for this player
-	var id = 0;
-	for (var i=0; i < self._gameInfo.players.length; i++) {
-		if (self._playerMap[i].isHuman() && !self._playerMap[i].hasSocket()) {
-			Globals.debug('Assigning socket ' + sock.id() + ' to player ' + i, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
-			self._currentHumans ++; 
-			self._playerMap[i].setSocket(sock);
-			id = i;
-			break;
+	var id = self.reconnect(sock);
+	
+	if (id < 0) {
+		for (var i=0; i < self._gameInfo.players.length; i++) {
+			if (self._playerMap[i].isHuman() && !self._playerMap[i].hasSocket()) {
+				Globals.debug('Assigning socket ' + sock.id() + ' to player ' + i, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+				self._currentHumans ++; 
+				self._playerMap[i].setSocket(sock);
+				
+				if (!self._socketMap[sock.id()]) { self._socketMap[sock.id()] = []; }
+				self._socketMap[sock.id()].push(i);
+				
+				if (!self._ipMap[sock.ip()]) { self._ipMap[sock.ip()] = []; }
+				self._ipMap[sock.ip()].push(i);
+				id = i;
+				break;
+			}
 		}
 	}
 	
@@ -271,12 +288,63 @@ GameServer.prototype.connect = function(socket) {
 	}
 };
 
+// checks to see if we've seen this IP address before, and if so
+// attempts to reconnect socket to same player
+GameServer.prototype.reconnect = function(socketWrapper) {
+	console.log("reconnect");
+	var self = this;
+	var humanAssignedTo = -1;
+	if (self._ipMap.hasOwnProperty(socketWrapper.ip())) {
+		var playerIds = self._ipMap[socketWrapper.ip()];
+		playerIds.forEach(function(playerId) {
+			// try to reconnect all the players that were previously assigned to this IP
+			if (self._playerMap[playerId] && !self._playerMap[playerId].hasSocket()) {
+				Globals.debug('Reconnecting socket ' + socketWrapper.id() + ' to player ' + playerId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+				
+				if (self._playerMap[playerId].isHuman()) {
+					self._playerMap[playerId].setSocket(socketWrapper);
+
+					if (!self._socketMap[socketWrapper.id()]) { self._socketMap[socketWrapper.id()] = []; }
+					self._socketMap[socketWrapper.id()].push(playerId);
+					
+					self._currentHumans ++; 
+					humanAssignedTo = playerId;
+				} else { 
+					self.assignBot(self._playerMap[playerId], socketWrapper);
+					if (self._engine.currentPlayerId() == playerId) {
+						self._playerMap[playerId].startTurn(self._engine.getState());
+					}
+				}
+			} else {
+				console.log("can't find a player to reconnect with");
+			}
+		});
+		
+	} else {
+		console.log("haven't seen this IP before");
+	}
+	
+	return humanAssignedTo;
+};
+
 GameServer.prototype.disconnect = function(socketWrapper) {
 	var self = this;
 	self._connectionCount --;
 	self._currentHumans --;
 	
 	Globals.debug('Socket ' + socketWrapper.id() + ' disconnected. Current connectionCount', self._connectionCount, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+		
+	if (self._socketMap.hasOwnProperty(socketWrapper.id())) {
+		var playerIds = self._socketMap[socketWrapper.id()];
+		playerIds.forEach(function(playerId) {
+			if (self._playerMap[playerId]) {
+				Globals.debug('Socket disconnect orphaning player', playerId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
+				self._playerMap[playerId].setSocket(null);
+			}
+		});
+		delete self._socketMap[socketWrapper.id()];
+	}
+	
 	
 	if (self._connectionCount == 0) {
 		Globals.debug('No active connections, starting linger timer', self._gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
@@ -311,19 +379,28 @@ GameServer.prototype.startGame = function() {
 };
 
 // @bot: AISocketWrapper
-GameServer.prototype.assignBot = function(bot, player) {
+GameServer.prototype.assignBot = function(bot, socket) {
 	var self = this;
 	var socketIds = [];
 	Object.keys(self._sockets).forEach(function(socketId) {
 		socketIds.push(socketId);
 	});
 
-	// randomly pick a socket to assign it to
-	var index = Math.round(Math.random() * (socketIds.length - 1));
-	var socket = self._sockets[socketIds[index]];
+	if (!socket) {
+		// randomly pick a socket to assign it to
+		var index = Math.round(Math.random() * (socketIds.length - 1));
+		socket = self._sockets[socketIds[index]];
+	}
 	Globals.ASSERT(socket instanceof SocketWrapper);
 	Globals.debug('Assigning Bot ' + bot.getName() + ' at position ' + bot.id() + ' to socket ' + socket.id(), Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 	bot.setSocket(socket);
+	
+	if (!self._socketMap[socket.id()]) { self._socketMap[socket.id()] = []; }
+	self._socketMap[socket.id()].push(bot.id());
+	
+	if (!self._ipMap[socket.ip()]) { self._ipMap[socket.ip()] = []; }
+	self._ipMap[socket.ip()].push(bot.id());
+	
 	socket.emit('create_bot', {name: bot.getName(), playerId: bot.id()});
 };
 

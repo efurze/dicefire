@@ -244,8 +244,6 @@ $(function() {
 			Client._started = true;
 			$('#game').css('display', 'block');
 			
-			Globals.ASSERT(Client._playerId >= 0);
-			
 			if (Client._mode == Client.MODES.PLAY) {
 				$('#end_turn').click(Client._controller.endTurn.bind(Client._controller));
 			} else {
@@ -383,7 +381,7 @@ $(function() {
 					Client._map.setState(gamestate);
 				}
 				
-				Globals.debug("Rendering state", Client._currentState, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+				//Globals.debug("Rendering state", Client._currentState, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 				Renderer.render(gamestate, Client.renderAttackDone);
 				if (Client._controller) {
 					Client._controller.update();
