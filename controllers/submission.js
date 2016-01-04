@@ -14,7 +14,7 @@ function validate() {
 		var createFn = eval(code);
 		var ai = createFn();
 		
-		if (!ai.hasOwnProperty('startTurn') || typeof ai.startTurn !== 'function') {
+		if (!ai.__proto__.hasOwnProperty('startTurn') || typeof ai.__proto__.startTurn !== 'function') {
 			return "Submitted AI has no startTurn() function";
 		}
 		
