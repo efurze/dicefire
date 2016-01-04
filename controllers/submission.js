@@ -28,7 +28,8 @@ function validate() {
 
 module.exports = {
 	submit: function(req, res) {
-		var code = decodeURI(req.body.code).trim();
+		var code = req.body.code.trim();
+		code = code.replace(/\n|\r|\t/gm, '');
 		
 		var fnString = validate.toString();
 		fnString = fnString.replace("replaceThis", code);
