@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/mikeslemmer/dicefire",
   "dependencies": {
+    "bluebird": "^3.1.1",
+    "body-parser": "latest",
     "bootstrap": "latest",
     "bootstrap-social": "latest",
     "connect-redis": "latest",
@@ -27,7 +29,6 @@
     "express-handlebars": "latest",
     "express-session": "^1.12.1",
     "font-awesome": "latest",
-  	"body-parser": "latest",
     "jquery": "latest",
     "jshashes": "latest",
     "lodash": "latest",
@@ -36,9 +37,9 @@
     "passport-facebook": "^2.0.0",
     "passport-oauth": "^1.0.0",
     "redis": "latest",
+    "sandbox": "latest",
     "serve-favicon": "latest",
-	  "socket.io": "latest",
-	  "sandbox": "latest"
+    "socket.io": "latest"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

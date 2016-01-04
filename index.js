@@ -88,8 +88,11 @@ app.get('/getMap', gameController.getMap);
 app.get('/getState', gameController.getState); 
 app.get('/getStateCount', gameController.getStateCount);
 app.get('/setup', gameController.setup);
+app.get('/ais', gameController.getAIList);
+app.get('/ai', gameController.getAI);
 app.post('/submission', submissionController.submit);
 
+// server
 app.post('/createGame', gameServer.createGame);
 
 

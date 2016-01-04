@@ -1,5 +1,10 @@
 var fs = require('fs');
+var bluebird = require('bluebird');
 var redis = require('redis');
+
+bluebird.promisifyAll(redis.RedisClient.prototype);
+bluebird.promisifyAll(redis.Multi.prototype);
+
 var redisClient = redis.createClient(); //6379, 'localhost', '');
 var uuid = require('node-uuid');
 
@@ -196,6 +201,33 @@ module.exports = {
 			res.send({'stateCount': stateCount});
 
 		});
+	},
+	
+	
+	getAIList: function(req, res) {
+		redisClient.lrangeAsync("AI_LIST", 0, -1)
+			.then(function(results) {
+				var ais = [];
+				results.forEach(function(result) {
+					ais.push({hash: result, name: result});
+				});
+				res.render("ai_list", {
+					title: "AIs",
+					ais: ais
+				});
+			}).catch(function(err) {
+				res.status(500).send("Error retrieving AI list: " + err);
+			});
+	},
+	
+	getAI: function(req, res) {
+		var sha = req.query['hash'];
+		redisClient.getAsync("ai/"+sha)
+			.then(function(result) {
+				res.send(result);
+			}).catch(function(err) {
+				res.status(500).send("Error retrieving AI: " + err);
+			});
 	}
 
 };
