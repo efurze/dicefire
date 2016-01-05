@@ -32,49 +32,63 @@ function validate() {
 	return true;
 };
 
-var storeAI = function(codeStr, sha) {
-	redisClient.rpushAsync("AI_LIST", sha)
+var storeAI = function(codeStr, sha, name) {
+	redisClient.rpushAsync("AI_LIST", JSON.stringify({hash:sha, name: name}))
 		.then(function(result) {
-			return redisClient.set("ai/"+sha, JSON.stringify({code: codeStr}));
+			return redisClient.set("ai/"+sha, JSON.stringify({name: name, code: codeStr}));
 		}).catch(function(err) {
 			console.log("storeAI error:", err);
 		});
 };
 
+// returns a promise
+var getAIs = function() {
+	return redisClient.lrangeAsync("AI_LIST", 0, -1);
+};
+
+var getAI = function(hash) {
+	return redisClient.getAsync("ai/"+hash);
+};
+
+
+var submit = function(req, res) {
+	var name = req.body.name.trim();
+	var code = req.body.code.trim();
+	code = code.replace(/\n|\r|\t/gm, '');
+	var codeHash = SHA1.hex(code);
+	
+	getAI(codeHash)
+		.then(function (result) {
+			if (result) {
+				res.send("Code dupliate");
+			} else {
+				
+				var fnString = validate.toString();
+				fnString = fnString.replace("replaceThis", code);
+				fnString += ";validate()";
+
+				var s = new Sandbox();
+				s.run(fnString, function(result) {
+					console.log(result);
+					result = result.result;
+					if (result === 'true') {
+						storeAI(code, codeHash, name);
+						res.send("Submission received!");
+					} else {
+						res.send("Invalid submission: " + JSON.stringify(result));
+					}
+				});
+				
+			}
+		}).catch(function(e) {
+			console.log("Redis error:", e);
+			res.send("Server error:", e);
+		});		
+};
 
 module.exports = {
-	submit: function(req, res) {
-		var code = req.body.code.trim();
-		code = code.replace(/\n|\r|\t/gm, '');
-		var codeHash = SHA1.hex(code);
-		
-		redisClient.getAsync('ai/'+codeHash)
-					.then(function (result) {
-						if (result) {
-							res.send("Code dupliate");
-						} else {
-							
-							var fnString = validate.toString();
-							fnString = fnString.replace("replaceThis", code);
-							fnString += ";validate()";
-
-							var s = new Sandbox();
-							s.run(fnString, function(result) {
-								console.log(result);
-								result = result.result;
-								if (result === 'true') {
-									storeAI(code, codeHash);
-									res.send("Submission received!");
-								} else {
-									res.send("Invalid submission: " + JSON.stringify(result));
-								}
-							});
-							
-						}
-					}).catch(function(e) {
-						console.log("Redis error:", e);
-						res.send("Server error:", e);
-					});		
-	}
+	submit: submit,
+	getAIs: getAIs,
+	getAI: getAI
 };
 
