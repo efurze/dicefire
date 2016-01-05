@@ -14,15 +14,23 @@ var redisClient = redis.createClient(); //6379, 'localhost', '');
 function validate() {
 	
 	var code = "replaceThis";
-	code += ";create";
+	code += ";replaceWithClassName";
 	
 	try {
 		
-		var createFn = eval(code);
-		var ai = createFn();
+		var submittedClass = eval(code);
+		if (!submittedClass.hasOwnProperty('create') || typeof submittedClass.create !== 'function') {
+			return "Submitted AI missing create() method - create() must be a class method, not an instance method.";
+		}
+		
+		if (!submittedClass.hasOwnProperty('getName') || typeof submittedClass.getName !== 'function') {
+			return "Submitted AI missing getName() method - getName() must be a class method, not an instance method. ";
+		}
+		
+		var ai = submittedClass.create();
 		
 		if (!ai.__proto__.hasOwnProperty('startTurn') || typeof ai.__proto__.startTurn !== 'function') {
-			return "Submitted AI has no startTurn() function";
+			return "Submitted AI has no startTurn() method";
 		}
 		
 	} catch (e) {
@@ -55,6 +63,7 @@ var submit = function(req, res) {
 	var name = req.body.name.trim();
 	var code = req.body.code.trim();
 	code = code.replace(/\n|\r|\t/gm, '');
+	code = code.replace(/"/gm, "'");
 	var codeHash = SHA1.hex(code);
 	
 	getAI(codeHash)
@@ -65,6 +74,8 @@ var submit = function(req, res) {
 				
 				var fnString = validate.toString();
 				fnString = fnString.replace("replaceThis", code);
+				fnString = fnString.replace("replaceWithClassName", name);
+				console.log(fnString);
 				fnString += ";validate()";
 
 				var s = new Sandbox();

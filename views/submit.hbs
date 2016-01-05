@@ -1,23 +1,54 @@
 <div>
 	<form action="submission" method="post">
 		Name:<br>
-		<input type="text" name="name">
+		<input type="text" name="name" value="Aggressive">
 		<br>
 		Code:<br>
 		<textarea rows="50" cols="100" name="code">
 		
-var MyAI = function() {
+var Aggressive = function (id) {
 
 };
 
-MyAI.prototype.startTurn = function() {
+Aggressive.prototype.startTurn = function(interface, depth) {
+	depth = depth || 0;
+	var self = this;
+	var state = interface.getState();
 
+	var playerId = state.currentPlayerId();
+	var countryIds = state.countryIds();
+	for (var i = 0; i < countryIds.length; i++) {
+		var countryId = countryIds[i];
+		if (state.countryOwner(countryId) == playerId) {
+			var possibleAttacks = [];
+			interface.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
+				if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
+					state.countryDice(countryId) >= state.countryDice(adjacentCountryId)) {
+					possibleAttacks.push(adjacentCountryId);
+				}
+			});
+
+			if (possibleAttacks.length > 0) {
+				var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
+				interface.attack(countryId, attackCountryId, function(result) {
+					self.startTurn(interface, depth + 1);
+				});
+				return;
+			}
+		}
+	}
+
+	interface.endTurn();
 };
 
+Aggressive.getName = function() {
+	return 'Aggressive';
+};
+
+Aggressive.create = function(playerId) {
+	return new Aggressive(playerId);
+};
 		
-function create() {
-	return new MyAI();
-};
 		</textarea>
 		<br>
 		<input type="submit" value="Submit">
