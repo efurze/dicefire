@@ -65,12 +65,18 @@ AIWrapper.prototype.isHuman = function() {
 // from engine
 AIWrapper.prototype.start = function() {
 	if (!this._trusted) {
-		this._worker = new Worker("/js/game/aiworker.js");
+		if (this._aiHash) {
+			// grab a specialized worker
+			this._worker = new Worker("/aiworker/this._aiHash");
+		} else {
+			this._worker = new Worker("/js/game/botworker.js");
+		}
+		
 		this._worker.onmessage = this.callback.bind(this);
 		this._worker.postMessage({
 								command: 'init', 
 								adjacencyList: this._controller.map().adjacencyList(), 
-								ai: this._aiHash ? this._aiHash : this._name, 
+								ai: this._name, 
 								playerId: this._id});
 	}
 };
@@ -126,7 +132,7 @@ AIWrapper.prototype.attack = function(from, to, callback) {
 	this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
 }
 
-// from AIWorker
+// from BotWorker
 AIWrapper.prototype.callback = function(e) {
 	Globals.ASSERT(this._isMyTurn);
 	var data = e.data;
