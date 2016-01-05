@@ -35,8 +35,17 @@ $(function() {
 				$('#view_link').css('display', 'block');
 			}
 			
-			Game._engine = new Engine();
-			Game._engine.init(playerCode.map(function(pc){return pc;}), Game.gameOver);
+			Game._engine = new Engine(false);
+			// create the PlayerWrappers
+			var pws = playerCode.map(function(player, idx) {
+				if (player.getName() == 'human') {
+					return Engine.PlayerInterface;
+				} else {
+					return new AIWrapper(player, Game._engine, idx, false);
+				}
+			});
+			
+			Game._engine.init(pws, Game.gameOver);
 			Game._engine.setup();
 			
 			var playerNames = playerCode.map(function(pc) {

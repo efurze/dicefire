@@ -9,15 +9,6 @@ if (typeof module !== 'undefined' && module.exports) {
 	var AIWrapper = require('./aiwrapper.js');
 }
 
-var PlayerInterface = {
-	getName: function(){return "human";},
-	isHuman: function(){return true;},
-	start: function(){},
-	stop: function(){},
-	startTurn: function(state){},
-	attackDone: function(success){},
-	loses: function(){}
-};
 
 var Engine = function(trusted) {
 	this._trusted = (typeof trusted == 'undefined') ? true : trusted;
@@ -34,6 +25,16 @@ var Engine = function(trusted) {
 	this._map = null;
 	this._watchdogTimerID = -1;
 };
+
+Engine.PlayerInterface = {
+	getName: function(){return "human";},
+	isHuman: function(){return true;},
+	start: function(){},
+	stop: function(){},
+	startTurn: function(state){},
+	attackDone: function(success){},
+	loses: function(){}
+};
         
 Engine.prototype.map = function() { return this._map; };
 Engine.prototype.getPlayer = function(id) { return this._players[id]; };
@@ -47,19 +48,15 @@ Engine.prototype.setCurrentPlayer = function(id) {
 	this._currentPlayerId = id;
 };
 
-// @playerCode = EITHER array[string] of player names OR array[object] of PlayerWrappers
+// @players =  array[object] of PlayerWrappers
 // @callback = function(winningAI, winningID), called when game is over
-Engine.prototype.init = function(playerCode, callback) {
+Engine.prototype.init = function(players, callback) {
 	console.time("DICEFIRE");
-	Globals.debug("Engine init", JSON.stringify(playerCode), callback, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+	players.forEach(function(ai) {
+		Globals.ASSERT(Globals.implements(ai, Engine.PlayerInterface));
+	});
+	Globals.debug("Engine init", players.map(function(player) {return player.getName();}), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	var self = this;
-	
-	if (typeof playerCode !== 'undefined') {
-		if (typeof playerCode == 'function') {
-			callback = playerCode;
-			playerCode = null;
-		}
-	}
 	
 	self._history = [];
 	self.setCurrentPlayer(0);
@@ -67,25 +64,18 @@ Engine.prototype.init = function(playerCode, callback) {
 	self._attackInProgress = false;
 	self._gameCallback = callback;
 	self._stateCallback = null;
-	self._playerCode = playerCode;
 	if (self._AIs){
 		self._AIs.forEach(function(ai) {
 			ai.stop();
 		});
 	}
 	self._AIs = [];
-	self._AIs.length = playerCode.length;
+	self._AIs.length = players.length;
 	
 	self._players = [];
-	if (playerCode) {
-		for (var i=0; i < playerCode.length; i++) {
-			self._players.push(new Player(i));
-			if (Globals.implements(playerCode[i], PlayerInterface)) {
-				// it's a PlayerInterface
-				Globals.debug("Player " + i + " is a PlayerInterface", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-				self._AIs[i] = playerCode[i];
-			}
-		}
+	for (var i=0; i < players.length; i++) {
+		self._players.push(new Player(i));
+		self._AIs[i] = players[i];
 	}
 	
 	self._initialized = true;	
@@ -113,24 +103,10 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	
 	self._map.assignCountries(self._players);
 	
-	if (typeof self._playerCode[0] == 'function') {
-		// initialize AIs
-		var isHumanList = self._playerCode.map(function(elem) { return elem == "human"; });
-		self._playerCode.forEach(function(elem, index) {
-			if (elem.getName() == "human") {
-				Globals.debug("Player " + index + " is human", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-				self._AIs[index] = PlayerInterface;
-			} else {
-				Globals.debug("Creating player " + index + ": " + elem.getName(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-				self._AIs[index] = new AIWrapper(elem, self, index, self._trusted);
-				self._AIs[index].start();
-			} 
-		});
-	}
-	
-	//self._AIs.forEach(function(ai) {
-	//	Globals.ASSERT(Globals.implements(ai, PlayerInterface));
-	//});
+	// start the AIs - this has to happen after the map is initialized
+	self._AIs.forEach(function(ai) {
+		ai.start();
+	});
 	
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);

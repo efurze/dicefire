@@ -17,16 +17,22 @@ var GameRunner = function(AIs) {
 
 // @gameOver_cb = function(){}
 GameRunner.prototype.start = function(gameOver_cb) {
+	var self = this;
 	if (this._players.length > 1) {
 		this._callback = gameOver_cb;
 		
-		this._engine.init(this._players, this.gameDone.bind(this));
+		// create the PlayerWrappers
+		var pws = this._players.map(function(player, idx) {
+			return new AIWrapper(player, self._engine, idx, false);
+		});
+		
+		this._engine.init(pws, this.gameDone.bind(this));
 		this._engine.setup();
 		this._engine.registerStateCallback(this.engineUpdate.bind(this));
 		
 		this._gameId = uuid.v1();
 		this._uploader = new Uploader(this._gameId);
-		this._uploader.push(this._engine.serializeMap());
+		//this._uploader.push(this._engine.serializeMap());
 	
 		debug("Beginning game " + this._gameId + ": " + this._players.map(function(p) {return p.getName();}));
 		this._engine.startTurn(0);
@@ -45,7 +51,7 @@ GameRunner.prototype.start = function(gameOver_cb) {
 
 GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
-	self._uploader.push(gamestate.clone());
+	//self._uploader.push(gamestate.clone());
 	if (gamestate.attack()) {
 		window.setTimeout(function() {
 			self._engine.finishAttack(gamestate.attack());
@@ -57,7 +63,7 @@ GameRunner.prototype.gameDone = function(winner, id) {
 	var self = this;
 	var results = new Gameinfo(self._players.map(function(p){return p.getName();}), id);
 	
-	self._uploader.push(results);
+	//self._uploader.push(results);
 	
 	var cb = this._callback;
 	

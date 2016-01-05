@@ -27,15 +27,27 @@ var ControllerInterface = {
 //--------------------------------------------------------------------------------------
 //	AIWrapper - implements Engine::PlayerInterface
 // 
+// @ai: EITHER an AI class OR a string representing the hash of an AI stored on the server. 
+//		If it's a hash, then @name must be defined
+//
 // @controller: must implement ControllerInterface above
 //--------------------------------------------------------------------------------------
-var AIWrapper = function(ai, controller, playerId, trusted) {
+var AIWrapper = function(ai, controller, playerId, trusted, name) {
 	Globals.ASSERT(Globals.implements(controller, ControllerInterface));
-	this._trusted = (typeof trusted == undefined) ? false : trusted;
+	this._trusted = trusted;
 	this._isMyTurn = false;
 	this._controller = controller;
-	this._name = ai.getName();
 	this._id = playerId;
+	
+	if (typeof ai === 'string') {
+		Globals.ASSERT(name);
+		this._trusted = false;
+		this._ai = null;
+		this._aiHash = ai;
+		this._name = name;
+	} else {
+		this._name = ai.getName();
+	}
 	
 	if (this._trusted) {
 		this._ai = ai.create(playerId);
@@ -55,14 +67,18 @@ AIWrapper.prototype.start = function() {
 	if (!this._trusted) {
 		this._worker = new Worker("/js/game/aiworker.js");
 		this._worker.onmessage = this.callback.bind(this);
-		this._worker.postMessage({command: 'init', adjacencyList: this._controller.map().adjacencyList(), ai: this._name, playerId: this._id});
+		this._worker.postMessage({
+								command: 'init', 
+								adjacencyList: this._controller.map().adjacencyList(), 
+								ai: this._aiHash ? this._aiHash : this._name, 
+								playerId: this._id});
 	}
 };
 
 // from engine
 AIWrapper.prototype.stop = function() {
 	if (!this._trusted && this._worker) {
-		this._worker.close();
+		this._worker.terminate();
 		this._worker = null;
 	}
 };
