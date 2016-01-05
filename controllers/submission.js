@@ -89,7 +89,7 @@ var submit = function(req, res) {
 					console.log(result);
 					result = result.result;
 					if (result === 'true') {
-						//storeAI(code, codeHash, name);
+						storeAI(code, codeHash, name);
 						res.send("Submission received!");
 					} else {
 						res.send("Invalid submission: " + JSON.stringify(result));
