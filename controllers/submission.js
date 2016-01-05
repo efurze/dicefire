@@ -11,14 +11,22 @@ bluebird.promisifyAll(redis.Multi.prototype);
 
 var redisClient = redis.createClient(); //6379, 'localhost', '');
 
+/*
+	validate() - THIS CODE IS VERY FRAGILE. Don't edit it without reading the comment below.
+	
+	This function validates that submitted AI code meets the submission requirements. In order to safely run
+	untrusted code, we jump through some hoops. Validate() is run in a sandbox by toString()-ing it and passing the
+	string to the sandbox. In order to incorporate the AI code, we paste it into the stringified body of validate() over the 
+	"replaceMe" comment below. DO NOT REMOVE OR ALTER THIS COMMENT or the whole thing will stop working. Additionally, the
+	name of the AI class is copied over the "replaceWithClassName" string below. Don't alter that string, either.
+*/
 function validate() {
 	
-	var code = "replaceThis";
-	code += ";replaceWithClassName";
+	/*replaceMe*/
 	
 	try {
 		
-		var submittedClass = eval(code);
+		var submittedClass = "replaceWithClassName";
 		if (!submittedClass.hasOwnProperty('create') || typeof submittedClass.create !== 'function') {
 			return "Submitted AI missing create() method - create() must be a class method, not an instance method.";
 		}
@@ -62,20 +70,18 @@ var getAI = function(hash) {
 var submit = function(req, res) {
 	var name = req.body.name.trim();
 	var code = req.body.code.trim();
-	code = code.replace(/\n|\r|\t/gm, '');
-	code = code.replace(/"/gm, "'");
 	var codeHash = SHA1.hex(code);
 	
 	getAI(codeHash)
 		.then(function (result) {
 			if (result) {
-				res.send("Code dupliate");
+				res.send("Code duplicate");
 			} else {
 				
 				var fnString = validate.toString();
-				fnString = fnString.replace("replaceThis", code);
-				fnString = fnString.replace("replaceWithClassName", name);
-				console.log(fnString);
+				fnString = fnString.replace("/*replaceMe*/", code);
+				fnString = fnString.replace("\"replaceWithClassName\"", name);
+				//console.log(fnString);
 				fnString += ";validate()";
 
 				var s = new Sandbox();
@@ -83,7 +89,7 @@ var submit = function(req, res) {
 					console.log(result);
 					result = result.result;
 					if (result === 'true') {
-						storeAI(code, codeHash, name);
+						//storeAI(code, codeHash, name);
 						res.send("Submission received!");
 					} else {
 						res.send("Invalid submission: " + JSON.stringify(result));
