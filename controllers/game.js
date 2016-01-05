@@ -217,11 +217,31 @@ module.exports = {
 		});
 	},
 	
+	getAIListJSON: function(req, res) {
+		submitter.getAIs().then(function(results) {
+			var parsedResults = results.map(function(result){return JSON.parse(result);});
+			res.send(parsedResults);
+		}).catch(function(err) {
+			res.status(500).send("Error retrieving AI list: " + err);
+		});
+	},
+	
 	getAI: function(req, res) {
 		var sha = req.query['hash'];
 		submitter.getAI(sha)
 			.then(function(result) {
 				res.send(result);
+			}).catch(function(err) {
+				res.status(500).send("Error retrieving AI: " + err);
+			});
+	},
+	
+	getAICode: function(req, res) {
+		var sha = req.params['hash'];
+		submitter.getAI(sha)
+			.then(function(result) {
+				result = JSON.parse(result);
+				res.send(result.code);
 			}).catch(function(err) {
 				res.status(500).send("Error retrieving AI: " + err);
 			});

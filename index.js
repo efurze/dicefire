@@ -89,7 +89,9 @@ app.get('/getState', gameController.getState);
 app.get('/getStateCount', gameController.getStateCount);
 app.get('/setup', gameController.setup);
 app.get('/ais', gameController.getAIList);
+app.get('/aisjson', gameController.getAIListJSON);
 app.get('/ai', gameController.getAI);
+app.get('/aicode/:hash', gameController.getAICode);
 app.post('/submission', submissionController.submit);
 
 // server

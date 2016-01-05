@@ -23,7 +23,7 @@ GameRunner.prototype.start = function(gameOver_cb) {
 		
 		// create the PlayerWrappers
 		var pws = this._players.map(function(player, idx) {
-			return new AIWrapper(player, self._engine, idx, false);
+			return new AIWrapper(player.hash, self._engine, idx, false, player.name);
 		});
 		
 		this._engine.init(pws, this.gameDone.bind(this));
@@ -34,7 +34,7 @@ GameRunner.prototype.start = function(gameOver_cb) {
 		this._uploader = new Uploader(this._gameId);
 		//this._uploader.push(this._engine.serializeMap());
 	
-		debug("Beginning game " + this._gameId + ": " + this._players.map(function(p) {return p.getName();}));
+		debug("Beginning game " + this._gameId + ": " + pws.map(function(p) {return p.getName();}));
 		this._engine.startTurn(0);
 	} else {
 		debug("Not enough players to play: " + JSON.stringify(this._players));
@@ -61,7 +61,7 @@ GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 
 GameRunner.prototype.gameDone = function(winner, id) {
 	var self = this;
-	var results = new Gameinfo(self._players.map(function(p){return p.getName();}), id);
+	var results = new Gameinfo(self._players.map(function(p){return p.name + '-' + p.hash;}), id);
 	
 	//self._uploader.push(results);
 	
@@ -87,7 +87,7 @@ var debug = function(msg) {
 //	RandomRunner
 //--------------------------------------------------------------------------------------
 
-
+// @AI = array of {hash: , name: }
 var RandomRunner = function(AIs, max) {
 	this._count = 0;
 	this._stop = false;
@@ -142,17 +142,31 @@ $(function() {
 	
 	window.Thunderdome = {
 		
-		_AIs: [AI.Plyer, AI.Greedy, AI.Aggressive],
+		_AIs: [], // array of {hash: , name: }
 		_runner: null,
+		_downloader: null,
 		
 		init: function () {
-			Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 1);
+			Thunderdome._downloader = new Downloader();
+			Thunderdome._downloader.getAIs(Thunderdome.aiListReceived);
 			
 			$('#stop_btn').prop('disabled', true);
-			$('#start_btn').prop('disabled', false);
+			$('#start_btn').prop('disabled', true);
 			
 			$('#start_btn').click(Thunderdome.start);
 			$('#stop_btn').click(Thunderdome.stop);
+		},
+		
+		aiListReceived: function(success, data) {
+			if (success) {
+				$('#stop_btn').prop('disabled', true);
+				$('#start_btn').prop('disabled', false);
+				Thunderdome._AIs = data;
+				Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 1);
+				
+			} else {
+				console.log("ERROR retrieving AI list", data);
+			}
 		},
 		
 		start: function() {

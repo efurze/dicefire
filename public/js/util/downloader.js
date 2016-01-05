@@ -39,6 +39,11 @@ Downloader.prototype.getStateCount = function(gameId, callback) {
 	this.get(url, callback);
 };
 
+Downloader.prototype.getAIs = function(callback) {
+	var url = "/aisjson";
+	this.get(url, callback);
+};
+
 Downloader.prototype._doNext = function() {
 	var self = this;
 	if (!self._pending && self._array.length) {
