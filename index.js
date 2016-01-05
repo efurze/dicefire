@@ -92,6 +92,7 @@ app.get('/ais', gameController.getAIList);
 app.get('/aisjson', gameController.getAIListJSON);
 app.get('/ai', gameController.getAI);
 app.get('/aicode/:hash', gameController.getAICode);
+app.get('/aiworker/:hash', gameController.getAIWorker);
 app.post('/submission', submissionController.submit);
 
 // server

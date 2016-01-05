@@ -2,6 +2,7 @@ var fs = require('fs');
 var bluebird = require('bluebird');
 var redis = require('redis');
 var submitter = require('./submission.js');
+var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
@@ -245,6 +246,12 @@ module.exports = {
 			}).catch(function(err) {
 				res.status(500).send("Error retrieving AI: " + err);
 			});
+	},
+	
+	getAIWorker: function(req, res) {
+		var sha = req.params['hash'];
+		var replaced = aiWorker.replace('_replaceThisWithAIHash_', sha);
+		res.send(replaced);
 	}
 
 };

@@ -67,7 +67,7 @@ AIWrapper.prototype.start = function() {
 	if (!this._trusted) {
 		if (this._aiHash) {
 			// grab a specialized worker
-			this._worker = new Worker("/aiworker/this._aiHash");
+			this._worker = new Worker("/aiworker/" + this._aiHash);
 		} else {
 			this._worker = new Worker("/js/game/botworker.js");
 		}
