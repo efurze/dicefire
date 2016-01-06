@@ -79,12 +79,21 @@ var getAI = function(hash) {
 	return redisClient.getAsync("ai/"+hash);
 };
 
-var recordGame = function(hash, gameId) {
-	console.log("recordGame", hash, gameId);
-	var key = "aigames/" + hash;
+var recordGame = function(gameId) {
+	console.log("recordGame", gameId);
+	var key = "games";
 	return redisClient.rpushAsync(key, gameId)
 		.catch(function(err) {
 			console.log("ERROR recording game to redis:", err);
+		});
+};
+
+var recordGameForAI = function(hash, gameId) {
+	console.log("recordGameForAI", hash, gameId);
+	var key = "aigames/" + hash;
+	return redisClient.rpushAsync(key, gameId)
+		.catch(function(err) {
+			console.log("ERROR recording AI game to redis:", err);
 		});
 };
 
@@ -163,6 +172,7 @@ module.exports = {
 	getAIs: getAIs,
 	getAI: getAI,
 	recordGame: recordGame,
+	recordGameForAI: recordGameForAI,
 	recordWin: recordWin,
 	recordLoss: recordLoss,
 	resetAI: resetAI

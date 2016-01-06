@@ -135,19 +135,24 @@ module.exports = {
 		 	.then(function(reply) {
 				
 				var uniquePlayers = {};
-				
-				
-				Promise.each(results.players, function(player, idx) {
+				// record the win and loss for each player
+				return Promise.each(results.players, function(player, idx) {
 					uniquePlayers[player] = true;
 					if (idx == results.winner) {
 						return submitter.recordWin(player);
 					} else {
 						return submitter.recordLoss(player);
 					}
+					
 				}).then(function() {
-					Object.keys(uniquePlayers).forEach(function(player) {
-						submitter.recordGame(player, gameId);
+					// Add the game to each AI's history
+					return Promise.each(Object.keys(uniquePlayers), function(player) {
+						return submitter.recordGameForAI(player, gameId);
 					});
+				}).then(function() {
+					// Add the game to the overall history
+					return submitter.recordGame(gameId);
+				}).then(function() {
 					res.status(200).send("{}");
 				}).catch(function(err){
 					console.log("uploadGameInfo ERROR:", err);
@@ -181,7 +186,7 @@ module.exports = {
 		var stateData = JSON.stringify(req.body);
 		
 		var filename = gameId + "/state_" + moveId + ".json";
-		console.log("Saving state file " + filename);
+		//console.log("Saving state file " + filename);
 		redisClient.set(filename, stateData, function(err, reply) {
 			res.status(200).send("{}");
 		});
