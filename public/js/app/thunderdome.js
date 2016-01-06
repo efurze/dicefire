@@ -32,7 +32,7 @@ GameRunner.prototype.start = function(gameOver_cb) {
 		
 		this._gameId = uuid.v1();
 		this._uploader = new Uploader(this._gameId);
-		//this._uploader.push(this._engine.serializeMap());
+		this._uploader.push(this._engine.serializeMap());
 	
 		debug("Beginning game " + this._gameId + ": " + pws.map(function(p) {return p.getName();}));
 		this._engine.startTurn(0);
@@ -51,7 +51,7 @@ GameRunner.prototype.start = function(gameOver_cb) {
 
 GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
-	//self._uploader.push(gamestate.clone());
+	self._uploader.push(gamestate.clone());
 	if (gamestate.attack()) {
 		window.setTimeout(function() {
 			self._engine.finishAttack(gamestate.attack());
@@ -61,9 +61,9 @@ GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 
 GameRunner.prototype.gameDone = function(winner, id) {
 	var self = this;
-	var results = new Gameinfo(self._players.map(function(p){return p.name + '-' + p.hash;}), id);
+	var results = new Gameinfo(self._players.map(function(p){return p.hash;}), id);
 	
-	//self._uploader.push(results);
+	self._uploader.push(results);
 	
 	var cb = this._callback;
 	

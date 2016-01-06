@@ -49,12 +49,12 @@ function validate() {
 };
 
 var storeAI = function(codeStr, sha, name) {
-	redisClient.rpushAsync("AI_LIST", JSON.stringify({hash:sha, name: name}))
-		.then(function(result) {
-			return redisClient.set("ai/"+sha, JSON.stringify({name: name, code: codeStr}));
-		}).catch(function(err) {
-			console.log("storeAI error:", err);
-		});
+	return redisClient.rpushAsync("AI_LIST", JSON.stringify({hash:sha, name: name}))
+				.then(function(result) {
+					return redisClient.setAsync("ai/"+sha, JSON.stringify({name: name, code: codeStr}));
+				}).catch(function(err) {
+					console.log("storeAI error:", err);
+				});
 };
 
 // returns a promise
@@ -66,6 +66,48 @@ var getAI = function(hash) {
 	return redisClient.getAsync("ai/"+hash);
 };
 
+var recordGame = function(hash, gameId) {
+	console.log("recordGame", hash, gameId);
+	var key = "aigames/" + hash;
+	return redisClient.rpushAsync(key, gameId)
+	.catch(function(err) {
+		console.log("ERROR recording game to redis:", err);
+	});
+};
+
+var recordWin = function(hash, gameId) {
+	console.log("recordWin", hash);
+	var key = "ai/"+hash;
+	redisClient.getAsync(key)
+		.then(function(str) {
+			var info = JSON.parse(str);
+			if (!info.hasOwnProperty('wins')) {
+				info.wins = 0;
+			}
+			info.wins ++;
+			return redisClient.setAsync(key, JSON.stringify(info));
+			
+		}).catch(function(err) {
+			console.log("ERROR recording win:", err);
+		});
+};
+
+var recordLoss = function(hash, gameId) {
+	console.log("recordLoss", hash, gameId);
+	var key = "ai/"+hash;
+	redisClient.getAsync(key)
+		.then(function(str) {
+			var info = JSON.parse(str);
+			if (!info.hasOwnProperty('losses')) {
+				info.losses = 0;
+			}
+			info.losses ++;
+			return redisClient.setAsync(key, JSON.stringify(info));
+			
+		}).catch(function(err) {
+			console.log("ERROR recording loss:", err);
+		});
+};
 
 var submit = function(req, res) {
 	var name = req.body.name.trim();
@@ -106,6 +148,9 @@ var submit = function(req, res) {
 module.exports = {
 	submit: submit,
 	getAIs: getAIs,
-	getAI: getAI
+	getAI: getAI,
+	recordGame: recordGame,
+	recordWin: recordWin,
+	recordLoss: recordLoss
 };
 

@@ -126,16 +126,37 @@ module.exports = {
 
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
-		var resultsData = JSON.stringify(req.body);
-		console.log("UploadGameInfo for gameId " + gameId);
+		var results = req.body;
+		var resultsStr = JSON.stringify(req.body);
+		console.log("UploadGameInfo for gameId " + gameId, results, resultsStr);
 		var filename = gameId + "/game.json";
 
-		redisClient.set(filename, resultsData, function(err, reply) {
-			res.status(200).send("{}");
-			if (err) {
-				console.log("ERROR saving gameInfo to Redis:", err);
-			}
-		});
+		redisClient.setAsync(filename, resultsStr)
+		 	.then(function(reply) {
+				
+				var uniquePlayers = {};
+				
+				
+				results.players.forEach(function(player, idx) {
+					uniquePlayers[player] = true;
+					if (idx == results.winner) {
+						submitter.recordWin(player);
+					} else {
+						submitter.recordLoss(player);
+					}
+				});
+				
+				Object.keys(uniquePlayers).forEach(function(player) {
+					submitter.recordGame(player, gameId);
+				});
+				
+				res.status(200).send("{}");
+				
+			}).catch(function(err) {
+				if (err) {
+					console.log("ERROR saving gameInfo to Redis:", err);
+				}
+			});
 	},
 
 	getGameInfo: function(req, res) {
@@ -227,13 +248,23 @@ module.exports = {
 		});
 	},
 	
-	getAI: function(req, res) {
-		var sha = req.query['hash'];
+	getAIDetail: function(req, res) {
+		var sha = req.params['hash'];
+		var dataToRender = {};
 		submitter.getAI(sha)
 			.then(function(result) {
-				res.send(result);
+				// append AI summary
+				var info = JSON.parse(result);
+				dataToRender.name = info.name;
+				dataToRender.wins = info.wins ? info.wins : 0;
+				dataToRender.losses = info.losses ? info.losses : 0;
+				// get Game history
+				return redisClient.lrangeAsync('aigames/'+sha, 0, -1);
+			}).then(function(result) {
+				dataToRender.games = result;
+				res.render("ai_detail", dataToRender);
 			}).catch(function(err) {
-				res.status(500).send("Error retrieving AI: " + err);
+				res.status(500).send("Error retrieving AI detail: " + err);
 			});
 	},
 	
