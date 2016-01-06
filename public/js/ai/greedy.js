@@ -27,10 +27,6 @@
 	
 	var AI = AI || {};
 	
-	if (typeof module !== 'undefined' && module.exports) {
-		var Globals = require('../globals.js');
-		AI.Plyer = require('./plyer.js');
-	}
 
 
 	AI.Greedy = function(){};
@@ -46,9 +42,4 @@
 		return new AI.Plyer(playerId, 1);
 	};
 
-
-
-	if (typeof module !== 'undefined' && module.exports) {
-		module.exports = AI.Greedy;
-	}
 	

@@ -160,10 +160,13 @@ $(function() {
 		
 		aiListReceived: function(success, data) {
 			if (success) {
-				$('#stop_btn').prop('disabled', true);
-				$('#start_btn').prop('disabled', false);
-				Thunderdome._AIs = data;
-				Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 1);
+				
+				if (data && data.length) {
+					$('#stop_btn').prop('disabled', true);
+					$('#start_btn').prop('disabled', false);
+					Thunderdome._AIs = data;
+					Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 1);
+				}
 				
 			} else {
 				console.log("ERROR retrieving AI list", data);

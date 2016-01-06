@@ -80,9 +80,9 @@ PlayerWrapper.prototype.loses = function() {};
 /*========================================================================================================================================*/
 // AISocketWrapper: implements Engine::PlayerInterface
 /*========================================================================================================================================*/
-var AISocketWrapper = function (AI, id) {
+var AISocketWrapper = function (aiName, id) {
 	this._socket = null;
-	this._name = AI.getName();
+	this._name = aiName;
 	this._id = id;
 };
 
@@ -157,18 +157,7 @@ var Greedy = require('../public/js/ai/greedy.js');
 var Aggressive = require('../public/js/ai/aggressive.js');
 var Human = require('../public/js/ai/human.js');
 var AIWrapper = require('../public/js/game/aiwrapper.js');
-var AIs = [
-	Plyer,
-	Greedy,
-	Aggressive,
-	Human
-];
-var AIMap = {};
 
-// initialize the AI name-to-class mapping
-AIs.forEach(function(ai) {
-	AIMap[ai.getName()] = ai;
-});
 
 var GameServer = function(gameId, namespace, watchNamespace) {
 	var self = this;
@@ -206,12 +195,10 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 						Globals.debug("Inserted human at position " + pw.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 						players.push(pw);
 						self._playerMap.push(pw);
-					} else if (AIMap.hasOwnProperty(playerName)) {
-						var ai = new AISocketWrapper(AIMap[playerName], id);
+					} else {
+						var ai = new AISocketWrapper(playerName, id);
 						players.push(ai);
 						self._playerMap.push(ai);
-					} else {
-						Globals.debug("Unexpected player name:", playerName, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 					}
 				});
 				

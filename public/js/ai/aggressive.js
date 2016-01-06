@@ -23,15 +23,6 @@
         endTurn()
 			Called by the AI when its turn is over
 	*/
-
-	if (typeof module !== 'undefined' && module.exports) {
-		var Globals = require('../globals.js');
-		var window = {};
-	} else {
-		if (!window) {
-			window = {};
-		}
-	}
 	
 	var AI = AI || {};
 	AI.Aggressive = function (id) {
@@ -82,7 +73,4 @@
 
 		interface.endTurn();
 	};
-	
-if (typeof module !== 'undefined' && module.exports) {
-	module.exports = AI.Aggressive;
-}
+
