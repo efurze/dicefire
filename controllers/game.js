@@ -1,11 +1,11 @@
 var fs = require('fs');
-var bluebird = require('bluebird');
+var Promise = require('bluebird');
 var redis = require('redis');
 var submitter = require('./submission.js');
 var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
 
-bluebird.promisifyAll(redis.RedisClient.prototype);
-bluebird.promisifyAll(redis.Multi.prototype);
+Promise.promisifyAll(redis.RedisClient.prototype);
+Promise.promisifyAll(redis.Multi.prototype);
 
 var redisClient = redis.createClient(); //6379, 'localhost', '');
 var uuid = require('node-uuid');
@@ -137,20 +137,23 @@ module.exports = {
 				var uniquePlayers = {};
 				
 				
-				results.players.forEach(function(player, idx) {
+				Promise.each(results.players, function(player, idx) {
 					uniquePlayers[player] = true;
 					if (idx == results.winner) {
-						submitter.recordWin(player);
+						return submitter.recordWin(player);
 					} else {
-						submitter.recordLoss(player);
+						return submitter.recordLoss(player);
 					}
+				}).then(function() {
+					Object.keys(uniquePlayers).forEach(function(player) {
+						submitter.recordGame(player, gameId);
+					});
+					res.status(200).send("{}");
+				}).catch(function(err){
+					console.log("uploadGameInfo ERROR:", err);
+					res.status(500).send(err);
 				});
 				
-				Object.keys(uniquePlayers).forEach(function(player) {
-					submitter.recordGame(player, gameId);
-				});
-				
-				res.status(200).send("{}");
 				
 			}).catch(function(err) {
 				if (err) {
@@ -283,6 +286,17 @@ module.exports = {
 		var sha = req.params['hash'];
 		var replaced = aiWorker.replace('_replaceThisWithAIHash_', sha);
 		res.send(replaced);
+	},
+	
+	resetAI: function(req, res) {
+		var sha = req.params['hash'];
+		submitter.resetAI(sha)
+			.then(function(reply) {
+				res.send("Reset successful");
+			}).catch(function(err) {
+				console.log("ERROR resetting AI", err);
+				res.status(500).send("Error resetting AI", err);
+			});
 	}
 
 };

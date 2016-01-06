@@ -18,7 +18,7 @@ var redisClient = redis.createClient(); //6379, 'localhost', '');
 	untrusted code, we jump through some hoops. Validate() is run in a sandbox by toString()-ing it and passing the
 	string to the sandbox. In order to incorporate the AI code, we paste it into the stringified body of validate() over the 
 	"replaceMe" comment below. DO NOT REMOVE OR ALTER THIS COMMENT or the whole thing will stop working. Additionally, the
-	name of the AI class is copied over the "replaceWithClassName" string below. Don't alter that string, either.
+	name of the AI class is copied over the "replaceWithClassName" string below. Don't alter that string either.
 */
 function validate() {
 	
@@ -57,6 +57,19 @@ var storeAI = function(codeStr, sha, name) {
 				});
 };
 
+// erases AI's game history and win-loss record
+var resetAI = function(hash) {
+	return redisClient.delAsync("aigames/"+hash)
+				.then(function(){
+					return redisClient.getAsync("ai/"+hash);
+				}).then(function(reply) {
+					var info = JSON.parse(reply);
+					info.wins = 0;
+					info.losses = 0;
+					return redisClient.setAsync("ai/"+hash, JSON.stringify(info));
+				});
+};
+
 // returns a promise
 var getAIs = function() {
 	return redisClient.lrangeAsync("AI_LIST", 0, -1);
@@ -70,43 +83,43 @@ var recordGame = function(hash, gameId) {
 	console.log("recordGame", hash, gameId);
 	var key = "aigames/" + hash;
 	return redisClient.rpushAsync(key, gameId)
-	.catch(function(err) {
-		console.log("ERROR recording game to redis:", err);
-	});
+		.catch(function(err) {
+			console.log("ERROR recording game to redis:", err);
+		});
 };
 
 var recordWin = function(hash, gameId) {
 	console.log("recordWin", hash);
 	var key = "ai/"+hash;
-	redisClient.getAsync(key)
-		.then(function(str) {
-			var info = JSON.parse(str);
-			if (!info.hasOwnProperty('wins')) {
-				info.wins = 0;
-			}
-			info.wins ++;
-			return redisClient.setAsync(key, JSON.stringify(info));
+	return redisClient.getAsync(key)
+				.then(function(str) {
+					var info = JSON.parse(str);
+					if (!info.hasOwnProperty('wins')) {
+						info.wins = 0;
+					}
+					info.wins ++;
+					return redisClient.setAsync(key, JSON.stringify(info));
 			
-		}).catch(function(err) {
-			console.log("ERROR recording win:", err);
-		});
+				}).catch(function(err) {
+					console.log("ERROR recording win:", err);
+				});
 };
 
-var recordLoss = function(hash, gameId) {
-	console.log("recordLoss", hash, gameId);
+var recordLoss = function(hash) {
+	console.log("recordLoss", hash);
 	var key = "ai/"+hash;
-	redisClient.getAsync(key)
-		.then(function(str) {
-			var info = JSON.parse(str);
-			if (!info.hasOwnProperty('losses')) {
-				info.losses = 0;
-			}
-			info.losses ++;
-			return redisClient.setAsync(key, JSON.stringify(info));
+	return redisClient.getAsync(key)
+				.then(function(str) {
+					var info = JSON.parse(str);
+					if (!info.hasOwnProperty('losses')) {
+						info.losses = 0;
+					}
+					info.losses ++;
+					return redisClient.setAsync(key, JSON.stringify(info));
 			
-		}).catch(function(err) {
-			console.log("ERROR recording loss:", err);
-		});
+				}).catch(function(err) {
+					console.log("ERROR recording loss:", err);
+				});
 };
 
 var submit = function(req, res) {
@@ -151,6 +164,7 @@ module.exports = {
 	getAI: getAI,
 	recordGame: recordGame,
 	recordWin: recordWin,
-	recordLoss: recordLoss
+	recordLoss: recordLoss,
+	resetAI: resetAI
 };
 
