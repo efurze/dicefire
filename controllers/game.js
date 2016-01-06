@@ -135,7 +135,7 @@ module.exports = {
 		redisClient.setAsync(filename, resultsStr)
 		 	.then(function(reply) {
 				
-				if (!results.winner) {
+				if (typeof results.winner === 'undefined') {
 					res.status(200).send("{}");
 					return;
 				}

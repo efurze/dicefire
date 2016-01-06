@@ -55,7 +55,7 @@ Uploader.prototype._doNext = function() {
 Uploader.prototype.ajaxDone = function(data) {
 	Globals.ASSERT(this._pending);
 	var self = this;
-	self._timeout = 100;
+	self._timeout = 10;
 	self._retryCount = 0;
 	
 	self._array.shift();
