@@ -79,6 +79,7 @@ var getAI = function(hash) {
 	return redisClient.getAsync("ai/"+hash);
 };
 
+// adds entry to global game list "games"
 var recordGame = function(gameId) {
 	console.log("recordGame", gameId);
 	var key = "games";
@@ -88,6 +89,7 @@ var recordGame = function(gameId) {
 		});
 };
 
+// adds entry to game list for given AI
 var recordGameForAI = function(hash, gameId) {
 	console.log("recordGameForAI", hash, gameId);
 	var key = "aigames/" + hash;

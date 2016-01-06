@@ -14,3 +14,7 @@ Gameinfo.prototype.serialize = function() {
 	};
 	return ret;
 }
+
+Gameinfo.prototype.toString = function() {
+	return JSON.stringify(this.serialize());
+}

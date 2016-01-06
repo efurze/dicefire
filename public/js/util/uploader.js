@@ -1,16 +1,32 @@
 "use strict"
 
-var Uploader = function(gameId) {
-	this._count = 1;
-	this._gameId = gameId;
-	this._array = [];
+var MAX_RETRIES = 3;
+
+var Uploader = function() {
+	this._array = []; // array of {url: , data:}
 	this._pending = false;
 	this._timeout = 10;
+	this._retryCount = 0;
 };
 
-Uploader.prototype.push = function(data) {
-	this._array.push(data);
+Uploader.prototype.push = function(url, data) {
+	this._array.push({url: url, data: data});
 	this._doNext();
+};
+
+Uploader.prototype.uploadMap = function(gameId, mapData) {
+	var url = '/uploadMap?gameId=' + gameId;
+	this.push(url, mapData);
+};
+
+Uploader.prototype.uploadState = function(gameId, stateId, stateData) {
+	var url = '/uploadState?gameId=' + gameId + '&moveId=' + stateId;
+	this.push(url, stateData);
+};
+
+Uploader.prototype.uploadGameInfo = function(gameId, data) {
+	var url = '/uploadGameInfo?gameId=' + gameId;
+	this.push(url, data);
 };
 
 Uploader.prototype._doNext = function() {
@@ -20,33 +36,17 @@ Uploader.prototype._doNext = function() {
 		self._pending = true;
 		
 		window.setTimeout(function() {
-			var data = self._array[0];
-			var url = '';
-			if (data instanceof Gamestate) {
-				$.post('/uploadState?gameId=' + self._gameId + "&moveId=" + self._count, 
-							data.serialize()).done(function(d) {
-						self.ajaxDone(d);
-					}).fail(function(err) {
-						self.ajaxFail(err);
-					});
-			} else if (data instanceof Gameinfo) {
-				$.post('/uploadGameInfo?gameId=' + self._gameId, 
-							data.serialize()).done(function(d) {
-						self.ajaxDone(d);
-					}).fail(function(err) {
-						self.ajaxFail(err);
-					});
-			} else {
-				$.ajax({
-							url: '/uploadMap?gameId=' + self._gameId,
-							type: 'POST',
-							dataType: "json",
-							contentType: "application/json; charset=utf-8",
-							data: data,
-							success: self.ajaxDone.bind(self),
-							failure: self.ajaxFail.bind(self)
-						});
-			}
+			var req = self._array[0];
+			
+			$.ajax({
+					url: req.url,
+					type: 'POST',
+					dataType: "json",
+					contentType: "application/json; charset=utf-8",
+					data: req.data,
+					success: self.ajaxDone.bind(self),
+					failure: self.ajaxFail.bind(self)
+				});
 			
 		}, self._timeout);
 	}
@@ -55,12 +55,10 @@ Uploader.prototype._doNext = function() {
 Uploader.prototype.ajaxDone = function(data) {
 	Globals.ASSERT(this._pending);
 	var self = this;
-	self._timeout = 10;
+	self._timeout = 100;
+	self._retryCount = 0;
 	
-	var data = self._array.shift();
-	if (data instanceof Gamestate) {
-		self._count++;
-	}
+	self._array.shift();
 	self._pending = false;
 	self._doNext();
 };
@@ -68,9 +66,14 @@ Uploader.prototype.ajaxDone = function(data) {
 Uploader.prototype.ajaxFail = function(err) {
 	console.log("UPLOAD FAILURE: ", err.error(), JSON.stringify(err));
 	var self = this;
-	if (self._timeout < 10000) {
-		self._timeout = self._timeout * 10;
+	if (self._retryCount >= MAX_RETRIES) {
+		self.ajaxDone();
+	} else {
+		self._retryCount ++;
+		if (self._timeout < 10000) {
+			self._timeout = self._timeout * 10;
+		}
+		self._pending = false;
+		self._doNext();
 	}
-	self._pending = false;
-	self._doNext();
 };

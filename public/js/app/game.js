@@ -19,7 +19,7 @@ $(function() {
 		init: function (gameId) {
 			console.log("gameId: " + gameId);
 			Game._gameId = gameId;
-			Game._uploader = new Uploader(gameId);
+			Game._uploader = new Uploader();
 			$('#setup').css('display', 'block');
 			$('#game').css('display', 'none');
 			
@@ -56,10 +56,11 @@ $(function() {
 			
 			if (Globals.uploadGame && Game._gameId) {
 				// upload game info to server
-				Game._uploader.push(new Gameinfo(playerNames));
+				var info = new Gameinfo(playerNames);
+				Game._uploader.uploadGameInfo(Game._gameId, info.toString());
 			
 				// upload map data to server
-				Game._uploader.push(Game._engine.map().serializeHexes());
+				Game._uploader.uploadMap(Game._gameId, Game._engine.serializeMap());
 			}
 			
 			Game._engine.registerStateCallback(Game.engineUpdate);
@@ -87,7 +88,7 @@ $(function() {
 			gamestate = gamestate || Game._engine.getState();
 			if (Globals.uploadGame && Game._gameId) {
 				// upload the state info
-				Game._uploader.push(gamestate.clone());
+				Game._uploader.uploadState(Game._gameId, stateId, gamestate.toString());
 			}
 			Game.redraw(gamestate);
 		},

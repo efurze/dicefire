@@ -127,12 +127,18 @@ module.exports = {
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
 		var results = req.body;
-		var resultsStr = JSON.stringify(req.body);
-		console.log("UploadGameInfo for gameId " + gameId, results, resultsStr);
+		var resultsStr = JSON.stringify(results);
+		console.log("UploadGameInfo for gameId " + gameId, results);
+		
 		var filename = gameId + "/game.json";
 
 		redisClient.setAsync(filename, resultsStr)
 		 	.then(function(reply) {
+				
+				if (!results.winner) {
+					res.status(200).send("{}");
+					return;
+				}
 				
 				var uniquePlayers = {};
 				// record the win and loss for each player
