@@ -1,13 +1,8 @@
 var fs = require('fs');
 var Promise = require('bluebird');
-var redis = require('redis');
 var submitter = require('./submission.js');
 var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
-
-Promise.promisifyAll(redis.RedisClient.prototype);
-Promise.promisifyAll(redis.Multi.prototype);
-
-var redisClient = redis.createClient(); //6379, 'localhost', '');
+var rwClient = require('../lib/redisWrapper.js');
 var uuid = require('node-uuid');
 
 
@@ -117,22 +112,21 @@ module.exports = {
 		var gameId = req.query['gameId'];
 		var mapData = JSON.stringify(req.body);
 		console.log("UploadMap for gameId " + gameId);
-		var filename = gameId + "/map.json";
 
-		redisClient.set(filename, mapData, function(err, reply) {
-			res.status(200).send("{}");
-		});
+		rwClient.saveMap(gameId, mapData)
+			.then(function(reply) {
+				res.status(200).send("{}");
+			}).catch(function(err) {
+				res.status(500).send("Error saving Map data" + err);
+			});
 	},
 
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
 		var results = req.body;
-		var resultsStr = JSON.stringify(results);
 		console.log("UploadGameInfo for gameId " + gameId, results);
 		
-		var filename = gameId + "/game.json";
-
-		redisClient.setAsync(filename, resultsStr)
+		rwClient.saveGameInfo(gameId, JSON.stringify(results))
 		 	.then(function(reply) {
 				
 				if (typeof results.winner === 'undefined') {
@@ -175,15 +169,18 @@ module.exports = {
 
 	getGameInfo: function(req, res) {
 		var gameId = req.query['gameId'];
-		var filename = gameId + '/game.json';
 
-		redisClient.get(filename, function(err, data) {
-			if (!data) {
-				res.status(404).send("No game file found for gameId " + gameId);
-			} else {
-				res.send(data);
-			}
-		});
+		rwClient.getGameInfo(gameId)
+			.then(function(reply) {
+				if (!reply) {
+					res.status(404).send("No game file found for gameId " + gameId);
+				} else {
+					res.send(reply);
+				}
+			}).catch(function(err) {
+				console.log("Error retrieving GameInfo" + err);
+				res.status(500).send("Error retrieving GameInfo" + err);
+			});
 	},
 
 	uploadState: function(req, res) { 
@@ -191,53 +188,58 @@ module.exports = {
 		var gameId = req.query['gameId'];
 		var stateData = JSON.stringify(req.body);
 		
-		var filename = gameId + "/state_" + moveId + ".json";
-		//console.log("Saving state file " + filename);
-		redisClient.set(filename, stateData, function(err, reply) {
-			res.status(200).send("{}");
-		});
+		rwClient.saveState(gameId, moveId, stateData)
+			.then(function(reply) {
+				res.status(200).send("{}");
+			}).catch(function(err) {
+				console.log("Error saving state data" + err);
+				res.status(500).send("Error saving state data" + err);
+			});
 	},
 
 	getMap: function(req, res) {
 		var gameId = req.query['gameId'];
-		var filename = gameId + '/map.json';
-
-		redisClient.get(filename, function(err, data) {
-			if (!data) {
-				res.status(404).send("No map file found for gameId " + gameId);
-			} else {
-				res.send(data);
-			}
-		});
+		
+		rwClient.getMap(gameId)
+			.then(function(data) {
+				if (!data) {
+					res.status(404).send("No map file found for gameId " + gameId);
+				} else {
+					res.send(data);
+				}
+			}).catch(function(err) {
+				console.log("Error retrieving map " + err);
+				res.status(500).send("Error retrieving map " + err);
+			});
 	},
 
 	getState: function(req, res) {
 		var gameId = req.query['gameId'];
 		var moveId = req.query['moveId'];
 		
-		var filename =  gameId + '/state_' + moveId + '.json';
-		redisClient.get(filename, function(err, data) {
-			if (!data) {
-				res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
-			} else {
-				res.send({'data': data, 'id': moveId});
-			}
-		});
-	
+		rwClient.getState(gameId, moveId)
+			.then(function(data) {
+				if (!data) {
+					res.status(404).send("No statefile found for gameId " + gameId + " moveId " + moveId);
+				} else {
+					res.send({'data': data, 'id': moveId});
+				}
+			}).catch(function(err) {
+				console.log("Error getting state data " + err);
+				res.status(500).send("Error getting state data " + err);
+			});
 	},
 	
 	getStateCount: function(req, res) {
 		var gameId = req.query['gameId'];
 
-		redisClient.keys(gameId + '*', function(err, reply) {
-			var filenames = reply;
-			var stateCount = filenames.filter(function(name) {
-				return (name.indexOf("state_") != -1);
-			}).length;
-
-			res.send({'stateCount': stateCount});
-
-		});
+		rwClient.getStateCount(gameId)
+			.then(function(filenames) {
+				res.send({'stateCount': filenames.length});
+			}).catch(function(err) {
+				console.log("Error getting state count " + err);
+				res.status(500).send("Error getting state count " + err);
+			});
 	},
 	
 	
@@ -249,6 +251,7 @@ module.exports = {
 				ais: parsedResults
 			});
 		}).catch(function(err) {
+			console.log("Error retrieving AI list: " + err);
 			res.status(500).send("Error retrieving AI list: " + err);
 		});
 	},
@@ -258,6 +261,7 @@ module.exports = {
 			var parsedResults = results.map(function(result){return JSON.parse(result);});
 			res.send(parsedResults);
 		}).catch(function(err) {
+			console.log("Error retrieving AI list: " + err);
 			res.status(500).send("Error retrieving AI list: " + err);
 		});
 	},
@@ -273,11 +277,12 @@ module.exports = {
 				dataToRender.wins = info.wins ? info.wins : 0;
 				dataToRender.losses = info.losses ? info.losses : 0;
 				// get Game history
-				return redisClient.lrangeAsync('aigames/'+sha, 0, -1);
+				return rwClient.getAIGames(sha);
 			}).then(function(result) {
 				dataToRender.games = result;
 				res.render("ai_detail", dataToRender);
 			}).catch(function(err) {
+				console.log("Error retrieving AI detail: " + err);
 				res.status(500).send("Error retrieving AI detail: " + err);
 			});
 	},
@@ -289,6 +294,7 @@ module.exports = {
 				result = JSON.parse(result);
 				res.send(result.code);
 			}).catch(function(err) {
+				console.log("Error retrieving AI: " + err);
 				res.status(500).send("Error retrieving AI: " + err);
 			});
 	},
@@ -306,7 +312,7 @@ module.exports = {
 				res.send("Reset successful");
 			}).catch(function(err) {
 				console.log("ERROR resetting AI", err);
-				res.status(500).send("Error resetting AI", err);
+				res.status(500).send("Error resetting AI" + err);
 			});
 	}
 

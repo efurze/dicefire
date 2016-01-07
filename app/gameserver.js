@@ -2,10 +2,8 @@
 
 var GAME_LINGER_TIMEOUT = 100000000; // milliseconds
 
-
-var redis = require('redis');
-var redisClient = redis.createClient();
-var Globals = require('..//public/js/globals.js');
+var rwClient = require('../lib/redisWrapper.js');
+var Globals = require('../public/js/globals.js');
 
 var SocketHandler = function() {
 
@@ -27,18 +25,18 @@ var SocketHandler = function() {
 			resultsData.players = Globals.shuffleArray(resultsData.players);
 			Globals.debug("Create game", gameId, resultsData, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 			var filename = gameId + "/game.json";
-			redisClient.set(filename, JSON.stringify(resultsData), function(err, reply) {
-				if (err) {
-					Globals.debug("ERROR saving gameInfo to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
-					res.status(500).send(JSON.stringify({err: err}));
-				} else {
+			rwClient.saveGameInfo(gameId, JSON.stringify(resultsData))
+				.then(function(reply) {
 					Globals.debug("Listening for game " + gameId, Globals.LEVEL.INFO, Globals.CHANNEL.SERVER);
 					var socketNamespace = io.of("/" + gameId);
 					var watchNamespace = io.of("/watch/" + gameId);
 					games[gameId] = new GameServer(gameId, socketNamespace, watchNamespace);
 					res.status(200).send("{}");
-				}
-			});
+
+				}).catch(function(err) {
+					Globals.debug("ERROR saving gameInfo to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
+					res.status(500).send(JSON.stringify({err: err}));
+				});
 		},
 		
 		removeGame: function(gameId) {
@@ -176,61 +174,61 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 	self._watchdogTimerId = -1;
 	
 	// get the game info
-	redisClient.get(gameId+"/game.json", function(err, data) {
-		try {
-			if (!data) {
-				Globals.debug("No game file found for gameId " + gameId, Globals.LEVEL.WARN, Globals.CHANNEL.SERVER);
-			} else {
-				Globals.debug("Got game info: " + data, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
-				self._gameInfo = JSON.parse(data);
+	rwClient.getGameInfo(gameId)
+		.then(function(data) {
+			try {
+				if (!data) {
+					Globals.debug("No game file found for gameId " + gameId, Globals.LEVEL.WARN, Globals.CHANNEL.SERVER);
+				} else {
+					Globals.debug("Got game info: " + data, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+					self._gameInfo = JSON.parse(data);
 				
-				self._engine = new Engine();
+					self._engine = new Engine();
 				
-				//initialize the AIs
-				var players = [];
-				self._gameInfo['players'].forEach(function(playerName, id) {
-					if (playerName === "human") {
-						self._expectedHumans ++;
-						var pw = new PlayerWrapper(id);
-						Globals.debug("Inserted human at position " + pw.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
-						players.push(pw);
-						self._playerMap.push(pw);
-					} else {
-						var ai = new AISocketWrapper(playerName, id);
-						players.push(ai);
-						self._playerMap.push(ai);
-					}
-				});
+					//initialize the AIs
+					var players = [];
+					self._gameInfo['players'].forEach(function(playerName, id) {
+						if (playerName === "human") {
+							self._expectedHumans ++;
+							var pw = new PlayerWrapper(id);
+							Globals.debug("Inserted human at position " + pw.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+							players.push(pw);
+							self._playerMap.push(pw);
+						} else {
+							var ai = new AISocketWrapper(playerName, id);
+							players.push(ai);
+							self._playerMap.push(ai);
+						}
+					});
 				
-				Globals.debug("Players for game " + gameId + ":", Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
-				Object.keys(self._playerMap).forEach(function(id) {
-					Globals.debug(JSON.stringify(self._playerMap[id]), Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
-				})
+					Globals.debug("Players for game " + gameId + ":", Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+					Object.keys(self._playerMap).forEach(function(id) {
+						Globals.debug(JSON.stringify(self._playerMap[id]), Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
+					})
 				
 				
-				// initialize the game engine
-				self._engine.init(players);
-				self._engine.setup();
+					// initialize the game engine
+					self._engine.init(players);
+					self._engine.setup();
 
-				// push the map data to redis
-				var filename = self._gameId + "/map.json";
-				redisClient.set(filename, self._engine.map().serializeHexes(), function(err, reply) {
-					if (err) {
-						Globals.debug("ERROR saving map data to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
-					} 
-
-					self._engine.registerStateCallback(self.engineUpdate.bind(self));			
-				
-					// listen for player connections
-					namespace.on('connection', self.connectPlayer.bind(self));
-					// listen for watcher connections
-					watchNamespace.on('connection', self.connectWatcher.bind(self));
-				});
+					// push the map data to redis
+					rwClient.saveMap(self._gameId, self._engine.serializeMap())
+						.then(function(reply) {
+							self._engine.registerStateCallback(self.engineUpdate.bind(self));			
+							// listen for player connections
+							namespace.on('connection', self.connectPlayer.bind(self));
+							// listen for watcher connections
+							watchNamespace.on('connection', self.connectWatcher.bind(self));
+						}).catch(function(err) {
+							Globals.debug("ERROR saving map data to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
+						});
+				}
+			} catch (err) {
+				Globals.debug("Exception initializing game engine", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
 			}
-		} catch (err) {
-			Globals.debug("Exception initializing game engine", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
-		}
-	});
+		}).catch(function(err) {
+			Globals.debug("Error getting gameInfo", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
+		});
 };
 
 
@@ -453,18 +451,16 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 	Globals.debug("engineUpdate", stateId, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 	var self = this;
 	if (gamestate) {
-		var filename = self._gameId + "/state_" + stateId + ".json";
 		var stateData = JSON.stringify(gamestate.serialize());
-		redisClient.set(filename, stateData, function(err, reply) {
-			if (err) {
-				Globals.debug("ERROR saving engine state to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
-			} else {
+		rwClient.saveState(self._gameId, stateId, stateData)
+			.then(function(reply) {
 				Globals.debug("sending state update, stateId", stateId, Globals.LEVEL.DEBUG, Globals.CHANNEL.SERVER);
 				// brodcast to all
 				self._ns.emit("state", stateId);
 				self._watchersNs.emit("state", stateId);
-			}
-		});
+			}).catch(function(err) {
+				Globals.debug("ERROR saving engine state to Redis:", err, Globals.LEVEL.ERROR, Globals.CHANNEL.SERVER);
+			});
 		
 	}
 };

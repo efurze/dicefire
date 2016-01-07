@@ -3,13 +3,7 @@
 var Sandbox = require('sandbox');
 var Hashes = require('jshashes');
 var SHA1 = new Hashes.SHA1();
-var bluebird = require('bluebird');
-var redis = require('redis');
-
-bluebird.promisifyAll(redis.RedisClient.prototype);
-bluebird.promisifyAll(redis.Multi.prototype);
-
-var redisClient = redis.createClient(); //6379, 'localhost', '');
+var rwClient = require('../lib/redisWrapper.js');
 
 /*
 	validate() - THIS CODE IS VERY FRAGILE. Don't edit it without reading the comment below.
@@ -49,41 +43,38 @@ function validate() {
 };
 
 var storeAI = function(codeStr, sha, name) {
-	return redisClient.rpushAsync("AI_LIST", JSON.stringify({hash:sha, name: name}))
+	return rwClient.pushAI(sha, name)
 				.then(function(result) {
-					return redisClient.setAsync("ai/"+sha, JSON.stringify({name: name, code: codeStr}));
-				}).catch(function(err) {
-					console.log("storeAI error:", err);
+					return rwClient.saveAI(sha, JSON.stringify({name: name, code: codeStr, wins: 0, losses: 0}));
 				});
 };
 
 // erases AI's game history and win-loss record
 var resetAI = function(hash) {
-	return redisClient.delAsync("aigames/"+hash)
+	return rwClient.delAIGames(hash)
 				.then(function(){
-					return redisClient.getAsync("ai/"+hash);
+					return rwClient.getAI(hash);
 				}).then(function(reply) {
 					var info = JSON.parse(reply);
 					info.wins = 0;
 					info.losses = 0;
-					return redisClient.setAsync("ai/"+hash, JSON.stringify(info));
+					return rwClient.saveAI(hash, JSON.stringify(info));
 				});
 };
 
 // returns a promise
 var getAIs = function() {
-	return redisClient.lrangeAsync("AI_LIST", 0, -1);
+	return rwClient.getAIList();
 };
 
 var getAI = function(hash) {
-	return redisClient.getAsync("ai/"+hash);
+	return rwClient.getAI(hash);
 };
 
 // adds entry to global game list "games"
 var recordGame = function(gameId) {
 	console.log("recordGame", gameId);
-	var key = "games";
-	return redisClient.rpushAsync(key, gameId)
+	return rwClient.pushGame(gameId)
 		.catch(function(err) {
 			console.log("ERROR recording game to redis:", err);
 		});
@@ -92,8 +83,7 @@ var recordGame = function(gameId) {
 // adds entry to game list for given AI
 var recordGameForAI = function(hash, gameId) {
 	console.log("recordGameForAI", hash, gameId);
-	var key = "aigames/" + hash;
-	return redisClient.rpushAsync(key, gameId)
+	return rwClient.pushAIGame(hash, gameId)
 		.catch(function(err) {
 			console.log("ERROR recording AI game to redis:", err);
 		});
@@ -101,15 +91,14 @@ var recordGameForAI = function(hash, gameId) {
 
 var recordWin = function(hash, gameId) {
 	console.log("recordWin", hash);
-	var key = "ai/"+hash;
-	return redisClient.getAsync(key)
+	return rwClient.getAI(hash)
 				.then(function(str) {
 					var info = JSON.parse(str);
 					if (!info.hasOwnProperty('wins')) {
 						info.wins = 0;
 					}
 					info.wins ++;
-					return redisClient.setAsync(key, JSON.stringify(info));
+					return rwClient.saveAI(hash, JSON.stringify(info));
 			
 				}).catch(function(err) {
 					console.log("ERROR recording win:", err);
@@ -118,15 +107,14 @@ var recordWin = function(hash, gameId) {
 
 var recordLoss = function(hash) {
 	console.log("recordLoss", hash);
-	var key = "ai/"+hash;
-	return redisClient.getAsync(key)
+	return rwClient.getAI(hash)
 				.then(function(str) {
 					var info = JSON.parse(str);
 					if (!info.hasOwnProperty('losses')) {
 						info.losses = 0;
 					}
 					info.losses ++;
-					return redisClient.setAsync(key, JSON.stringify(info));
+					return rwClient.saveAI(hash, JSON.stringify(info));
 			
 				}).catch(function(err) {
 					console.log("ERROR recording loss:", err);
@@ -155,6 +143,7 @@ var submit = function(req, res) {
 					console.log(result);
 					result = result.result;
 					if (result === 'true') {
+						// TODO: FIXME: handle the returned promise and check for errors
 						storeAI(code, codeHash, name);
 						res.send("Submission received!");
 					} else {
