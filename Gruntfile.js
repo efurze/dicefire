@@ -6,7 +6,7 @@ module.exports = function(grunt) {
   grunt.initConfig({
     shell: {
       mongo: {
-        command: 'redis-server'
+        command: 'redis-server ./config/redis.conf'
       }
     },
     concurrent: {
