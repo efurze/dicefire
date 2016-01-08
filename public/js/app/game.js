@@ -12,19 +12,25 @@ $(function() {
 		_gameId: null,
 		_uploader: null,
 		_engine: null,
+		_aiName: null,
 		
 		
 		currentPlayer: function() { return Game._engine.currentPlayer(); },
 		
-		init: function (gameId) {
+		init: function (gameId, aiName) {
 			console.log("gameId: " + gameId);
 			Game._gameId = gameId;
 			Game._uploader = new Uploader();
 			$('#setup').css('display', 'block');
 			$('#game').css('display', 'none');
 			
-			$('#start_game').click(Setupcontroller.startGame);
-			Setupcontroller.init(Game.start);
+			if (aiName) {
+				Game._aiName = aiName;
+				Game.start([AI.Aggressive, AI.Aggressive]);
+			} else {
+				$('#start_game').click(Setupcontroller.startGame);
+				Setupcontroller.init(Game.start);
+			}
 		},
 		
 		start: function(playerCode) {
@@ -37,21 +43,30 @@ $(function() {
 			
 			Game._engine = new Engine(false);
 			// create the PlayerWrappers
-			var pws = playerCode.map(function(player, idx) {
+			var pws = [];
+			var playerNames = [];
+			
+			if (Game._aiName) {
+				var ai = eval(Game._aiName);
+				pws.push(new AIWrapper(ai, Game._engine, 0, true));
+				playerNames.push(Game._aiName);
+			}
+			
+			playerCode.forEach(function(player, idx) {
 				if (player.getName() == 'human') {
-					return Engine.PlayerInterface;
+					pws.push(Engine.PlayerInterface);
 				} else {
-					return new AIWrapper(player, Game._engine, idx, false);
+					pws.push(new AIWrapper(player, Game._engine, pws.length, false));
 				}
 			});
 			
 			Game._engine.init(pws, Game.gameOver);
 			Game._engine.setup();
 			
-			var playerNames = playerCode.map(function(pc) {
-				return pc.getName();
+			playerCode.forEach(function(pc) {
+				playerNames.push(pc.getName());
 			});
-			Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
+			Renderer.init(playerNames.length, Game._canvas, Game._engine.map(), playerNames);
 			
 			
 			if (Globals.uploadGame && Game._gameId) {

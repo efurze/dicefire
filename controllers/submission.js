@@ -42,10 +42,14 @@ function validate() {
 	return true;
 };
 
-var storeAI = function(codeStr, sha, name) {
-	return rwClient.pushAI(sha, name)
-				.then(function(result) {
-					return rwClient.saveAI(sha, JSON.stringify({name: name, code: codeStr, wins: 0, losses: 0}));
+var storeAI = function(codeStr, sha, name, temporary) {
+	return rwClient.saveAI(sha, JSON.stringify({name: name, code: codeStr, wins: 0, losses: 0}))
+				.then(function(reply) {
+					if (temporary) {
+						return rwClient.expireAI(sha, 3600);
+					} else {
+						return rwClient.pushAI(sha, name);
+					}
 				});
 };
 
@@ -121,7 +125,12 @@ var recordLoss = function(hash) {
 				});
 };
 
-var submit = function(req, res) {
+var submitForTest = function(req, res) {
+	submit(req, res, true);
+};
+
+var submit = function(req, res, test) {
+	test = (typeof test == 'undefined') ? false : test;
 	var name = req.body.name.trim();
 	var code = req.body.code.trim();
 	var codeHash = SHA1.hex(code);
@@ -143,9 +152,16 @@ var submit = function(req, res) {
 					console.log(result);
 					result = result.result;
 					if (result === 'true') {
-						// TODO: FIXME: handle the returned promise and check for errors
-						storeAI(code, codeHash, name);
-						res.send("Submission received!");
+						storeAI(code, codeHash, name, test)
+							.then(function(reply) {
+								if (test) {
+									res.redirect('/aitest?ai='+codeHash+'&name='+name);
+								} else {
+									res.send("Submission received!");
+								}
+							}).catch(function(err) {
+								res.status(500).send("There was an error saving your submission: " + err);
+							});
 					} else {
 						res.send("Invalid submission: " + JSON.stringify(result));
 					}
@@ -160,6 +176,7 @@ var submit = function(req, res) {
 
 module.exports = {
 	submit: submit,
+	submitForTest: submitForTest,
 	getAIs: getAIs,
 	getAI: getAI,
 	recordGame: recordGame,

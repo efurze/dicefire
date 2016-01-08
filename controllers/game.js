@@ -10,7 +10,9 @@ module.exports = {
 	index: function(req, res) { 
 		res.render("index", {
 			title: "Dicefire",
-			gameId: uuid.v1()
+			gameId: uuid.v1(),
+			aiName: req.query['name'],
+			scripts: [{path: '/aicode/'+req.query['ai']}]
 		});	    
 	},
 	

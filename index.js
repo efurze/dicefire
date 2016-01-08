@@ -73,6 +73,7 @@ app.use(function(req, res, next) {
 
 // Routes
 app.get('/', gameController.index);
+app.get('/aitest', gameController.index);
 app.get('/play', gameController.client);
 app.get('/submit', gameController.submit);
 app.get('/data/*', gameController.data);
@@ -95,6 +96,7 @@ app.get('/aicode/:hash', gameController.getAICode);
 app.get('/aiworker/:hash', gameController.getAIWorker);
 app.get('/resetai/:hash', gameController.resetAI);
 app.post('/submission', submissionController.submit);
+app.post('/testsubmission', submissionController.submitForTest);
 
 // server
 app.post('/createGame', gameServer.createGame);
