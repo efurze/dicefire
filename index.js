@@ -8,6 +8,7 @@ var path = require('path');
 var secrets = require('./config/secrets');
 var favicon = require('serve-favicon');
 var flash = require('express-flash');
+var logger = require('./lib/logger.js');
 
 // Create the app.
 var app = express();
@@ -117,6 +118,7 @@ app.get('/account/unlink/:provider', passportConf.isAuthenticated, userControlle
 
 app.listen(app.get('port'), function() {
 	console.log('Node app is running on port', app.get('port'));
+	logger.server("Server starting", logger.LEVEL.INFO, logger.CHANNEL.SERVER);
 });
 
 
