@@ -109,6 +109,13 @@ module.exports = {
 			]
 		});
 	},
+	
+	uploadErrorReport: function(req, res) {
+		var gameId = req.query['gameId'];
+		var logData = JSON.stringify(req.body);
+		console.log("ErrorLog: ", logData);
+		res.status(200).send("{}");
+	},
 
 
 	uploadMap: function(req, res) { 

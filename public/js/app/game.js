@@ -18,9 +18,10 @@ $(function() {
 		currentPlayer: function() { return Game._engine.currentPlayer(); },
 		
 		init: function (gameId, aiName) {
-			console.log("gameId: " + gameId);
 			Game._gameId = gameId;
 			Game._uploader = new Uploader();
+			Globals.initLogger(gameId, Game._uploader.uploadLogDump.bind(Game._uploader));
+			
 			$('#setup').css('display', 'block');
 			$('#game').css('display', 'none');
 			

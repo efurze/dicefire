@@ -1,6 +1,17 @@
 "use strict"
 
+var logBuffer = [];
+var BUFFER_LENGTH = 100;
+
+var uploadFn = null;
+var GAME_ID = "";
+
 var Globals = {
+			initLogger: function(game_id, logUploadFn) {
+				GAME_ID = game_id;
+				uploadFn = logUploadFn;
+			},
+	
 		// USAGE: debug("my msg", foo, bar, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	    debug: function(title) {
 			var argc = arguments.length;
@@ -14,15 +25,32 @@ var Globals = {
 				var channel = arguments[argc-1];
 				var level = arguments[argc-2];
 				
-				if (level <= Globals.channels[channel]) {
-					delete arguments[argc-1];
-					delete arguments[argc-2];
-					//console.log(title, arguments);
-					var msg = ""
-					var args = arguments;
-					Object.keys(arguments).forEach(function(key) {
+				var msg = ""
+				var args = arguments;
+				Object.keys(arguments).forEach(function(key, idx) {
+					if (idx < argc-2) {
 						msg += args[key] + " ";
+					}
+				});
+				
+				if (level < Globals.LEVEL.TRACE && channel != Globals.CHANNEL.RENDERER) {
+					logBuffer.unshift({
+						channel: channel,
+						level: level,
+						gameId: GAME_ID,
+						msg: msg.substring(0, 100)
 					});
+				
+					if (logBuffer.length > BUFFER_LENGTH) {
+						logBuffer.pop();
+					}
+				
+					if (uploadFn && level == Globals.LEVEL.ERROR) {
+						uploadFn(GAME_ID, logBuffer);
+					}
+				}
+				
+				if (level <= Globals.channels[channel]) {
 					console.log(msg);
 				}
 				

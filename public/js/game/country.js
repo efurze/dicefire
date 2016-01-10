@@ -12,7 +12,7 @@ var Country = function(id) {
         
         this._numDice = 1;
 
-		Globals.debug("Constructed country", this, Globals.LEVEL.DEBUG, Globals.CHANNEL.COUNTRY);        
+		Globals.debug("Constructed country", this, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);        
     };
 
 Country.MAX_HEXES = 100;

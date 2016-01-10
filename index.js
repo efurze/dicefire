@@ -82,6 +82,7 @@ app.get('/unit', gameController.unit);
 app.get('/test', gameController.test);
 app.get('/thunderdome', gameController.thunderdome);
 app.get('/replay', gameController.replay);
+app.post('/uploadErrorReport', gameController.uploadErrorReport);
 app.post('/uploadMap', gameController.uploadMap);
 app.post('/uploadGameInfo', gameController.uploadGameInfo);
 app.get('/getGameInfo', gameController.getGameInfo);

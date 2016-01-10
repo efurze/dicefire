@@ -60,7 +60,6 @@ Map.prototype.countryCount = function() {
 };
 
 Map.prototype.adjacentCountries = function(countryId) {
-	Globals.debug("adjacencyLst: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP);
 	return this._adjacencyList[countryId];
 };
 
@@ -181,7 +180,7 @@ Map.prototype.generateMap = function(players) {
 		}
 	}
 
-	Globals.debug("Created countries ", JSON.stringify(this._countryArray), Globals.LEVEL.INFO, Globals.CHANNEL.MAP);		
+	Globals.debug("Created countries ", JSON.stringify(this._countryArray), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP);		
 
 	// Finds all hexes which are alone and absorbs them into a nearby country. Do this because
 	// they look kind of bad.
@@ -200,7 +199,7 @@ Map.prototype.generateMap = function(players) {
 	
 	this.pruneLakes();
 	//this.validate();
-	Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP)
+	Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP)
 };
 
 // makes sure that the countries and hexes agree about who owns what

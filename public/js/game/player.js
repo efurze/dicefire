@@ -38,8 +38,8 @@ Player.prototype.numContiguousCountries = function() { return this._numContiguou
 Player.prototype.addCountry = function(country) {
 	country.setOwner(this.id());
 	this._countries.push(country.id());
-	Globals.debug("Player " + this._id + " added country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
-	Globals.debug("New country count: " + this._countries.length, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
+	Globals.debug("Player " + this._id + " added country " + country.id(), Globals.LEVEL.TRACE, Globals.CHANNEL.PLAYER);
+	Globals.debug("New country count: " + this._countries.length, Globals.LEVEL.TRACE, Globals.CHANNEL.PLAYER);
 };
 
 // Take away the country from this player.

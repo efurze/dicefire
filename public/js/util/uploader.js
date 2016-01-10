@@ -1,6 +1,6 @@
 "use strict"
 
-var MAX_RETRIES = 3;
+var MAX_RETRIES = 0;
 
 var Uploader = function() {
 	this._array = []; // array of {url: , data:}
@@ -27,6 +27,12 @@ Uploader.prototype.uploadState = function(gameId, stateId, stateData) {
 Uploader.prototype.uploadGameInfo = function(gameId, data) {
 	var url = '/uploadGameInfo?gameId=' + gameId;
 	this.push(url, data);
+};
+
+// @buffer = array of {channel:, level:, msg:, gameId:}
+Uploader.prototype.uploadLogDump = function(gameId, buffer) {
+	var url = '/uploadErrorReport?gameId=' + gameId;
+	this.push(url, JSON.stringify(buffer));
 };
 
 Uploader.prototype._doNext = function() {
