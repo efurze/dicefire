@@ -21,6 +21,8 @@ var Engine = function(trusted) {
 	this._gameCallback = null; 	// called when game is over
 	this._stateCallback = null;	// called whenever the state updates
 	this._attackCallback = null; // call AIs back with attack results
+	this._keepHistory = true;
+	this._stateCount = 0;
 	this._initialized = false;
 	this._map = null;
 	this._watchdogTimerID = -1;
@@ -42,6 +44,7 @@ Engine.prototype.currentPlayer = function() { return this._players[this._current
 Engine.prototype.currentPlayerId = function() { return this._currentPlayerId; };
 Engine.prototype.isAttacking = function() {return this._attackInProgress;};
 Engine.prototype.isInitialized = function() {return this._initialized;};
+Engine.prototype.setKeepHistory = function(keep) { this._keepHistory = keep;};	
 	
 Engine.prototype.setCurrentPlayer = function(id) {
 	Globals.debug("Current player set to " + id, Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
@@ -59,6 +62,7 @@ Engine.prototype.init = function(players, callback) {
 	var self = this;
 	
 	self._history = [];
+	self._stateCount = 0;
 	self.setCurrentPlayer(0);
 	self._gameOver = false;
 	self._attackInProgress = false;
@@ -131,13 +135,19 @@ Engine.prototype.setup = function(initialMap, initialState) {
 // } 
 Engine.prototype.pushHistory = function(attack){
 	var self = this;
-	var stateId = self._history.length;
+	var stateId = self._stateCount;
+	self._stateCount ++;
 	var state = new Gamestate(self._players, self._map._countryArray, self._currentPlayerId, stateId);
 	if (attack) {
 		state.setAttack(attack);
 	}
 	
-	self._history.push(state);
+	if (self._keepHistory) {
+		self._history.push(state);
+	} else {
+		self._history = [state];
+	}
+	
 	if (self._stateCallback) {
 		self._stateCallback(state, stateId);
 	}
@@ -428,6 +438,7 @@ Engine.prototype.setState = function(gamestate) {
 		Globals.debug("Deserialized player: " + JSON.stringify(player), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	});
 	
+	self._stateCount = gamestate.stateId();
 	self.setCurrentPlayer(gamestate.currentPlayerId());
 };
 

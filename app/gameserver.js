@@ -1,10 +1,12 @@
 "use strict"
 
-var GAME_LINGER_TIMEOUT = 100000000; // milliseconds
+var GAME_LINGER_TIMEOUT = 600000; // 10 minutes in milliseconds
 
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var Globals = require('../public/js/globals.js');
+var Map = require('../public/js/game/map.js');
+var Gamestate = require('../public/js/game/gamestate.js');
 
 // redirect the Engine logs to the server-side logger
 Globals.setLogRedirect(logger.log.bind(logger));
@@ -14,6 +16,50 @@ var SocketHandler = function() {
 	var sio = require('socket.io');
 	var io = null;
 	var games = {};
+	
+	var setupGame = function(gameId, restoreState) {
+		logger.log("Listening for game", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+		var socketNamespace = io.of("/" + gameId);
+		var watchNamespace = io.of("/watch/" + gameId);
+		games[gameId] = new GameServer(gameId, socketNamespace, watchNamespace, restoreState);
+	};
+	
+	var init = function() {
+		rwClient.getActiveGames()
+			.then(function(gameIds) { // String array of gameIds
+				if (!gameIds || !gameIds.length) {
+					return;
+				}
+				
+				gameIds.forEach(function(gameId) {
+					logger.log("Restore game", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+					var gamestate = null;
+					rwClient.getStateCount(gameId)
+						.then(function(count) {
+							logger.log("State count", count, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+							return rwClient.getState(gameId, count-1);
+						}).then(function(state) {
+							logger.log("Got state", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+							gamestate = Gamestate.deserialize(JSON.parse(state));
+							return rwClient.getMap(gameId);
+						}).then(function(mapData) {
+							logger.log("Got map", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+							var map = new Map();
+							map.deserializeHexes(mapData);
+							logger.log("Restoring game", logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
+							setupGame(gameId, gamestate, map);
+						}).catch(function(err) {
+							logger.log("Error Restoring game", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+						})
+					
+				});
+				
+			}).catch(function(err) {
+				logger.log("Error retrieving active game list", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+			});
+	};
+	
+	init();
 	
 	return {
 		
@@ -28,19 +74,19 @@ var SocketHandler = function() {
 		
 		createGame: function(req, res) {
 			var gameId = req.query['gameId'];
-			var resultsData = req.body;
+			var resultsData = req.body; // stringified GameInfo
 			// randomize the player order
 			resultsData.players = Globals.shuffleArray(resultsData.players);
 			logger.log("Create game", resultsData, logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
 			var filename = gameId + "/game.json";
 			rwClient.saveGameInfo(gameId, JSON.stringify(resultsData))
 				.then(function(reply) {
-					logger.log("Listening for game", logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
-					var socketNamespace = io.of("/" + gameId);
-					var watchNamespace = io.of("/watch/" + gameId);
-					games[gameId] = new GameServer(gameId, socketNamespace, watchNamespace);
+					setupGame(gameId);
+					rwClient.addActiveGame(gameId, games[gameId].createTime())
+						.catch(function(err) {
+							logger.log("Error adding game to redis", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+						});
 					res.status(200).send("{}");
-
 				}).catch(function(err) {
 					logger.log("ERROR saving gameInfo to Redis:", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 					res.status(500).send(JSON.stringify({err: err}));
@@ -52,6 +98,8 @@ var SocketHandler = function() {
 				games[gameId].close();
 				delete games[gameId];
 			}
+			
+			rwClient.removeActiveGame(gameId);
 		}
 	};
 }();
@@ -165,7 +213,7 @@ var Human = require('../public/js/ai/human.js');
 var AIWrapper = require('../public/js/game/aiwrapper.js');
 
 
-var GameServer = function(gameId, namespace, watchNamespace) {
+var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*optional*/, map /*optional*/) {
 	var self = this;
 	self._gameId = gameId;
 	self._ns = namespace;
@@ -179,6 +227,7 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 	self._expectedHumans = 0;
 	self._currentHumans = 0;
 	self._started = false;
+	self._createTime = Date.now();
 	self._watchdogTimerId = -1;
 	
 	// get the game info
@@ -192,6 +241,7 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 					self._gameInfo = JSON.parse(data);
 				
 					self._engine = new Engine();
+					self._engine.setKeepHistory(false);
 				
 					//initialize the AIs
 					var players = [];
@@ -217,7 +267,7 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 				
 					// initialize the game engine
 					self._engine.init(players);
-					self._engine.setup();
+					self._engine.setup(map, restoreState);
 
 					// push the map data to redis
 					rwClient.saveMap(self._gameId, self._engine.serializeMap())
@@ -239,6 +289,9 @@ var GameServer = function(gameId, namespace, watchNamespace) {
 		});
 };
 
+GameServer.prototype.createTime = function() {
+	return this._createTime;
+};
 
 GameServer.prototype.connectWatcher = function(socket) {
 	logger.log("Connected watcher socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 
@@ -247,7 +300,7 @@ GameServer.prototype.connectWatcher = function(socket) {
 	var sock = new SocketWrapper(socket);
 	self._sockets[sock.id()] = sock;
 	
-}
+};
 
 GameServer.prototype.connectPlayer = function(socket) {
 	logger.log("Connected player socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 

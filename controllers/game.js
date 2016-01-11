@@ -238,8 +238,8 @@ module.exports = {
 		var gameId = req.query['gameId'];
 
 		rwClient.getStateCount(gameId)
-			.then(function(filenames) {
-				res.send({'stateCount': filenames.length});
+			.then(function(count) {
+				res.send({'stateCount': count});
 			}).catch(function(err) {
 				logger.log("Error getting state count", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 				res.status(500).send("Error getting state count " + err);
