@@ -40,6 +40,7 @@ Clientcontroller.prototype.update = function() {
 	
 	$('#back_btn').prop('disabled', true);
 	$('#forward_btn').prop('disabled', true);
+	$('#history').html((self._historyIndex+1)  + ' / ' + self._historyLength);
 	
 	if (self._watchMode || self._history.currentPlayerId() == self._playerId) {	
 		if (self.viewingHistory()) {
@@ -51,8 +52,6 @@ Clientcontroller.prototype.update = function() {
 		} else {
 			$('#end_turn').prop('disabled', false);
 		} 
-		
-		$('#history').html((self._historyIndex+1)  + ' / ' + self._historyLength);
 		
 		if (self.viewingHistory()) {
 			$('#forward_btn').prop('disabled', false);

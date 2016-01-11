@@ -247,6 +247,7 @@ $(function() {
 		},
 		
 		start: function() {
+			Globals.debug("start()", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 			Client._started = true;
 			$('#wait_message').css('display', 'none');
 			$('#game').css('display', 'block');
@@ -264,6 +265,8 @@ $(function() {
 			
 			// startup the AIs
 			Object.keys(Client._bots).forEach(function(id) {
+				// we have to wait until we have a map to start the bots
+				Globals.debug("Starting bot", id, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 				Client._bots[id].start();
 			});
 			
@@ -313,11 +316,10 @@ $(function() {
 			if (AIMap.hasOwnProperty(aiName)) {
 				var id = parseInt(data['playerId']);
 				Globals.debug("Initializing new bot", aiName, "with playerId:", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-				if (!Client._bots.hasOwnProperty(id)) {
-					Client._bots[id] = new AIWrapper(AIMap[aiName], Client, id, false);
-				} else {
-					Globals.debug("Already have a player", id, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+				if (Client._bots.hasOwnProperty(id)) {
+					Globals.debug("Already have a player", id, "re-initializing bot", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				}
+				Client._bots[id] = new AIWrapper(AIMap[aiName], Client, id, false);
 				
 			} else {
 				Globals.debug("Unknown AI requested:", aiName, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
@@ -327,11 +329,17 @@ $(function() {
 		// from server - for the bots
 		startTurn: function(data) {
 			Globals.debug("startTurn event", JSON.stringify(data), Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
-			if (Client._started && Client._bots[data['playerId']]) {
-				Client._history.onStateReceived(data['stateId'], function(state) {
-					Globals.debug("Calling startTurn for player", data['playerId'], Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-					Client._bots[data['playerId']].startTurn(state);
-				});
+			if (Client._started) {
+				if (Client._bots[data['playerId']]) {
+					Client._history.onStateReceived(data['stateId'], function(state) {
+						Globals.debug("Calling startTurn for player", data['playerId'], Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+						Client._bots[data['playerId']].startTurn(state);
+					});
+				} else {
+					Globals.debug("Got start_turn event for nonexistant bot", data['playerId'], Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+				}
+			} else {
+				Globals.debug("Got start_turn event before game has started", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 			}
 		},
 		
@@ -344,6 +352,7 @@ $(function() {
 		
 		// from controller
 		endTurnClicked: function(currentPlayerId) {
+			Globals.debug("Sending end_turn", currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			Client._socket.emit("end_turn", {playerId: currentPlayerId});
 		},
 		
@@ -434,6 +443,7 @@ $(function() {
 		// @callback: function(success){}
 		attack: function(from, to, callback){
 			Client._attackCallback = callback;
+			Globals.debug("Sending attack", from, "=>", to, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 			Client._socket.emit('attack', {from: from.id(), to: to.id()});
 		}, 
 		/*========================================================================================================================================*/
@@ -448,6 +458,7 @@ $(function() {
 			
 			attack: function(from, to, callback) {
 				Client._attackCallback = callback;
+				Globals.debug("Sending attack", from, "=>", to, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 				Client._socket.emit('attack', {from: from.id(), to: to.id()});
 			},
 			

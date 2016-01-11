@@ -190,11 +190,10 @@ Engine.prototype.startTurn = function(playerId, callback) {
 	self.setCurrentPlayer(playerId);
 	self.pushHistory();
 
-	if (!self.isHuman(self._currentPlayerId)) {
-		self._timeout(function() {
-				self._AIs[self._currentPlayerId].startTurn(self.getState())
-			}, 0);
-	} 
+	self._timeout(function() {
+			self._AIs[self._currentPlayerId].startTurn(self.getState())
+		}, 0);
+
 };
 
 Engine.prototype.endTurn = function(event) {

@@ -266,10 +266,6 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 					// initialize the game engine
 					self._engine.init(players);
 					self._engine.setup(map, restoreState);
-					if (map && restoreState) {
-						logger.log("Map and initial state provided, game has already started", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
-						self._started = true;
-					}
 
 					// push the map data to redis
 					rwClient.saveMap(self._gameId, self._engine.serializeMap())
@@ -308,6 +304,11 @@ GameServer.prototype.connectPlayer = function(socket) {
 	logger.log("Connected player socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 
 									logger.LEVEL.INFO, logger.CHANNEL.SERVER, this._gameId);
 	var self = this;
+	if (self._currentHumans >= self._expectedHumans) {
+		// TODO: FIXME: should probably send a 'game full' message to client
+		socket.disconnect();
+		return;
+	}
 	var sock = new SocketWrapper(socket);
 	self._sockets[sock.id()] = sock;
 	self._connectionCount ++;
@@ -344,7 +345,6 @@ GameServer.prototype.connectPlayer = function(socket) {
 	
 	sock.emit("map", {playerId: id, waitingFor: self._expectedHumans - self._currentHumans});
 	if (self._currentHumans == self._expectedHumans && !self._started) {
-		// everyone's here, start the game!
 		self.startGame();
 	}
 };
@@ -433,9 +433,10 @@ GameServer.prototype.startGame = function() {
 		}
 	});
 	
-	logger.log('Game started', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
+	var current = self._engine.currentPlayerId();
+	logger.log('Game started, currentPlayer=', current, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	self._started = true;
-	self._engine.startTurn(0);
+	self._engine.startTurn(current);
 };
 
 // @bot: AISocketWrapper
