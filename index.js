@@ -22,6 +22,7 @@ var RedisStore = require('connect-redis')(session);	// For storing sessions.
 var userController = require('./controllers/user');
 var gameController = require('./controllers/game');
 var submissionController = require('./controllers/submission');
+var adminController = require('./controllers/admin');
 
 // Game Server
 var gameServer = require('./app/gameserver.js');
@@ -88,12 +89,12 @@ app.post('/testsubmission', submissionController.submitForTest); 	// submit for 
 app.get('/aitest', gameController.solo);													// user testing of AI
 
 // admin tools
-app.get('/errorReports', gameController.getErrorReportList);
-app.get('/errorReport', gameController.getErrorReport);
-app.get('/serverLog', gameController.getServerLog);
-app.get('/thunderdome', gameController.thunderdome);
-app.get('/resetai/:hash', gameController.resetAI);
-app.get('/aicode/:hash', gameController.getAICode);
+app.get('/errorReports', adminController.getErrorReportList);
+app.get('/errorReport', adminController.getErrorReport);
+app.get('/serverLog', adminController.getServerLog);
+app.get('/thunderdome', adminController.thunderdome);
+app.get('/resetai/:hash', adminController.resetAI);
+app.get('/aicode/:hash', adminController.getAICode);
 
 
 // client routes
@@ -106,7 +107,7 @@ app.post('/uploadState', gameController.uploadState);
 app.get('/getMap', gameController.getMap);
 app.get('/getState', gameController.getState); 
 app.get('/getStateCount', gameController.getStateCount);
-app.post('/uploadErrorReport', gameController.uploadErrorReport);
+app.post('/uploadErrorReport', adminController.uploadErrorReport);
 app.get('/aisjson', gameController.getAIListJSON);
 app.get('/aiworker/:hash', gameController.getAIWorker);
 
