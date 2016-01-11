@@ -1,0 +1,7 @@
+<div id="error_list">
+	<ul>
+		{{#each errorLogs}}
+			<li><a href="/errorReport?timestamp={{timestamp}}&gameId={{gameId}}">{{formattedDate}}</a></li>
+		{{/each}}
+	</ul>
+</div>

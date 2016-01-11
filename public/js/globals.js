@@ -92,6 +92,11 @@ Globals.LEVEL = {
 	"TRACE" : 5 
 }
 
+Globals.levelNames = [];
+Object.keys(Globals.LEVEL).forEach(function(name, idx) {
+	Globals.levelNames[idx] = name;
+});
+
 // The order in CHANNEL and channels must match. DON'T CHANGE THESE NUMBERS. To change the loglevel, see Globals.channels below
 Globals.CHANNEL = {
 	"ENGINE" : 0,
@@ -105,6 +110,11 @@ Globals.CHANNEL = {
 	"CLIENT" : 8,
 	"SERVER" : 9
 };
+
+Globals.channelNames = [];
+Object.keys(Globals.CHANNEL).forEach(function(name, idx) {
+	Globals.channelNames[idx] = name;
+});
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
 Globals.channels = [

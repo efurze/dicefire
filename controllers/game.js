@@ -4,6 +4,7 @@ var submitter = require('./submission.js');
 var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
+var Globals = require('../public/js/globals.js');
 var uuid = require('node-uuid');
 
 
@@ -113,10 +114,38 @@ module.exports = {
 	uploadErrorReport: function(req, res) {
 		var gameId = req.query['gameId'];
 		var logData = JSON.stringify(req.body);
-		console.log("ErrorLog: ", logData);
+		rwClient.clientErrorReport(logData, gameId);
 		res.status(200).send("{}");
 	},
-
+	
+	getErrorReportList: function(req, res) {
+		rwClient.getClientErrorReportList()
+			.then(function(list) { // array of {timestamp: , gameId: }
+				list = list.map(function(item) {
+					var date = new Date(parseInt(item.timestamp));
+					item.formattedDate = date.toString();
+					return item;
+				});
+				res.status(200).render("clientErrorLogs", {errorLogs: list});
+			}).catch(function(err) {
+				res.status(500).send("Error retrieving error log list" + err);
+			});
+	},
+	
+	getErrorReport: function(req, res) {
+		var gameId = req.query['gameId'];
+		var timestamp = req.query['timestamp'];
+		rwClient.getClientErrorReport (timestamp, gameId)
+			.then(function(log) { // log is a string
+				log = JSON.parse(log);
+				var strList = log.map(function(l) {
+					return '['+Globals.channelNames[l.channel]+'] ' + '['+Globals.levelNames[l.level]+'] ' + l.msg;
+				});
+				res.status(200).send(strList.join('<br>'));
+			}).catch(function(err) {
+				res.status(500).send("Error retrieving error log" + err);
+			});
+	},
 
 	uploadMap: function(req, res) { 
 		var gameId = req.query['gameId'];
