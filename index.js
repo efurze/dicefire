@@ -73,18 +73,32 @@ app.use(function(req, res, next) {
 
 
 // Routes
-app.get('/', gameController.index);
-app.get('/aitest', gameController.index);
-app.get('/play', gameController.client);
-app.get('/submit', gameController.submit);
-app.get('/data/*', gameController.data);
-app.get('/unit', gameController.unit);
-app.get('/test', gameController.test);
-app.get('/thunderdome', gameController.thunderdome);
-app.get('/replay', gameController.replay);
-app.post('/uploadErrorReport', gameController.uploadErrorReport);
+
+// User routes
+app.get('/', gameController.index);					// Front Page
+app.get('/solo', gameController.solo);			// Individual Game
+app.get('/setup', gameController.setup);		// Ladder Game
+app.get('/submit', gameController.submit);	// AI Submission
+app.get('/ais', gameController.getAIList);	// AI List
+app.get('/replay', gameController.replay);	
+app.get('/ai/:hash', gameController.getAIDetail);
+
+app.post('/submission', submissionController.submit); 						// submit the AI
+app.post('/testsubmission', submissionController.submitForTest); 	// submit for test
+app.get('/aitest', gameController.solo);													// user testing of AI
+
+// admin tools
 app.get('/errorReports', gameController.getErrorReportList);
 app.get('/errorReport', gameController.getErrorReport);
+app.get('/serverLog', gameController.getServerLog);
+app.get('/thunderdome', gameController.thunderdome);
+app.get('/resetai/:hash', gameController.resetAI);
+app.get('/aicode/:hash', gameController.getAICode);
+
+
+// client routes
+app.post('/createGame', gameServer.createGame);
+app.get('/play', gameController.client);
 app.post('/uploadMap', gameController.uploadMap);
 app.post('/uploadGameInfo', gameController.uploadGameInfo);
 app.get('/getGameInfo', gameController.getGameInfo);
@@ -92,18 +106,18 @@ app.post('/uploadState', gameController.uploadState);
 app.get('/getMap', gameController.getMap);
 app.get('/getState', gameController.getState); 
 app.get('/getStateCount', gameController.getStateCount);
-app.get('/setup', gameController.setup);
-app.get('/ais', gameController.getAIList);
+app.post('/uploadErrorReport', gameController.uploadErrorReport);
 app.get('/aisjson', gameController.getAIListJSON);
-app.get('/ai/:hash', gameController.getAIDetail);
-app.get('/aicode/:hash', gameController.getAICode);
 app.get('/aiworker/:hash', gameController.getAIWorker);
-app.get('/resetai/:hash', gameController.resetAI);
-app.post('/submission', submissionController.submit);
-app.post('/testsubmission', submissionController.submitForTest);
 
-// server
-app.post('/createGame', gameServer.createGame);
+
+// other
+app.get('/data/*', gameController.data);
+app.get('/unit', gameController.unit);
+app.get('/test', gameController.test);
+
+
+
 
 
 // User account routes

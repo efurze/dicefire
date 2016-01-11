@@ -9,7 +9,12 @@ var uuid = require('node-uuid');
 
 
 module.exports = {
+	
 	index: function(req, res) { 
+		res.render("frontPage", {title: "Dicefire"});
+	},
+	
+	solo: function(req, res) { 
 		var data = {
 			title: "Dicefire",
 			gameId: uuid.v1()
@@ -126,6 +131,26 @@ module.exports = {
 		res.status(200).send("{}");
 	},
 	
+	getServerLog: function(req, res) {
+		rwClient.getServerLog()
+			.then(function(list) { // list: array of strings: {channel:, level:, gameId:, msg:, timestamp:}
+				console.log("logger", logger);
+				var formatted = list.map(function(msg) {
+					try {
+						var m = JSON.parse(msg);
+						var d = new Date(parseInt(m.timestamp));
+						return '[' + m.channel + '] '
+										+ '[' + m.level + '] '
+										+ '[' + d.toString()  + '] '
+										+ m.msg;
+					} catch (err) {
+						return "Parse Error: " + err;
+					}
+				});
+				res.status(200).send(formatted.join("<br>"));
+			});
+	},
+	
 	getErrorReportList: function(req, res) {
 		rwClient.getClientErrorReportList()
 			.then(function(list) { // array of {timestamp: , gameId: }
@@ -145,6 +170,7 @@ module.exports = {
 		var timestamp = req.query['timestamp'];
 		rwClient.getClientErrorReport (timestamp, gameId)
 			.then(function(log) { // log is a string
+				console.log("Client Log:", log);
 				log = JSON.parse(log);
 				var strList = log.map(function(l) {
 					return '['+Globals.channelNames[l.channel]+'] ' + '['+Globals.levelNames[l.level]+'] ' + l.msg;
