@@ -150,7 +150,7 @@ module.exports = {
 	uploadMap: function(req, res) { 
 		var gameId = req.query['gameId'];
 		var mapData = JSON.stringify(req.body);
-		logger.server("UploadMap", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+		logger.log("UploadMap", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 
 		rwClient.saveMap(gameId, mapData)
 			.then(function(reply) {
@@ -163,7 +163,7 @@ module.exports = {
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
 		var results = req.body;
-		logger.server("UploadGameInfo", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+		logger.log("UploadGameInfo", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 		
 		rwClient.saveGameInfo(gameId, JSON.stringify(results))
 		 	.then(function(reply) {
@@ -194,14 +194,14 @@ module.exports = {
 				}).then(function() {
 					res.status(200).send("{}");
 				}).catch(function(err){
-					logger.server("UploadGameInfo ERROR", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+					logger.log("UploadGameInfo ERROR", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 					res.status(500).send(err);
 				});
 				
 				
 			}).catch(function(err) {
 				if (err) {
-					logger.server("ERROR saving gameInfo to Redis", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+					logger.log("ERROR saving gameInfo to Redis", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 				}
 			});
 	},
@@ -217,7 +217,7 @@ module.exports = {
 					res.send(reply);
 				}
 			}).catch(function(err) {
-				logger.server("Error retrieving GameInfo", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+				logger.log("Error retrieving GameInfo", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 				res.status(500).send("Error retrieving GameInfo" + err);
 			});
 	},
@@ -231,7 +231,7 @@ module.exports = {
 			.then(function(reply) {
 				res.status(200).send("{}");
 			}).catch(function(err) {
-				logger.server("Error saving state data", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+				logger.log("Error saving state data", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 				res.status(500).send("Error saving state data" + err);
 			});
 	},
@@ -247,7 +247,7 @@ module.exports = {
 					res.send(data);
 				}
 			}).catch(function(err) {
-				logger.server("Error retrieving map", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+				logger.log("Error retrieving map", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 				res.status(500).send("Error retrieving map " + err);
 			});
 	},
@@ -264,7 +264,7 @@ module.exports = {
 					res.send({'data': data, 'id': moveId});
 				}
 			}).catch(function(err) {
-				logger.server("Error getting state data", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+				logger.log("Error getting state data", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 				res.status(500).send("Error getting state data " + err);
 			});
 	},
@@ -276,7 +276,7 @@ module.exports = {
 			.then(function(filenames) {
 				res.send({'stateCount': filenames.length});
 			}).catch(function(err) {
-				logger.server("Error getting state count", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+				logger.log("Error getting state count", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 				res.status(500).send("Error getting state count " + err);
 			});
 	},
@@ -290,7 +290,7 @@ module.exports = {
 				ais: parsedResults
 			});
 		}).catch(function(err) {
-			logger.server("Error retrieving AI list", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+			logger.log("Error retrieving AI list", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
 			res.status(500).send("Error retrieving AI list: " + err);
 		});
 	},
@@ -300,7 +300,7 @@ module.exports = {
 			var parsedResults = results.map(function(result){return JSON.parse(result);});
 			res.send(parsedResults);
 		}).catch(function(err) {
-			logger.server("Error retrieving AI list JSON", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+			logger.log("Error retrieving AI list JSON", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
 			res.status(500).send("Error retrieving AI list: " + err);
 		});
 	},
@@ -321,7 +321,7 @@ module.exports = {
 				dataToRender.games = result;
 				res.render("ai_detail", dataToRender);
 			}).catch(function(err) {
-				logger.server("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+				logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
 				res.status(500).send("Error retrieving AI detail: " + err);
 			});
 	},
@@ -333,7 +333,7 @@ module.exports = {
 				result = JSON.parse(result);
 				res.send(result.code);
 			}).catch(function(err) {
-				logger.server("Error retrieving AI", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+				logger.log("Error retrieving AI", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
 				res.status(500).send("Error retrieving AI: " + err);
 			});
 	},
@@ -350,7 +350,7 @@ module.exports = {
 			.then(function(reply) {
 				res.send("Reset successful");
 			}).catch(function(err) {
-				logger.server("Error resetting AI", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+				logger.log("Error resetting AI", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
 				res.status(500).send("Error resetting AI" + err);
 			});
 	}

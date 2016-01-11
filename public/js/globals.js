@@ -6,57 +6,67 @@ var BUFFER_LENGTH = 100;
 var uploadFn = null;
 var GAME_ID = "";
 
+var redirectFn = null;
+
 var Globals = {
 			initLogger: function(game_id, logUploadFn) {
 				GAME_ID = game_id;
 				uploadFn = logUploadFn;
 			},
+			
+			setLogRedirect: function(fn) {
+				redirectFn = fn;
+			},
 	
 		// USAGE: debug("my msg", foo, bar, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	    debug: function(title) {
-			var argc = arguments.length;
+				if (redirectFn) {
+					redirectFn.apply(null, arguments);
+				} else {
+					var argc = arguments.length;
 		
-			if (argc >= 3 
-				&& (typeof arguments[argc-1]) == 'number'
-				&& (typeof arguments[argc-2]) == 'number'
-				&& arguments[argc-1] < Globals.channels.length
-				) {
+					if (argc >= 3 
+						&& (typeof arguments[argc-1]) == 'number'
+						&& (typeof arguments[argc-2]) == 'number'
+						&& arguments[argc-1] < Globals.channels.length
+						) {
 				
-				var channel = arguments[argc-1];
-				var level = arguments[argc-2];
+						var channel = arguments[argc-1];
+						var level = arguments[argc-2];
 				
-				var msg = ""
-				var args = arguments;
-				Object.keys(arguments).forEach(function(key, idx) {
-					if (idx < argc-2) {
-						msg += args[key] + " ";
-					}
-				});
+						var msg = ""
+						var args = arguments;
+						Object.keys(arguments).forEach(function(key, idx) {
+							if (idx < argc-2) {
+								msg += args[key] + " ";
+							}
+						});
 				
-				if (level < Globals.LEVEL.TRACE && channel != Globals.CHANNEL.RENDERER) {
-					logBuffer.unshift({
-						channel: channel,
-						level: level,
-						gameId: GAME_ID,
-						msg: msg.substring(0, 100)
-					});
+						if (level < Globals.LEVEL.TRACE && channel != Globals.CHANNEL.RENDERER) {
+							logBuffer.unshift({
+								channel: channel,
+								level: level,
+								gameId: GAME_ID,
+								msg: msg.substring(0, 100)
+							});
 				
-					if (logBuffer.length > BUFFER_LENGTH) {
-						logBuffer.pop();
-					}
+							if (logBuffer.length > BUFFER_LENGTH) {
+								logBuffer.pop();
+							}
 				
-					if (uploadFn && level == Globals.LEVEL.ERROR) {
-						uploadFn(GAME_ID, logBuffer);
+							if (uploadFn && level == Globals.LEVEL.ERROR) {
+								uploadFn(GAME_ID, logBuffer);
+							}
+						}
+				
+						if (level <= Globals.channels[channel]) {
+							console.log(msg);
+						}
+				
+					} else {
+			        	console.log(title, arguments);
 					}
 				}
-				
-				if (level <= Globals.channels[channel]) {
-					console.log(msg);
-				}
-				
-			} else {
-	        	console.log(title, arguments);
-			}
 	    },
 	
 		ASSERT: function (condition) {
@@ -107,8 +117,7 @@ Globals.CHANNEL = {
 	"PLYER" : 5,
 	"RENDERER" : 6,
 	"GREEDY" : 7,
-	"CLIENT" : 8,
-	"SERVER" : 9
+	"CLIENT" : 8
 };
 
 Globals.channelNames = [];

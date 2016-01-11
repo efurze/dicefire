@@ -121,7 +121,7 @@ app.get('/account/unlink/:provider', passportConf.isAuthenticated, userControlle
 
 app.listen(app.get('port'), function() {
 	console.log('Node app is running on port', app.get('port'));
-	logger.server("Server starting", logger.LEVEL.INFO, logger.CHANNEL.SERVER);
+	logger.log("Server starting", logger.LEVEL.INFO, logger.CHANNEL.SERVER);
 });
 
 

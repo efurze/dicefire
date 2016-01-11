@@ -78,24 +78,24 @@ var getAI = function(hash) {
 
 // adds entry to global game list "games"
 var recordGame = function(gameId) {
-	logger.server("recordGame", logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
+	logger.log("recordGame", logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
 	return rwClient.pushGame(gameId)
 		.catch(function(err) {
-			logger.server("Error recording game", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
+			logger.log("Error recording game", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
 		});
 };
 
 // adds entry to game list for given AI
 var recordGameForAI = function(hash, gameId) {
-	logger.server("recordGameForAI", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
+	logger.log("recordGameForAI", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
 	return rwClient.pushAIGame(hash, gameId)
 		.catch(function(err) {
-			logger.server("Error recording AI game", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
+			logger.log("Error recording AI game", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
 		});
 };
 
 var recordWin = function(hash, gameId) {
-	logger.server("recordWin", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
+	logger.log("recordWin", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
 	return rwClient.getAI(hash)
 				.then(function(str) {
 					var info = JSON.parse(str);
@@ -106,12 +106,12 @@ var recordWin = function(hash, gameId) {
 					return rwClient.saveAI(hash, JSON.stringify(info));
 			
 				}).catch(function(err) {
-					logger.server("Error recording win", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
+					logger.log("Error recording win", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
 				});
 };
 
 var recordLoss = function(hash) {
-	logger.server("recordLoss", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
+	logger.log("recordLoss", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
 	return rwClient.getAI(hash)
 				.then(function(str) {
 					var info = JSON.parse(str);
@@ -122,7 +122,7 @@ var recordLoss = function(hash) {
 					return rwClient.saveAI(hash, JSON.stringify(info));
 			
 				}).catch(function(err) {
-					logger.server("Error recording loss", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+					logger.log("Error recording loss", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
 				});
 };
 
@@ -149,7 +149,7 @@ var submit = function(req, res, test) {
 
 				var s = new Sandbox();
 				s.run(fnString, function(result) {
-					logger.server("submit validate result", result, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
+					logger.log("submit validate result", result, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
 					result = result.result;
 					if (result === 'true') {
 						storeAI(code, codeHash, name, test)
@@ -169,7 +169,7 @@ var submit = function(req, res, test) {
 				
 			}
 		}).catch(function(e) {
-			logger.server("submit redis error", e, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+			logger.log("submit redis error", e, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
 			res.send("Server error:", e);
 		});		
 };
