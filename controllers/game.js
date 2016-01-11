@@ -134,7 +134,6 @@ module.exports = {
 	getServerLog: function(req, res) {
 		rwClient.getServerLog()
 			.then(function(list) { // list: array of strings: {channel:, level:, gameId:, msg:, timestamp:}
-				console.log("logger", logger);
 				var formatted = list.map(function(msg) {
 					try {
 						var m = JSON.parse(msg);
