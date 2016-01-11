@@ -17,6 +17,10 @@ var SocketHandler = function() {
 	
 	return {
 		
+		activeGames: function() {
+			return Object.keys(games);
+		},
+		
 		listen: function(app, port) {
 			var server = app.listen(port);
 			io = require('socket.io').listen(server);

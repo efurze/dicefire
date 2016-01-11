@@ -118,7 +118,11 @@ app.get('/unit', gameController.unit);
 app.get('/test', gameController.test);
 
 
-
+app.get('/current', function(req, res) {
+	var data = {games: gameServer.activeGames()};
+	console.log(data);
+	res.render('currentGames', data);
+});
 
 
 // User account routes
