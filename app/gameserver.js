@@ -17,11 +17,11 @@ var SocketHandler = function() {
 	var io = null;
 	var games = {};
 	
-	var setupGame = function(gameId, restoreState) {
+	var setupGame = function(gameId, restoreState, map) {
 		logger.log("Listening for game", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 		var socketNamespace = io.of("/" + gameId);
 		var watchNamespace = io.of("/watch/" + gameId);
-		games[gameId] = new GameServer(gameId, socketNamespace, watchNamespace, restoreState);
+		games[gameId] = new GameServer(gameId, socketNamespace, watchNamespace, restoreState, map);
 	};
 	
 	var init = function() {
@@ -40,14 +40,12 @@ var SocketHandler = function() {
 							return rwClient.getState(gameId, count-1);
 						}).then(function(state) {
 							logger.log("Got state", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
-							gamestate = Gamestate.deserialize(JSON.parse(state));
+							gamestate = state;
 							return rwClient.getMap(gameId);
 						}).then(function(mapData) {
 							logger.log("Got map", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
-							var map = new Map();
-							map.deserializeHexes(mapData);
 							logger.log("Restoring game", logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
-							setupGame(gameId, gamestate, map);
+							setupGame(gameId, gamestate, mapData);
 						}).catch(function(err) {
 							logger.log("Error Restoring game", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 						})
@@ -268,6 +266,10 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 					// initialize the game engine
 					self._engine.init(players);
 					self._engine.setup(map, restoreState);
+					if (map && restoreState) {
+						logger.log("Map and initial state provided, game has already started", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+						self._started = true;
+					}
 
 					// push the map data to redis
 					rwClient.saveMap(self._gameId, self._engine.serializeMap())
@@ -369,7 +371,7 @@ GameServer.prototype.reconnect = function(socketWrapper) {
 					humanAssignedTo = playerId;
 				} else { 
 					self.assignBot(self._playerMap[playerId], socketWrapper);
-					if (self._engine.currentPlayerId() == playerId) {
+					if (self._started && self._engine.currentPlayerId() == playerId) {
 						self._playerMap[playerId].startTurn(self._engine.getState());
 					}
 				}
@@ -512,7 +514,7 @@ GameServer.prototype.socketError = function(socketWrapper, err) {
 // from engine
 GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
-	logger.log("engineUpdate", stateId, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
+	logger.log("engineUpdate, stateId", stateId, 'currentPlayer', gamestate.currentPlayerId(), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
 	if (gamestate) {
 		var stateData = JSON.stringify(gamestate.serialize());
 		rwClient.saveState(self._gameId, stateId, stateData)

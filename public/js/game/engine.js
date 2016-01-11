@@ -47,7 +47,7 @@ Engine.prototype.isInitialized = function() {return this._initialized;};
 Engine.prototype.setKeepHistory = function(keep) { this._keepHistory = keep;};	
 	
 Engine.prototype.setCurrentPlayer = function(id) {
-	Globals.debug("Current player set to " + id, Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
+	Globals.debug("Current player set to " + id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 	this._currentPlayerId = id;
 };
 
