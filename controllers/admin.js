@@ -21,7 +21,7 @@ module.exports = {
 		var gameId = req.query['gameId'];
 		var logData = JSON.stringify(req.body);
 		rwClient.clientErrorReport(logData, gameId);
-		logger.log("Got client error report", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+		logger.log("Got client error report", logger.LEVEL.DEBUG, logger.CHANNEL.ADMIN, gameId);
 		res.status(200).send("{}");
 	},
 	
@@ -81,7 +81,7 @@ module.exports = {
 				result = JSON.parse(result);
 				res.send(result.code);
 			}).catch(function(err) {
-				logger.log("Error retrieving AI", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+				logger.log("Error retrieving AI", err, logger.LEVEL.ERROR, logger.CHANNEL.ADMIN);
 				res.status(500).send("Error retrieving AI: " + err);
 			});
 	},
@@ -92,7 +92,7 @@ module.exports = {
 			.then(function(reply) {
 				res.send("Reset successful");
 			}).catch(function(err) {
-				logger.log("Error resetting AI", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+				logger.log("Error resetting AI", err, logger.LEVEL.ERROR, logger.CHANNEL.ADMIN);
 				res.status(500).send("Error resetting AI" + err);
 			});
 	}

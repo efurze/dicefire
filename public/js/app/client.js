@@ -284,7 +284,7 @@ $(function() {
 		
 		// push notification from server that the map is available
 		mapAvailable: function(data) {
-			Globals.debug("Server map push", data, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			Globals.debug("=> map", JSON.stringify(data), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			if (Client._playerId == -1) {
 				Client._playerId = data.playerId;
 				Client._controller.setPlayerId(data.playerId);
@@ -305,13 +305,14 @@ $(function() {
 		// push notification from server that a new state is available
 		// @stateId: 0-based counter. First state is 0.
 		engineUpdate: function(stateId) {
-			Globals.debug("Got state push from server for stateId " + stateId, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+			Globals.debug("=> state " + stateId, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT_SOCKET);
 			Client._history.updateStateCount(stateId+1);
 		},
 				
 		// from server
 		// @data: {name: AI.getName(), playerId: <int>}
 		createBot: function(data) {
+			Globals.debug("=> create_bot", JSON.stringify(data), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			var aiName = data['name'];
 			if (AIMap.hasOwnProperty(aiName)) {
 				var id = parseInt(data['playerId']);
@@ -328,7 +329,7 @@ $(function() {
 		
 		// from server - for the bots
 		startTurn: function(data) {
-			Globals.debug("startTurn event", JSON.stringify(data), Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			Globals.debug("=> start_turn", JSON.stringify(data), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			if (Client._started) {
 				if (Client._bots[data['playerId']]) {
 					Client._history.onStateReceived(data['stateId'], function(state) {
@@ -352,7 +353,7 @@ $(function() {
 		
 		// from controller
 		endTurnClicked: function(currentPlayerId) {
-			Globals.debug("Sending end_turn", currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			Globals.debug("<= end_turn", currentPlayerId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			Client._socket.emit("end_turn", {playerId: currentPlayerId});
 		},
 		
@@ -422,7 +423,7 @@ $(function() {
 		},
 		
 		socketError: function(err) {
-			Globals.debug("Socket ERROR:", err, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+			Globals.debug("Socket ERROR:", err, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT_SOCKET);
 		},
 		
 		/*========================================================================================================================================*/
@@ -443,7 +444,7 @@ $(function() {
 		// @callback: function(success){}
 		attack: function(from, to, callback){
 			Client._attackCallback = callback;
-			Globals.debug("Sending attack", from, "=>", to, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+			Globals.debug("<= attack", from, "=>", to, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			Client._socket.emit('attack', {from: from.id(), to: to.id()});
 		}, 
 		/*========================================================================================================================================*/
@@ -458,7 +459,7 @@ $(function() {
 			
 			attack: function(from, to, callback) {
 				Client._attackCallback = callback;
-				Globals.debug("Sending attack", from, "=>", to, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+				Globals.debug("<= attack", from, "=>", to, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 				Client._socket.emit('attack', {from: from.id(), to: to.id()});
 			},
 			

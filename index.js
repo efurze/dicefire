@@ -120,7 +120,6 @@ app.get('/test', gameController.test);
 
 app.get('/current', function(req, res) {
 	var data = {games: gameServer.activeGames()};
-	console.log(data);
 	res.render('currentGames', data);
 });
 
@@ -139,8 +138,7 @@ app.get('/account/unlink/:provider', passportConf.isAuthenticated, userControlle
 
 
 app.listen(app.get('port'), function() {
-	console.log('Node app is running on port', app.get('port'));
-	logger.log("Server starting", logger.LEVEL.INFO, logger.CHANNEL.SERVER);
+	logger.log("Server starting", logger.LEVEL.INFO, logger.CHANNEL.DEFAULT);
 });
 
 

@@ -117,7 +117,8 @@ Globals.CHANNEL = {
 	"PLYER" : 5,
 	"RENDERER" : 6,
 	"GREEDY" : 7,
-	"CLIENT" : 8
+	"CLIENT" : 8,
+	"CLIENT_SOCKET" : 9
 };
 
 Globals.channelNames = [];
@@ -135,8 +136,8 @@ Globals.channels = [
 	0, //"AI.PLYER"
 	0, //"RENDERER",
 	0, //"GREEDY",
-	0, //"CLIENT",
-	0, //"SERVER"
+	4, //"CLIENT",
+	3, //"CLIENT_SOCKET"
 ];
 
 

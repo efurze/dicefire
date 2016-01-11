@@ -160,8 +160,9 @@ AISocketWrapper.prototype.loses = function() {};
 /*========================================================================================================================================*/
 // SocketWrapper: wraps a Socket.IO socket
 /*========================================================================================================================================*/
-var SocketWrapper = function(socket) {
+var SocketWrapper = function(socket, gameId) {
 	this._socket = socket;
+	this._gameId = gameId;
 	this._id = socket.id;
 	this._callbacks = {};
 };
@@ -177,7 +178,7 @@ SocketWrapper.prototype.ip= function() {
 SocketWrapper.prototype.on = function(event, callback) {
 	var self = this;
 	self._socket.on(event, function() {
-		logger.log("Got socket event", event, JSON.stringify(arguments), self._id, logger.LEVEL.TRACE, logger.CHANNEL.SERVER);
+		logger.log("=>", event, JSON.stringify(arguments), logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, self._gameId);
 		var args = [];
 		args.push(self);
 		var count = Object.keys(arguments).length;
@@ -189,6 +190,7 @@ SocketWrapper.prototype.on = function(event, callback) {
 };
 
 SocketWrapper.prototype.emit = function(event, data) {
+	logger.log("<=", event, JSON.stringify(data), logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, this._gameId);
 	this._socket.emit(event, data);
 };
 
@@ -295,7 +297,7 @@ GameServer.prototype.connectWatcher = function(socket) {
 	logger.log("Connected watcher socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 
 									logger.LEVEL.INFO, logger.CHANNEL.SERVER, this._gameId);
 	var self = this;
-	var sock = new SocketWrapper(socket);
+	var sock = new SocketWrapper(socket, self._gameId);
 	self._sockets[sock.id()] = sock;
 	
 };
@@ -309,7 +311,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 		socket.disconnect();
 		return;
 	}
-	var sock = new SocketWrapper(socket);
+	var sock = new SocketWrapper(socket, self._gameId);
 	self._sockets[sock.id()] = sock;
 	self._connectionCount ++;
 	sock.on('error', this.socketError.bind(this));
