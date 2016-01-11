@@ -10,12 +10,19 @@ var uuid = require('node-uuid');
 
 module.exports = {
 	index: function(req, res) { 
-		res.render("index", {
+		var data = {
 			title: "Dicefire",
-			gameId: uuid.v1(),
-			aiName: req.query['name'],
-			scripts: [{path: '/aicode/'+req.query['ai']}]
-		});	    
+			gameId: uuid.v1()
+		};
+		
+		var aiHash = req.query['ai'];
+		var aiName = req.query['name'];
+		if (aiHash && aiName) {
+			data.aiName = aiName;
+			data.scripts = [{path: '/aicode/'+req.query['ai']}];
+		}
+		
+		res.render("index", data);	    
 	},
 	
 	setup: function(req, res) {
@@ -115,6 +122,7 @@ module.exports = {
 		var gameId = req.query['gameId'];
 		var logData = JSON.stringify(req.body);
 		rwClient.clientErrorReport(logData, gameId);
+		logger.log("Got client error report", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 		res.status(200).send("{}");
 	},
 	
