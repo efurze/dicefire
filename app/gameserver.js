@@ -128,6 +128,7 @@ PlayerWrapper.prototype.startTurn = function(state) {
 	}
 };
 PlayerWrapper.prototype.attackDone = function(success) {};
+PlayerWrapper.prototype.turnEnded = function() {};
 PlayerWrapper.prototype.loses = function() {};
 
 /*========================================================================================================================================*/
@@ -156,6 +157,7 @@ AISocketWrapper.prototype.startTurn = function(state) {
 	}
 };
 AISocketWrapper.prototype.attackDone = function(success) {};
+AISocketWrapper.prototype.turnEnded = function() {}; // TODO: FIXME: add a socket msg for this
 AISocketWrapper.prototype.loses = function() {};
 
 /*========================================================================================================================================*/

@@ -64,6 +64,12 @@ Country.prototype.addDie = function() {
 	if (this._numDice < 8) {
     	this._numDice++;
 	}
+};
+
+Country.prototype.removeDie = function() {
+	if (this._numDice > 1) {
+    	this._numDice--;
+	}
 }
 
 

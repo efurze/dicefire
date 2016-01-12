@@ -9,6 +9,7 @@ if (typeof module !== 'undefined' && module.exports) {
 	var AIWrapper = require('./aiwrapper.js');
 }
 
+var MOVE_TIME_BUDGET = 2000; // each player gets 2 seconds per turn
 
 var Engine = function(trusted) {
 	this._trusted = (typeof trusted == 'undefined') ? true : trusted;
@@ -26,6 +27,7 @@ var Engine = function(trusted) {
 	this._initialized = false;
 	this._map = null;
 	this._watchdogTimerID = -1;
+	this._enforceTimeLimits = false;
 };
 
 Engine.PlayerInterface = {
@@ -35,6 +37,7 @@ Engine.PlayerInterface = {
 	stop: function(){},
 	startTurn: function(state){},
 	attackDone: function(success){},
+	turnEnded: function() {},
 	loses: function(){}
 };
         
@@ -45,6 +48,7 @@ Engine.prototype.currentPlayerId = function() { return this._currentPlayerId; };
 Engine.prototype.isAttacking = function() {return this._attackInProgress;};
 Engine.prototype.isInitialized = function() {return this._initialized;};
 Engine.prototype.setKeepHistory = function(keep) { this._keepHistory = keep;};	
+Engine.prototype.setEnforceTime = function(enforce) { this._enforceTimeLimits = enforce;};	
 	
 Engine.prototype.setCurrentPlayer = function(id) {
 	Globals.debug("Current player set to " + id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
@@ -78,7 +82,7 @@ Engine.prototype.init = function(players, callback) {
 	
 	self._players = [];
 	for (var i=0; i < players.length; i++) {
-		self._players.push(new Player(i));
+		self._players.push(new Player(i, self));
 		self._AIs[i] = players[i];
 	}
 	
@@ -191,14 +195,19 @@ Engine.prototype.startTurn = function(playerId, callback) {
 	self.pushHistory();
 
 	self._timeout(function() {
-			self._AIs[self._currentPlayerId].startTurn(self.getState())
-		}, 0);
+		if (!self.isHuman(playerId)) {
+			self._players[playerId].setTimeBudget(MOVE_TIME_BUDGET);
+			self._startClock(playerId);
+		}
+		self._AIs[self._currentPlayerId].startTurn(self.getState())
+	}, 0);
 
 };
 
-Engine.prototype.endTurn = function(event) {
+Engine.prototype.endTurn = function() {
 	Globals.debug("Player " + this._currentPlayerId + " ending turn", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	var self = this;
+	self._stopClock(self._currentPlayerId);
 	var cur = self._currentPlayerId;
 	var player = self._players[self._currentPlayerId];
 	self.addDiceToPlayer(player, player._numContiguousCountries);
@@ -221,19 +230,31 @@ Engine.prototype.endTurn = function(event) {
 
 Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	var self = this;
+	
 	if (typeof fromCountry === 'number') {
 		fromCountry = self._map.getCountry(fromCountry); 
 	}
 	if (typeof toCountry === 'number') {
 		toCountry = self._map.getCountry(toCountry); 
 	}
+	
+	var fromPlayer = self._players[fromCountry.ownerId()];
+	var toPlayer = self._players[toCountry.ownerId()];
+
+	if (fromPlayer.id() != self._currentPlayerId) {
+		Globals.debug("Attacking player not current player", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+		if (self._attackCallback) {
+			self._attackCallback(false);
+		}
+		return;
+	}
+
 	Globals.debug("Attack FROM", fromCountry._id, "TO", toCountry._id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 	
+	self._stopClock(self._currentPlayerId);
+
 	self._attackInProgress = true;
 	self._attackCallback = callback;
-
-	var fromPlayer = this._players[fromCountry.ownerId()];
-	var toPlayer = this._players[toCountry.ownerId()];
 	
 	// make sure the 2 countries are next to each other
 	var neighbors = self._map.adjacentCountries(fromCountry.id());
@@ -267,38 +288,39 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 		Globals.debug("Illegal attack", fromCountry, toCountry, Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 		if (self._attackCallback) {
 			self._attackCallback(false);
-		}
-		return;    		
-	}
-
-	var fromNumDice = fromCountry.numDice();
-	var toNumDice = toCountry.numDice();
-	var fromRollArray = Player.rollDice(fromNumDice);
-	var toRollArray = Player.rollDice(toNumDice);
-
-	var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
-	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
-
-	var attack = {
-		fromCountryId: fromCountry._id,
-		toCountryId: toCountry._id,
-		fromRollArray: fromRollArray,
-		toRollArray: toRollArray
-	}
-	
-	// IMPORTANT: the way this now works is that Engine expects the application wrapper (ie, Game) to call
-	// finishAttack() when the attack rendering is done. The pushHistory() here informs Game, via
-	// the stateCallback that an attack needs to be rendered
-	
-	self.pushHistory(attack);
-
-	if (typeof module !== 'undefined' && module.exports) {
-		self.finishAttack(attack);
+		}		
+		self._startClock(self._currentPlayerId);
+		
 	} else {
-		Globals.ASSERT(self._watchdogTimerID < 0);
-		self._watchdogTimerID = self._timeout(function() {
-			console.log("Watchdog timeout! Did you forget to call Engine.finishAttack?");
-		}, 5000);
+		var fromNumDice = fromCountry.numDice();
+		var toNumDice = toCountry.numDice();
+		var fromRollArray = Player.rollDice(fromNumDice);
+		var toRollArray = Player.rollDice(toNumDice);
+
+		var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
+		var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+
+		var attack = {
+			fromCountryId: fromCountry._id,
+			toCountryId: toCountry._id,
+			fromRollArray: fromRollArray,
+			toRollArray: toRollArray
+		}
+	
+		// IMPORTANT: the way this now works is that Engine expects the application wrapper (ie, Game) to call
+		// finishAttack() when the attack rendering is done. The pushHistory() here informs Game, via
+		// the stateCallback that an attack needs to be rendered
+	
+		self.pushHistory(attack);
+
+		if (typeof module !== 'undefined' && module.exports) {
+			self.finishAttack(attack);
+		} else {
+			Globals.ASSERT(self._watchdogTimerID < 0);
+			self._watchdogTimerID = self._timeout(function() {
+				console.log("Watchdog timeout! Did you forget to call Engine.finishAttack?");
+			}, 5000);
+		}
 	}
 };
 
@@ -355,10 +377,51 @@ Engine.prototype.finishAttack = function(attack) {
 	
 	// attack is done, save to history
 	self.pushHistory();
+	self._startClock(self._currentPlayerId);
 	if (self._attackCallback) {
 		var temp = self._attackCallback;
 		self._attackCallback = null;
 		temp(fromRoll > toRoll);
+	}
+};
+
+Engine.prototype.penalizePlayer = function(id) {
+	var self = this;
+	if (!self._enforceTimeLimits) {
+		return;
+	}
+
+	if (id == self._currentPlayerId) {
+		if (!self._AIs[id].isHuman()) {
+			Globals.debug("Penalizing player", id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+			var player = self._players[id];
+
+			// remove stored dice first
+			if (player.storedDice()) {
+				player.removeStoredDie();
+			} else {
+				// get list of countries for this player that have at least 2 die
+				var countries = player.countries().map(function(countryId) {
+					return self._map.getCountry(countryId);
+				}).filter(function(country) {
+					return (country.numDice() > 1);
+				});
+
+				if (countries.length) {
+					// randomly pick a country
+					var idx = Math.floor(countries.length * Math.random());
+					Globals.debug("Removing die from country", countries[idx].id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);		
+					countries[idx].removeDie();
+				} else {
+					Globals.debug("Player has no more dice to remove", id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);	
+					self._AIs[id].turnEnded();
+					self.endTurn();	
+				}
+			}
+		}
+
+	} else {
+		Globals.debug("PenalizePlayer called for non-current player", id, Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
 	}
 };
 
@@ -367,6 +430,7 @@ Engine.prototype.gameOver = function(winner) {
 	var self = this;
 	if (!self._gameOver) {
 		console.log("GAME OVER");
+		self.pushHistory();
 		self._gameOver = true;
 		console.timeEnd("DICEFIRE");
 		
@@ -423,7 +487,7 @@ Engine.prototype.setState = function(gamestate) {
 	self._players = [];
 	self._players.length = gamestate.playerIds().length;
 	gamestate.playerIds().forEach(function(playerId) {
-		var player = new Player(playerId);
+		var player = new Player(playerId, self);
 		player._countries = [];
 		gamestate.countryIds().forEach(function(countryId) {
 			var country = self._map.getCountry(countryId);
@@ -462,6 +526,19 @@ Engine.prototype._timeout = function(callback, interval) {
 	}
 };
 
+Engine.prototype._startClock = function(playerId) {
+	var self = this;
+	if (self._enforceTimeLimits && !self._AIs[playerId].isHuman()) {
+		self._players[playerId].startClock();
+	}
+};
+
+Engine.prototype._stopClock = function(playerId) {
+	var self = this;
+	if (self._enforceTimeLimits && !self._AIs[playerId].isHuman()) {
+		self._players[playerId].stopClock();
+	}
+};
 
 
 if (typeof module !== 'undefined' && module.exports) {

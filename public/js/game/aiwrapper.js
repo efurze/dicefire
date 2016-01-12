@@ -33,6 +33,7 @@ var ControllerInterface = {
 // @controller: must implement ControllerInterface above
 //--------------------------------------------------------------------------------------
 var AIWrapper = function(ai, controller, playerId, trusted, name) {
+	Globals.debug("AIWrapper()", ai, playerId, trusted, name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 	Globals.ASSERT(Globals.implements(controller, ControllerInterface));
 	this._trusted = trusted;
 	this._isMyTurn = false;
@@ -110,6 +111,11 @@ AIWrapper.prototype.attackDone = function(success) {
 };
 
 // from engine
+AIWrapper.prototype.turnEnded = function() {
+	this._isMyTurn = false;
+};
+
+// from engine
 AIWrapper.prototype.loses = function() {
 	if (this._trusted) {
 		this._ai = null;
@@ -121,31 +127,35 @@ AIWrapper.prototype.loses = function() {
 
 // from AI
 AIWrapper.prototype.endTurn = function() {
-	Globals.ASSERT(this._isMyTurn);
-	this._isMyTurn = false;
-	this._controller.endTurn();
+	if (this._isMyTurn) {
+		this._isMyTurn = false;
+		this._controller.endTurn();
+	}
 };
 
 // from AI
 AIWrapper.prototype.attack = function(from, to, callback) {
-	this._aiCallback = callback;
-	this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
+	if (this._isMyTurn) {
+		this._aiCallback = callback;
+		this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
+	}
 }
 
 // from BotWorker
 AIWrapper.prototype.callback = function(e) {
-	Globals.ASSERT(this._isMyTurn);
-	var data = e.data;
-	switch (data.command) {
-		case 'attack':
-			var from = parseInt(data.from);
-			var to = parseInt(data.to);
-			this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
-			break;
-		case 'endTurn':
-			this._isMyTurn = false;
-			this._controller.endTurn();
-			break;
+	if (this._isMyTurn) {
+		var data = e.data;
+		switch (data.command) {
+			case 'attack':
+				var from = parseInt(data.from);
+				var to = parseInt(data.to);
+				this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
+				break;
+			case 'endTurn':
+				this._isMyTurn = false;
+				this._controller.endTurn();
+				break;
+		}
 	}
 };
 
