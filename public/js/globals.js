@@ -74,11 +74,7 @@ var Globals = {
 				console.log("ASSERTION FAILURE");
 				try {
 					var err = new Error('assertion');
-					var stack = err.stack.replace(/^[^\(]+?[\n$]/gm, '')
-								      .replace(/^\s+at\s+/gm, '')
-								      .replace(/^Object.<anonymous>\s*\(/gm, '{anonymous}()@')
-								      .split('\n');
-					console.log(stack);
+					console.log(err.stack);
 				} catch (e) {}
 				debugger;
 				throw new Error("Assertion Failure");

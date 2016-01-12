@@ -47,13 +47,13 @@ var SocketHandler = function() {
 							logger.log("Restoring game", logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
 							setupGame(gameId, gamestate, mapData);
 						}).catch(function(err) {
-							logger.log("Error Restoring game", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+							logger.log("Error Restoring game", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 						})
 					
 				});
 				
 			}).catch(function(err) {
-				logger.log("Error retrieving active game list", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
+				logger.log("Error retrieving active game list", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER);
 			});
 	};
 	
@@ -83,11 +83,11 @@ var SocketHandler = function() {
 					setupGame(gameId);
 					rwClient.addActiveGame(gameId, games[gameId].createTime())
 						.catch(function(err) {
-							logger.log("Error adding game to redis", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+							logger.log("Error adding game to redis", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 						});
 					res.status(200).send("{}");
 				}).catch(function(err) {
-					logger.log("ERROR saving gameInfo to Redis:", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+					logger.log("ERROR saving gameInfo to Redis:", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 					res.status(500).send(JSON.stringify({err: err}));
 				});
 		},
@@ -281,14 +281,14 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 							// listen for watcher connections
 							watchNamespace.on('connection', self.connectWatcher.bind(self));
 						}).catch(function(err) {
-							logger.log("ERROR saving map data to Redis:", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+							logger.log("ERROR saving map data to Redis:", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 						});
 				}
 			} catch (err) {
-				logger.log("Exception initializing game engine", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+				logger.log("Exception initializing game engine", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 			}
 		}).catch(function(err) {
-			logger.log("Error getting gameInfo", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
+			logger.log("Error getting gameInfo", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 		});
 };
 
@@ -497,7 +497,7 @@ GameServer.prototype.endTurn = function(socketWrapper, data) {
 		logger.log("Player " + data.playerId + " ending turn", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
 		self._engine.endTurn();
 	} catch (err) {
-		logger.log("GameServer::endTurn error", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
+		logger.log("GameServer::endTurn error", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
 	}
 };
 
@@ -508,7 +508,7 @@ GameServer.prototype.attack = function(socketWrapper, data) {
 		logger.log("Got attack msg", socketWrapper.id(), JSON.stringify(data), logger.LEVEL.TRACE, logger.CHANNEL.SERVER, self._gameId);
 		self._engine.attack(parseInt(data.from), parseInt(data.to), null);
 	} catch (err) {
-		logger.log("GameServer::attack error", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
+		logger.log("GameServer::attack error", err,  err.stack,logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
 	}
 };
 
@@ -530,7 +530,7 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 				self._ns.emit("state", stateId);
 				self._watchersNs.emit("state", stateId);
 			}).catch(function(err) {
-				logger.log("ERROR saving engine state to Redis:", err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
+				logger.log("ERROR saving engine state to Redis:", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
 			});
 		
 	}

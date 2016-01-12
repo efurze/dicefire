@@ -285,7 +285,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 
 	if (!ok) {
 		//Globals.ASSERT(false);
-		Globals.debug("Illegal attack", fromCountry, toCountry, Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
+		Globals.debug("Illegal attack", fromCountry.id(), toCountry.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		if (self._attackCallback) {
 			self._attackCallback(false);
 		}		
@@ -498,7 +498,7 @@ Engine.prototype.setState = function(gamestate) {
 		player._storedDice = gamestate.storedDice(playerId);
 		player._numContiguousCountries = gamestate.numContiguous(playerId);
 		self._players[playerId] = player;
-		Globals.debug("Deserialized player: " + JSON.stringify(player), Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+		Globals.debug("Deserialized player: " + player, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	});
 	
 	self._stateCount = gamestate.stateId();
