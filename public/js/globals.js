@@ -72,6 +72,14 @@ var Globals = {
 		ASSERT: function (condition) {
 			if (!condition) {
 				console.log("ASSERTION FAILURE");
+				try {
+					var err = new Error('assertion');
+					var stack = err.stack.replace(/^[^\(]+?[\n$]/gm, '')
+								      .replace(/^\s+at\s+/gm, '')
+								      .replace(/^Object.<anonymous>\s*\(/gm, '{anonymous}()@')
+								      .split('\n');
+					console.log(stack);
+				} catch (e) {}
 				debugger;
 				throw new Error("Assertion Failure");
 			}
@@ -144,9 +152,9 @@ Globals.channels = [
 	0, //"AI.PLYER"
 	0, //"RENDERER",
 	0, //"GREEDY",
-	4, //"CLIENT",
-	3, //"CLIENT_SOCKET"
-	3, //"AI_WRAPPER"
+	0, //"CLIENT",
+	0, //"CLIENT_SOCKET"
+	0, //"AI_WRAPPER"
 ];
 
 
