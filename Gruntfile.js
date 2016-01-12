@@ -9,9 +9,22 @@ module.exports = function(grunt) {
         command: 'redis-server ./config/redis.conf'
       }
     },
+		'node-inspector': {
+        custom: {
+            options: {
+                'web-port': 1337,
+                'web-host': 'localhost',
+                'debug-port': 5858,
+                'save-live-edit': true,
+								'debug-brk' : true,
+                'stack-trace-limit': 4
+            }
+        }
+    },
     concurrent: {
       dev: [
         'watch',
+        'node-inspector',
         'nodemon',
         'shell'
       ],
@@ -43,7 +56,7 @@ module.exports = function(grunt) {
       files: ['test/**/*.html']
     },
     jshint: {
-      files: ['Gruntfile.js', 'public/**/*.js', 'test/**/*.js', 'index.js', 'controllers/**/*.js'],
+      files: ['Gruntfile.js', 'public/**/*.js', 'test/**/*.js', 'index.js', 'controllers/**/*.js', 'lib/**/*.js'],
       options: {
         // options here to override JSHint defaults
         globals: {
@@ -60,7 +73,10 @@ module.exports = function(grunt) {
     },
     nodemon: {
         dev: {
-            script: 'index.js'
+          options: {
+            file: 'index.js',
+            //nodeArgs: ['--debug-brk']
+          }
         }
     },
   });
@@ -73,6 +89,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-shell');
+  grunt.loadNpmTasks('node-inspector');
+  grunt.loadNpmTasks('grunt-node-inspector');
 
   grunt.registerTask('test', ['jshint', 'qunit']);
   grunt.registerTask('default', ['jshint', 'concat', 'uglify']);
