@@ -48,7 +48,8 @@ $(function() {
 				}
 			});
 			//Renderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
-			SVGrenderer.init(playerCode.length, Game._engine.map(), playerNames);
+			//SVGrenderer.init(playerCode.length, Game._engine.map(), playerNames);
+			GLrenderer.init(playerCode.length, Game._canvas, Game._engine.map(), playerNames);
 			
 			if (Globals.uploadGame && Game._gameId) {
 				// upload game info to server
@@ -93,7 +94,8 @@ $(function() {
 		redraw: function(gamestate) {
 			gamestate = gamestate || Game._engine.getState();
 			//Renderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
-			SVGrenderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
+			//SVGrenderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
+			GLrenderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
 			if (Game._controller) {
 				Game._controller.update();
 			}
