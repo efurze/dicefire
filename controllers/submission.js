@@ -2,6 +2,7 @@
 
 var Sandbox = require('sandbox');
 var Hashes = require('jshashes');
+var Promise = require('bluebird');
 var SHA1 = new Hashes.SHA1();
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
@@ -17,9 +18,9 @@ var logger = require('../lib/logger.js');
 */
 function validate() {
 	
-	/*replaceMe*/
-	
 	try {
+
+		/*replaceMe*/
 		
 		var submittedClass = "replaceWithClassName";
 		if (!submittedClass.hasOwnProperty('create') || typeof submittedClass.create !== 'function') {
@@ -28,6 +29,11 @@ function validate() {
 		
 		if (!submittedClass.hasOwnProperty('getName') || typeof submittedClass.getName !== 'function') {
 			return "Submitted AI missing getName() method - getName() must be a class method, not an instance method. ";
+		}
+
+		var name = submittedClass.getName();
+		if (!name || typeof name !== 'string' || name.trim().length == 0) {
+			return "Your getName() function must return a string.";
 		}
 		
 		var ai = submittedClass.create();
@@ -41,6 +47,69 @@ function validate() {
 	}
 	
 	return true;
+};
+
+// promisifies sandbox.run
+var runInSandbox = function(fnString) {
+	var s = new Sandbox();
+	return new Promise(function (resolve, reject) {
+		s.run(fnString, function(result) {
+			resolve(result);
+		});
+	});
+};
+
+var submitForTest = function(req, res) {
+	doSubmit(req, res, true);
+};
+
+var submit = function(req, res) {
+	doSubmit(req, res, false);
+};
+
+var doSubmit = function(req, res, test) {
+	test = (typeof test == 'undefined') ? false : test;
+	var name = req.body.name.trim();
+	var code = req.body.code.trim();
+	var codeHash = SHA1.hex(code);
+	
+	getAI(codeHash)
+		.then(function (result) {
+			if (result) {
+				return Promise.reject("Code duplicate");
+			} else {
+
+				var fnString = validate.toString();
+				fnString = fnString.replace("/*replaceMe*/", code);
+				fnString = fnString.replace("\"replaceWithClassName\"", name);
+				fnString += ";validate()";
+
+				return runInSandbox(fnString);
+			}
+		})
+		.then(function(result) {
+				logger.log("validate result", result, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
+				result = result.result;
+				if (result === 'true') {
+					storeAI(code, codeHash, name, test)
+						.then(function(reply) {
+							if (test) {
+								res.redirect('/aitest?ai='+codeHash+'&name='+name);
+							} else {
+								res.send("Submission received!");
+							}
+						}).catch(function(err) {
+							res.status(500).send("There was an error saving your submission: " + err);
+						});
+				} else if (result === "TimeoutError") {
+					return Promise.reject("Your code took too long to run. Do you have an infinite loop somewhere?");
+				} else {
+					return Promise.reject(result);
+				}
+		})
+		.catch(function(err) {
+				res.send("Submission error: " + err + "<br><br>Invalid Sumbission");
+		});
 };
 
 var storeAI = function(codeStr, sha, name, temporary) {
@@ -126,53 +195,7 @@ var recordLoss = function(hash) {
 				});
 };
 
-var submitForTest = function(req, res) {
-	submit(req, res, true);
-};
 
-var submit = function(req, res, test) {
-	test = (typeof test == 'undefined') ? false : test;
-	var name = req.body.name.trim();
-	var code = req.body.code.trim();
-	var codeHash = SHA1.hex(code);
-	
-	getAI(codeHash)
-		.then(function (result) {
-			if (result) {
-				res.send("Code duplicate");
-			} else {
-				
-				var fnString = validate.toString();
-				fnString = fnString.replace("/*replaceMe*/", code);
-				fnString = fnString.replace("\"replaceWithClassName\"", name);
-				fnString += ";validate()";
-
-				var s = new Sandbox();
-				s.run(fnString, function(result) {
-					logger.log("submit validate result", result, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
-					result = result.result;
-					if (result === 'true') {
-						storeAI(code, codeHash, name, test)
-							.then(function(reply) {
-								if (test) {
-									res.redirect('/aitest?ai='+codeHash+'&name='+name);
-								} else {
-									res.send("Submission received!");
-								}
-							}).catch(function(err) {
-								res.status(500).send("There was an error saving your submission: " + err);
-							});
-					} else {
-						res.send("Invalid submission: " + JSON.stringify(result));
-					}
-				});
-				
-			}
-		}).catch(function(e) {
-			logger.log("submit redis error", e, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
-			res.send("Server error:", e);
-		});		
-};
 
 module.exports = {
 	submit: submit,
