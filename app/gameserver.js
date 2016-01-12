@@ -76,7 +76,8 @@ var SocketHandler = function() {
 			// randomize the player order
 			resultsData.players = Globals.shuffleArray(resultsData.players);
 			logger.log("Create game", resultsData, logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
-			var filename = gameId + "/game.json";
+			// add a timestamp
+			resultsData.timestamp = Date.now();
 			rwClient.saveGameInfo(gameId, JSON.stringify(resultsData))
 				.then(function(reply) {
 					setupGame(gameId);

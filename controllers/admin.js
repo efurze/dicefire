@@ -31,7 +31,7 @@ module.exports = {
 				list = list.map(function(m){
 					var msg = JSON.parse(m);
 					var d = new Date(parseInt(msg.timestamp));
-					msg.timestamp = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+					msg.timestamp = (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
 					msg.timestamp += " " + d.toTimeString().split(' ')[0];
 					return msg;
 				});

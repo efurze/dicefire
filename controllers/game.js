@@ -128,6 +128,7 @@ module.exports = {
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
 		var results = req.body;
+		results.timestamp = Date.now();
 		logger.log("UploadGameInfo", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 		
 		rwClient.saveGameInfo(gameId, JSON.stringify(results))

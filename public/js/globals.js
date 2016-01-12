@@ -77,17 +77,17 @@ var Globals = {
 			}
 		},
 		
-	    showNumbers: false,
+		showNumbers: false,
 		showCountryIds: false,
-	    markHexCenters: false,
-	    markCountryCenters: false,
-	    drawCountryConnections: false,
+		markHexCenters: false,
+		markCountryCenters: false,
+		drawCountryConnections: false,
 		maxPlayers: 8,
-	    maxDice: 8,
-	    maxStoredDice: 64,
-	    startingDice: 10,
-	    numCountries: 32,
-	    timeout: 0,
+		maxDice: 8,
+		maxStoredDice: 64,
+		startingDice: 10,
+		numCountries: 32,
+		timeout: 0,
 		play_sounds: 0,
 		suppress_ui: 0,
 		uploadGame: false
@@ -118,7 +118,15 @@ Globals.CHANNEL = {
 	"RENDERER" : 6,
 	"GREEDY" : 7,
 	"CLIENT" : 8,
-	"CLIENT_SOCKET" : 9
+	"CLIENT_SOCKET" : 9,
+	"AI_WRAPPER" : 10,
+
+	"SERVER": 11,
+	"SERVER_SOCKET" : 12,
+	"SUBMIT": 13,
+	"GAME": 14,
+	"ADMIN": 15,
+	"DEFAULT": 16,
 };
 
 Globals.channelNames = [];
@@ -138,6 +146,7 @@ Globals.channels = [
 	0, //"GREEDY",
 	4, //"CLIENT",
 	3, //"CLIENT_SOCKET"
+	3, //"AI_WRAPPER"
 ];
 
 
