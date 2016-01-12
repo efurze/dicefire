@@ -28,19 +28,15 @@ module.exports = {
 	getServerLog: function(req, res) {
 		rwClient.getServerLog()
 			.then(function(list) { // list: array of strings: {channel:, level:, gameId:, msg:, timestamp:}
-				var formatted = list.map(function(msg) {
-					try {
-						var m = JSON.parse(msg);
-						var d = new Date(parseInt(m.timestamp));
-						return '[' + m.channel + '] '
-										+ '[' + m.level + '] '
-										+ '[' + d.toString()  + '] '
-										+ m.msg;
-					} catch (err) {
-						return "Parse Error: " + err;
-					}
+				list = list.map(function(m){
+					var msg = JSON.parse(m);
+					var d = new Date(parseInt(msg.timestamp));
+					msg.timestamp = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+					msg.timestamp += " " + d.toTimeString().split(' ')[0];
+					return msg;
 				});
-				res.status(200).send(formatted.join("<br>"));
+
+				res.status(200).render('server_log', {log: list});
 			});
 	},
 	
