@@ -64,7 +64,7 @@ GameRunner.prototype.gameDone = function(winner, id) {
 	console.log("Game finished, winnerId", id);
 	var results = new Gameinfo(self._players.map(function(p){return p.hash;}), id);
 	
-	self._uploader.uploadGameInfo(self._gameId, results.toString());
+	self._uploader.uploadGameInfo(self._gameId, results.toString(), "ARENA");
 	
 	var cb = this._callback;
 	
@@ -165,7 +165,7 @@ $(function() {
 					$('#stop_btn').prop('disabled', true);
 					$('#start_btn').prop('disabled', false);
 					Thunderdome._AIs = data;
-					Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 1);
+					Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 10);
 				}
 				
 			} else {
