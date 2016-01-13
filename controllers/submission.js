@@ -17,7 +17,7 @@ var logger = require('../lib/logger.js');
 	name of the AI class is copied over the "replaceWithClassName" string below. Don't alter that string either.
 */
 function validate() {
-	
+
 	try {
 
 		/*replaceMe*/
@@ -29,16 +29,16 @@ function validate() {
 		var submittedClass = "replaceWithClassName";
 
 		if (!submittedClass.hasOwnProperty('create') || typeof submittedClass.create !== 'function') {
-			return "Server error: Scoped constructor missing create() method - this is a server error, not a problem with your code.";
+			return "Server Error: Scoped constructor missing create() method. This is not a problem with your code.";
 		}
 		
 		if (!submittedClass.hasOwnProperty('getName') || typeof submittedClass.getName !== 'function') {
-			return "Server error: Scoped consturctor missing getName() method - this is a server error, not a problem with your code.";
+			return "Server Error: Scoped consturctor missing getName() method. This is not a problem with your code.";
 		}
 
 		var name = submittedClass.getName();
 		if (!name || typeof name !== 'string' || name.trim().length == 0) {
-			return "Server error: getName() function must return a string.";
+			return "Server Error: getName() function must return a string. This is not a problem with your code.";
 		}
 		
 		var ai = submittedClass.create();
@@ -129,7 +129,7 @@ var doSubmit = function(req, res, test) {
 		.then(function(result) {
 				logger.log("validate result", result, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
 				result = result.result;
-				if (result === 'true') {
+				if (result === 'true') { // NOTE: must be single quotes
 					storeAI(code, codeHash, name, test)
 						.then(function(reply) {
 							if (test) {
@@ -140,7 +140,11 @@ var doSubmit = function(req, res, test) {
 						}).catch(function(err) {
 							res.status(500).render('submit/error', {error_message: err});
 						});
+				} else if (result.startsWith("Server Error")) {
+					logger.log("Server vaidate error", result, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+					return Promise.reject(result);
 				} else if (result === "TimeoutError") {
+					logger.log("validate timeout", logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
 					return Promise.reject("Your code took too long to run. Do you have an infinite loop somewhere?");
 				} else {
 					return Promise.reject(result);

@@ -48,7 +48,7 @@ Country.prototype.setOwner = function(ownerId) {
 	this._ownerId = ownerId;
 };
 Country.prototype.setNumDice = function(num) { 
-	Globals.ASSERT(num > 0 && num <= 8);
+	//Globals.ASSERT(num > 0 && num <= 8);
 	this._numDice = num;
 };
 
