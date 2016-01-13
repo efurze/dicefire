@@ -11,7 +11,7 @@ importScripts('/aicode/_replaceThisWithAIHash_');
 
 
 var createAIByName = function(name, playerId) {
-	return eval(name).create(playerId);
+	return eval('ai'+name).create(playerId);
 }
 
 var adjacencyList = null;

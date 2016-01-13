@@ -50,7 +50,7 @@ $(function() {
 			if (Game._aiName) {
 				var ai = eval(Game._aiName);
 				pws.push(new AIWrapper(ai, Game._engine, 0, true));
-				playerNames.push(Game._aiName);
+				playerNames.push(ai.getName());
 			}
 			
 			playerCode.forEach(function(player, idx) {

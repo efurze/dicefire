@@ -22,18 +22,23 @@ function validate() {
 
 		/*replaceMe*/
 		
+		if (!create || typeof create !== 'function') {
+			return "Submitted AI missing create() method";
+		}
+
 		var submittedClass = "replaceWithClassName";
+
 		if (!submittedClass.hasOwnProperty('create') || typeof submittedClass.create !== 'function') {
-			return "Submitted AI missing create() method - create() must be a class method, not an instance method.";
+			return "Server error: Scoped constructor missing create() method - this is a server error, not a problem with your code.";
 		}
 		
 		if (!submittedClass.hasOwnProperty('getName') || typeof submittedClass.getName !== 'function') {
-			return "Submitted AI missing getName() method - getName() must be a class method, not an instance method. ";
+			return "Server error: Scoped consturctor missing getName() method - this is a server error, not a problem with your code.";
 		}
 
 		var name = submittedClass.getName();
 		if (!name || typeof name !== 'string' || name.trim().length == 0) {
-			return "Your getName() function must return a string.";
+			return "Server error: getName() function must return a string.";
 		}
 		
 		var ai = submittedClass.create();
@@ -71,7 +76,7 @@ var testAI = function(req, res) {
 	var aiPath = '/aicode/'+aiHash;
 	res.render("submit/test", {
 					ai_path: aiPath,
-					ai_name: aiName,
+					ai_name: 'ai'+aiHash,
 					scripts: [
 						{ path: aiPath }
 					]
@@ -92,7 +97,21 @@ var doSubmit = function(req, res, test) {
 	var name = req.body.name.trim();
 	var code = req.body.code.trim();
 	var codeHash = SHA1.hex(code);
-	
+
+	/* 
+		Append the following to the submitted code. It creates namespaced factory
+		and getName() methods:
+
+		var ai23248aed328 = {};
+		ai23248aed328.create = function(id){return create(id);};
+		ai23248aed328.getName = function(){return 'name';};
+	*/
+	var className = "ai" + codeHash;
+	code += "var " + className + "={};";
+	code += className +".create=function(id){return create(id);};";
+	code += className +".getName=function(){return '" + name + "';};";
+
+
 	getAI(codeHash)
 		.then(function (result) {
 			if (result) {
@@ -101,7 +120,7 @@ var doSubmit = function(req, res, test) {
 
 				var fnString = validate.toString();
 				fnString = fnString.replace("/*replaceMe*/", code);
-				fnString = fnString.replace("\"replaceWithClassName\"", name);
+				fnString = fnString.replace("\"replaceWithClassName\"", className);
 				fnString += ";validate()";
 
 				return runInSandbox(fnString);

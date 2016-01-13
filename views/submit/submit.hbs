@@ -41,11 +41,8 @@ MyAI.prototype.startTurn = function(interface, depth) {
 	interface.endTurn();
 };
 
-MyAI.getName = function() {
-	return 'MyAI';
-};
 
-MyAI.create = function(playerId) {
+var create = function(playerId) {
 	return new MyAI(playerId);
 };
 		
