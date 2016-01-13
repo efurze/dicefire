@@ -1,16 +1,16 @@
 <div>
 	<form action="submission" method="post">
 		Name:<br>
-		<input type="text" name="name" value="Aggressive">
+		<input type="text" name="name" value="MyAI">
 		<br>
 		Code:<br>
 		<textarea rows="50" cols="100" name="code">
 		
-var Aggressive = function (id) {
+var MyAI = function (id) {
 
 };
 
-Aggressive.prototype.startTurn = function(interface, depth) {
+MyAI.prototype.startTurn = function(interface, depth) {
 	depth = depth || 0;
 	var self = this;
 	var state = interface.getState();
@@ -41,12 +41,12 @@ Aggressive.prototype.startTurn = function(interface, depth) {
 	interface.endTurn();
 };
 
-Aggressive.getName = function() {
-	return 'Aggressive';
+MyAI.getName = function() {
+	return 'MyAI';
 };
 
-Aggressive.create = function(playerId) {
-	return new Aggressive(playerId);
+MyAI.create = function(playerId) {
+	return new MyAI(playerId);
 };
 		
 		</textarea>

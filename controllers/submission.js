@@ -59,6 +59,26 @@ var runInSandbox = function(fnString) {
 	});
 };
 
+var submissionForm = function(req, res) {
+	res.render("submit/submit", {
+		title: "AI Submission"
+	});
+};
+
+var testAI = function(req, res) {
+	var aiHash = req.query['ai'];
+	var aiName = req.query['name'];
+	var aiPath = '/aicode/'+aiHash;
+	res.render("submit/test", {
+					ai_path: aiPath,
+					ai_name: aiName,
+					scripts: [
+						{ path: aiPath }
+					]
+				}
+		)
+};
+
 var submitForTest = function(req, res) {
 	doSubmit(req, res, true);
 };
@@ -96,10 +116,10 @@ var doSubmit = function(req, res, test) {
 							if (test) {
 								res.redirect('/aitest?ai='+codeHash+'&name='+name);
 							} else {
-								res.send("Submission received!");
+								res.status(200).render('submit/received', {hash: codeHash});
 							}
 						}).catch(function(err) {
-							res.status(500).send("There was an error saving your submission: " + err);
+							res.status(500).render('submit/error', {error_message: err});
 						});
 				} else if (result === "TimeoutError") {
 					return Promise.reject("Your code took too long to run. Do you have an infinite loop somewhere?");
@@ -198,8 +218,10 @@ var recordLoss = function(hash) {
 
 
 module.exports = {
+	submissionForm: submissionForm,
 	submit: submit,
 	submitForTest: submitForTest,
+	testAI: testAI,
 	getAIs: getAIs,
 	getAI: getAI,
 	recordGame: recordGame,

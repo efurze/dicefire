@@ -14,19 +14,7 @@ module.exports = {
 	},
 	
 	solo: function(req, res) { 
-		var data = {
-			title: "Dicefire",
-			gameId: uuid.v1()
-		};
-		
-		var aiHash = req.query['ai'];
-		var aiName = req.query['name'];
-		if (aiHash && aiName) {
-			data.aiName = aiName;
-			data.scripts = [{path: '/aicode/'+req.query['ai']}];
-		}
-		
-		res.render("index", data);	    
+		res.render("index", {title: "Dicefire"});	    
 	},
 	
 	setup: function(req, res) {
@@ -55,11 +43,7 @@ module.exports = {
 		});
 	},
 
-	submit: function(req, res) {
-		res.render("submit", {
-			title: "AI Submission"
-		});
-	},
+	
 
 	data: function(req, res) { 
 		var filename = req.url.trim().split("/").slice(2).join("/");
@@ -127,11 +111,12 @@ module.exports = {
 
 	uploadGameInfo: function(req, res) { 
 		var gameId = req.query['gameId'];
+		var ratingCode = req.query['ratingCode'];
 		var results = req.body;
 		results.timestamp = Date.now();
-		logger.log("UploadGameInfo", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
+		logger.log("UploadGameInfo", "ratingCode:", ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 		
-		rwClient.saveGameInfo(gameId, JSON.stringify(results))
+		rwClient.saveGameInfo(gameId, JSON.stringify(results), ratingCode)
 		 	.then(function(reply) {
 				
 				if (typeof results.winner === 'undefined') {
@@ -157,6 +142,12 @@ module.exports = {
 				}).then(function() {
 					// Add the game to the overall history
 					return submitter.recordGame(gameId);
+				}).then(function() {
+					if (ratingCode == "ARENA") {
+						// mark this game as an arena game for rating purposes
+						logger.log("Adding arena result", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
+						return rwClient.addArenaGame(gameId);
+					}
 				}).then(function() {
 					res.status(200).send("{}");
 				}).catch(function(err){

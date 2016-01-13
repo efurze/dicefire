@@ -1,0 +1,31 @@
+<div id="setup">
+		Your code has passed the basic checks - good job! Now it's time to test.
+	<br>
+	<br>
+	Your AI will run as Player 1 in a 3-player game. You can navigate to your AI code in your browser's developer tools. Go to the 'Sources' tab and look for the file 
+	<br>
+	<br>
+	{{ai_path}}.js
+	<br>
+	<br>
+	You can set breakpoints in that file. <b>Try it now!</b> Set a breakpoint in your 'startTurn' function <b>before</b> pressing the 'Go' button below, or the game will likely end before you can set a breakpoint.
+	<br>
+
+	<div id="button_div">
+		<button id="goButton" style="width:100px;height:30px;" onclick="onClick()">Go</button>
+	</div>
+</div>
+
+<div id="view_link">
+	Your code is in: {{ai_path}}
+</div>
+
+{{>game}}
+
+
+<script>
+	function onClick() {
+		Game.init("{{gameId}}", "{{ai_name}}");
+	};
+</script>
+

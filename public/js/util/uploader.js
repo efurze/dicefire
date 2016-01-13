@@ -1,6 +1,5 @@
 "use strict"
 
-var MAX_RETRIES = 0;
 
 var Uploader = function() {
 	this._array = []; // array of {url: , data:}
@@ -8,6 +7,8 @@ var Uploader = function() {
 	this._timeout = 10;
 	this._retryCount = 0;
 };
+
+Uploader.MAX_RETRIES = 4;
 
 Uploader.prototype.push = function(url, data) {
 	this._array.push({url: url, data: data});
@@ -24,8 +25,11 @@ Uploader.prototype.uploadState = function(gameId, stateId, stateData) {
 	this.push(url, stateData);
 };
 
-Uploader.prototype.uploadGameInfo = function(gameId, data) {
+Uploader.prototype.uploadGameInfo = function(gameId, data, ratingCode) {
 	var url = '/uploadGameInfo?gameId=' + gameId;
+	if (ratingCode) {
+		url += '&ratingCode=' + ratingCode;
+	}
 	this.push(url, data);
 };
 
@@ -72,7 +76,7 @@ Uploader.prototype.ajaxDone = function(data) {
 Uploader.prototype.ajaxFail = function(err) {
 	console.log("UPLOAD FAILURE: ", err.error(), JSON.stringify(err));
 	var self = this;
-	if (self._retryCount >= MAX_RETRIES) {
+	if (self._retryCount >= Uploader.MAX_RETRIES) {
 		self.ajaxDone();
 	} else {
 		self._retryCount ++;

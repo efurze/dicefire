@@ -5,7 +5,7 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
     shell: {
-      mongo: {
+      redis: {
         command: 'redis-server ./config/redis.conf'
       }
     },

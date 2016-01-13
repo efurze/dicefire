@@ -77,7 +77,7 @@ module.exports = {
 				result = JSON.parse(result);
 				res.send(result.code);
 			}).catch(function(err) {
-				logger.log("Error retrieving AI", err, logger.LEVEL.ERROR, logger.CHANNEL.ADMIN);
+				logger.log("Error retrieving AI", sha, JSON.stringify(err), logger.LEVEL.ERROR, logger.CHANNEL.ADMIN);
 				res.status(500).send("Error retrieving AI: " + err);
 			});
 	},

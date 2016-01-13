@@ -79,14 +79,14 @@ app.use(function(req, res, next) {
 app.get('/', gameController.index);					// Front Page
 app.get('/solo', gameController.solo);			// Individual Game
 app.get('/setup', gameController.setup);		// Ladder Game
-app.get('/submit', gameController.submit);	// AI Submission
 app.get('/ais', gameController.getAIList);	// AI List
 app.get('/replay', gameController.replay);	
 app.get('/ai/:hash', gameController.getAIDetail);
 
+app.get('/submit', submissionController.submissionForm);          // AI Submission form
 app.post('/submission', submissionController.submit); 						// submit the AI
 app.post('/testsubmission', submissionController.submitForTest); 	// submit for test
-app.get('/aitest', gameController.solo);													// user testing of AI
+app.get('/aitest', submissionController.testAI);									// instructions for testing a submitted AI
 
 // admin tools
 app.get('/errorReports', adminController.getErrorReportList);
