@@ -72,12 +72,12 @@ var submissionForm = function(req, res) {
 
 var testAI = function(req, res) {
 	var aiHash = req.query['ai'];
-	var aiName = req.query['name'];
 	var aiPath = '/aicode/'+aiHash;
 	res.render("submit/test", {
 					ai_path: aiPath,
 					ai_name: 'ai'+aiHash,
 					scripts: [
+						{ path: "/js/app/ai_test.js"},
 						{ path: aiPath }
 					]
 				}

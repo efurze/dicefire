@@ -1,4 +1,4 @@
-<div id="setup">
+<div id="instructions">
 		Your code has passed the basic checks - good job! Now it's time to test.
 	<br>
 	<br>
@@ -16,16 +16,27 @@
 	</div>
 </div>
 
-<div id="view_link">
+<div id="codepath" style="display: none">
 	Your code is in: {{ai_path}}
 </div>
 
-{{>game}}
+<div id="game" style="display: block">
+	<canvas id="c" width="980px" height="580px"></canvas>	
+	<div id="roll" class="row roll-row">
+		<div id="leftroll" class="col-sm-6"></div><div id="rightroll" class="col-sm-6 player-roll"></div>
+	</div>
+	<div id="players" class="row players-box"></div>
+</div>
 
 
 <script>
+	$(function() {
+		AI_Test.init("{{ai_name}}");
+	});
+</script>
+<script>
 	function onClick() {
-		Game.init("{{gameId}}", "{{ai_name}}");
+		AI_Test.start();
 	};
 </script>
 
