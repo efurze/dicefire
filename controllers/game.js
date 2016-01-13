@@ -38,6 +38,7 @@ module.exports = {
 			scripts: [
 				{ path: "/js/controllers/clientcontroller.js" },
 				{ path: "/js/util/downloader.js" },
+				{ path: "/js/util/history.js" },
 				{ path: "/js/app/client.js" }
 			]
 		});
@@ -91,6 +92,7 @@ module.exports = {
 			scripts: [
 				{ path: "/js/controllers/clientcontroller.js" },
 				{ path: "/js/util/downloader.js" },
+				{ path: "/js/util/history.js" },
 				{ path: "/js/app/client.js" }
 			]
 		});

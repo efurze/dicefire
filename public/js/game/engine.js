@@ -269,17 +269,17 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	
 	// make sure attacker has at least 2
 	if (fromCountry.numDice() < 2) {
-		Globals.debug("Attacking country has too few dice", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
+		Globals.debug("Attacking country has too few dice", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		ok = false;
 	}
 	
 	if (fromCountry.ownerId() == toCountry.ownerId()) {
-		Globals.debug("Player attacking itself", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
+		Globals.debug("Player attacking itself", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		ok = false;
 	}
 	
 	if (fromCountry.id() == toCountry.id()) {
-		Globals.debug("Country attacking itself", Globals.LEVEL.WARN, Globals.CHANNEL.ENGINE);
+		Globals.debug("Country attacking itself", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		ok = false;
 	}
 
