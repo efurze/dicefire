@@ -17,12 +17,6 @@ var AIInterface = function(aiwrapper) {
 	};
 };
 
-var ControllerInterface = {
-	map: function(){},
-	getState: function(){},
-	endTurn: function(){},
-	attack: function(from, to, callback){} // callback: function(success){}
-};
 
 //--------------------------------------------------------------------------------------
 //	AIWrapper - implements Engine::PlayerInterface
@@ -33,8 +27,8 @@ var ControllerInterface = {
 // @controller: must implement ControllerInterface above
 //--------------------------------------------------------------------------------------
 var AIWrapper = function(ai, controller, playerId, trusted, name) {
-	Globals.debug("AIWrapper()", ai, playerId, trusted, name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
-	Globals.ASSERT(Globals.implements(controller, ControllerInterface));
+	Globals.debug("AIWrapper()", (typeof ai == 'string') ? ai : ai.getName(), playerId, trusted, name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
+	Globals.ASSERT(Globals.implements(controller, AIWrapper.ControllerInterface));
 	this._trusted = trusted;
 	this._isMyTurn = false;
 	this._controller = controller;
@@ -53,6 +47,13 @@ var AIWrapper = function(ai, controller, playerId, trusted, name) {
 	if (this._trusted) {
 		this._ai = ai.create(playerId);
 	}
+};
+
+AIWrapper.ControllerInterface = {
+	map: function(){},
+	getState: function(){},
+	endTurn: function(){},
+	attack: function(from, to, callback){} // callback: function(success){}
 };
 
 AIWrapper.prototype.getName = function() {

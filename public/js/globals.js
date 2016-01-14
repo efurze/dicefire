@@ -148,11 +148,10 @@ Globals.channels = [
 	0, //"AI.PLYER"
 	0, //"RENDERER",
 	0, //"GREEDY",
-	0, //"CLIENT",
-	0, //"CLIENT_SOCKET"
-	0, //"AI_WRAPPER"
+	4, //"CLIENT",
+	4, //"CLIENT_SOCKET"
+	4, //"AI_WRAPPER"
 ];
-
 
 
 Globals.shuffleArray = function(inArray) {

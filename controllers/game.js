@@ -39,6 +39,7 @@ module.exports = {
 				{ path: "/js/controllers/clientcontroller.js" },
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
+				{ path: "/js/message.js" },
 				{ path: "/js/app/client.js" }
 			]
 		});
@@ -93,6 +94,7 @@ module.exports = {
 				{ path: "/js/controllers/clientcontroller.js" },
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
+				{ path: "/js/message.js" },
 				{ path: "/js/app/client.js" }
 			]
 		});

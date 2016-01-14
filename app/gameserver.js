@@ -5,6 +5,7 @@ var GAME_LINGER_TIMEOUT = 600000; // 10 minutes in milliseconds
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var Globals = require('../public/js/globals.js');
+var Message = require('../public/js/message.js');
 var Map = require('../public/js/game/map.js');
 var Gamestate = require('../public/js/game/gamestate.js');
 
@@ -124,7 +125,7 @@ PlayerWrapper.prototype.stop = function() {};
 PlayerWrapper.prototype.startTurn = function(state) {
 	logger.log("startTurn", this._id, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER);
 	if (this._socket) {
-		this._socket.emit('start_turn', {playerId: this._id, stateId: state.stateId()});
+		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
 	}
 };
 PlayerWrapper.prototype.attackDone = function(success) {};
@@ -153,11 +154,16 @@ AISocketWrapper.prototype.startTurn = function(state) {
 	logger.log("startTurn", this._id, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER);
 	if (this._socket) {
 		logger.log("Sending startTurn for player", this._id, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER);
-		this._socket.emit('start_turn', {playerId: this._id, stateId: state.stateId()});
+		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
 	}
 };
 AISocketWrapper.prototype.attackDone = function(success) {};
-AISocketWrapper.prototype.turnEnded = function() {}; // TODO: FIXME: add a socket msg for this
+AISocketWrapper.prototype.turnEnded = function() {
+	if (this._socket) {
+		logger.log("=> turn_ended, player", this._id, logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET);
+		this._socket.emit(Message.TYPE.TURN_ENDED, {playerId: this._id, stateId: state.stateId()});
+	}
+}; 
 AISocketWrapper.prototype.loses = function() {};
 
 /*========================================================================================================================================*/
@@ -309,11 +315,6 @@ GameServer.prototype.connectPlayer = function(socket) {
 	logger.log("Connected player socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 
 									logger.LEVEL.INFO, logger.CHANNEL.SERVER, this._gameId);
 	var self = this;
-	if (self._currentHumans >= self._expectedHumans) {
-		// TODO: FIXME: should probably send a 'game full' message to client
-		socket.disconnect();
-		return;
-	}
 	var sock = new SocketWrapper(socket, self._gameId);
 	self._sockets[sock.id()] = sock;
 	self._connectionCount ++;
@@ -348,7 +349,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 		}
 	}
 	
-	sock.emit("map", {playerId: id, waitingFor: self._expectedHumans - self._currentHumans});
+	sock.emit(Message.TYPE.MAP, Message.map(self._gameId));
 	if (self._currentHumans == self._expectedHumans && !self._started) {
 		self.startGame();
 	}
@@ -467,7 +468,7 @@ GameServer.prototype.assignBot = function(bot, socket) {
 	if (!self._ipMap[socket.ip()]) { self._ipMap[socket.ip()] = []; }
 	self._ipMap[socket.ip()].push(bot.id());
 	
-	socket.emit('create_bot', {name: bot.getName(), playerId: bot.id()});
+	socket.emit(Message.TYPE.CREATE_BOT, Message.createBot(bot.getName(), bot.id()));
 };
 
 GameServer.prototype.close = function() {
@@ -527,8 +528,8 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 			.then(function(reply) {
 				logger.log("sending state update, stateId", stateId, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
 				// brodcast to all
-				self._ns.emit("state", stateId);
-				self._watchersNs.emit("state", stateId);
+				self._ns.emit(Message.TYPE.STATE, stateId);
+				self._watchersNs.emit(Message.TYPE.STATE, stateId);
 			}).catch(function(err) {
 				logger.log("ERROR saving engine state to Redis:", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
 			});
