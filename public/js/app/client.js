@@ -59,7 +59,7 @@ $(function() {
 
 		// @msg: {gameId: <string>}
 		map_update: function(msg) {
-			Globals.debug("=> Socket map", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Globals.debug("=> map", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			if (!Client._map) {
 				Client._downloader.getMap(Client._gameId, Client.mapData);
 			}
@@ -67,13 +67,13 @@ $(function() {
 
 		// @msg: {stateId:, gameId:}
 		state: function(msg) {
-			Globals.debug("=> Socket state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Globals.debug("=> state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			Client._history.getState(msg.stateId);
 		},
 
 		// @msg: {name: AI.getName(), playerId: <int>}
 		create_bot: function(msg) {
-			Globals.debug("=> Socket create_bot", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Globals.debug("=> create_bot", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			var aiName = msg['name'];
 			if (AIMap.hasOwnProperty(aiName)) {
 				var id = parseInt(msg['playerId']);
@@ -93,12 +93,12 @@ $(function() {
 		},
 		
 		create_human: function(msg) {
-			Globals.debug("=> Socket create_human", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Globals.debug("=> create_human", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		},
 
 		// @msg: {playerId:, stateId:}
 		start_turn: function(msg) {
-			Globals.debug("=> Socket start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			if (Client._players.hasOwnProperty(msg.playerId) && Client._players[msg.playerId]) {
 				Client._players[msg.playerId].startTurn(msg.stateId);
 			} else {
@@ -108,7 +108,7 @@ $(function() {
 
 		// @msg: {playerId:, success:, stateId:}
 		attack_result: function(msg) {
-			Globals.debug("=> Socket attack_result", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Globals.debug("=> attack_result", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			if (Client._players.hasOwnProperty(msg.playerId) && Client._players[msg.playerId]) {
 				// wait until the state for this attack has been downloaded. Otherwise the AI will
 				// request a stateId that we don't have

@@ -109,9 +109,8 @@ Player.prototype.addCountry = function(country) {
 // Take away the country from this player.
 Player.prototype.loseCountry = function(country) {
 	var self = this;
+	Globals.debug("Player " + self._id + " lost country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
 	this._countries = this._countries.filter(function(elem) {
-		Globals.debug("Player " + self._id + " lost country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
-		Globals.debug("New country count: " + self._countries.length, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
 		return elem != country.id();
 	})
 };
