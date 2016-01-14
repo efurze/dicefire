@@ -131,8 +131,8 @@ $(function(){
 			var fromNumDice = state.attack().fromRollArray.length;
 			var toNumDice = state.attack().toRollArray.length;
 			
-			var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; });
-	    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; });
+			var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; }, 0);
+	    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; }, 0);
 			
 			self._resetRollDivs(state,
 				fromCountry, 

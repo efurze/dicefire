@@ -38,6 +38,7 @@ $(function() {
 			
 			$('#setup').css('display', 'none');
 			$('#game').css('display', 'block');
+			$('#game_controls').css('display', 'block');
 			if (Globals.uploadGame && Game._gameId) {
 				$('#view_link').css('display', 'block');
 			}
@@ -81,7 +82,7 @@ $(function() {
 			
 			Game._engine.registerStateCallback(Game.engineUpdate);
 			Game._controller = new Gamecontroller(Game._engine);
-			Game._mapController = new Mapcontroller(Game.mapUpdate, Game._canvas, Game._engine.map(), Game.mapConInterface);
+			Game._mapController = new Mapcontroller(0, Game._canvas, Game._engine.map(), Game.mapConInterface);
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
@@ -94,11 +95,6 @@ $(function() {
 			Game.redraw();
 		},
 		
-		mapUpdate: function() {
-			if (!Game._controller.viewingHistory()) {
-				Game.redraw();
-			}
-		},
 
 		engineUpdate: function(gamestate, stateId) {
 			gamestate = gamestate || Game._engine.getState();
@@ -123,13 +119,15 @@ $(function() {
 			currentPlayerId: function() {
 				return Game._engine.currentPlayerId();
 			},
+
+			update: function() {
+				if (!Game._controller.viewingHistory()) {
+					Game.redraw();
+				}
+			},
 			
 			attack: function(from, to, callback) {
 				Game._engine.attack(from, to, callback);
-			},
-			
-			isThisPlayer: function(playerId) {
-				return Game._engine.isHuman(playerId);
 			},
 			
 			clickable: function() {

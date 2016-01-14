@@ -9,16 +9,25 @@
 			clickable(),
 	}
 */
-var Mapcontroller = function(update_cb, canvas, map, mapControllerInterface) {
-	this._update_cb = update_cb;
+var Mapcontroller = function(playerId, canvas, map, mapControllerInterface) {
+	Globals.ASSERT(Globals.implements(mapControllerInterface, Mapcontroller.mapControllerInterface));
+
+	this._playerId = playerId;
 	this._canvas = canvas;
 	this._map = map;
-	this._mcInterface = mapControllerInterface;
+	this._iface = mapControllerInterface;
 	this._mouseOverCountry = null;
     this._selectedCountry = null;
 	$(canvas).mousemove(this.mouseMove.bind(this));
     $(canvas).mouseleave(this.mouseLeave.bind(this));
     $(canvas).click(this.click.bind(this));
+}
+
+Mapcontroller.mapControllerInterface = {
+	currentPlayerId: function(){},
+	update: function(){},
+	attack: function(fromId, toId, callback){},
+	clickable: function(){}
 }
 
 $(function(){
@@ -36,7 +45,7 @@ $(function(){
 		};
 		
 		Mapcontroller.prototype.isCountryClickable = function(country) {
-			if (!country || !this._mcInterface.isThisPlayer(this._mcInterface.currentPlayerId())) {
+			if (!country || this._playerId != this._iface.currentPlayerId()) {
 				return false;
 			}
 			
@@ -46,12 +55,12 @@ $(function(){
 			}
 			
 			// user is choosing a country to attack from
-			if (!this.selectedCountry() && country.ownerId() == this._mcInterface.currentPlayerId() && country.numDice() > 1) {
+			if (!this.selectedCountry() && country.ownerId() == this._iface.currentPlayerId() && country.numDice() > 1) {
 				return true;
 			}
 			
 			// user is choosing a country to attack
-			if (this.selectedCountry() && country.ownerId() !== this._mcInterface.currentPlayerId()) {
+			if (this.selectedCountry() && country.ownerId() !== this._iface.currentPlayerId()) {
 				return true;
 			}
 			
@@ -59,7 +68,7 @@ $(function(){
 		};
 		
 		Mapcontroller.prototype.mouseMove = function(event) {
-			if (!this._mcInterface.clickable()) {
+			if (!this._iface.clickable()) {
 				return;
 			}
 			
@@ -70,7 +79,7 @@ $(function(){
 				if (this.mouseOverCountry() !== country) {
 					this.setMouseOverCountry(country);
 					this._canvas.style.cursor = 'pointer';
-					this._update_cb();
+					this._iface.update();
 				}
 				
             } else {
@@ -78,34 +87,34 @@ $(function(){
                     this.setMouseOverCountry(null);
                 }
                 this._canvas.style.cursor = 'default';
-				this._update_cb();
+				this._iface.update();
             }
         };
 
         Mapcontroller.prototype.mouseLeave = function(event) {
-			if (!this._mcInterface.clickable()) {
+			if (!this._iface.clickable()) {
 				return;
 			}
             if (this.mouseOverCountry()) {
                 var country = this.mouseOverCountry();
                 this.setMouseOverCountry(null);
-                this._update_cb();
+                this._iface.update();
             }
         };
 
 
 		Mapcontroller.prototype.click = function(event) {
-			if (!this._mcInterface.clickable()) {
+			if (!this._iface.clickable()) {
 				return;
 			}
 			
 			var self = this;
-			var currentPlayerId = self._mcInterface.currentPlayerId(); 
-			if (!self._mcInterface.isThisPlayer(currentPlayerId)) {
+			var currentPlayerId = self._iface.currentPlayerId(); 
+			if ( self._playerId != currentPlayerId) {
 				if (self.selectedCountry()) {
 					var prevCountry = self.selectedCountry();
 					self.setSelectedCountry(null);
-					self._update_cb();
+					self._iface.update();
 				}
 				return;
 			}
@@ -118,19 +127,19 @@ $(function(){
                         // Select and deselect of countries owned by this user.                  
                         if (self.selectedCountry() == country) {
                             self.setSelectedCountry(null);
-                            self._update_cb();
+                            self._iface.update();
                         } else {
                             var oldCountry = self.selectedCountry();
                             self.setSelectedCountry(country);
-                            self._update_cb();
+                            self._iface.update();
                         }
                     } else {
                         // Attacks.
-						self._mcInterface.attack(self.selectedCountry(), country, function() {
+						self._iface.attack(self.selectedCountry(), country, function() {
                             var prevCountry = self.selectedCountry();
                             self.setSelectedCountry(null);
                             $('#end_turn').prop('disabled', false);
-							self._update_cb();
+							self._iface.update();
                         });
                     }
                 }
