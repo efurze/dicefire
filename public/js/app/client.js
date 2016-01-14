@@ -43,8 +43,6 @@ $(function() {
 			Client._socket.on(Message.TYPE.STATE, Client.state);
 			Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
 			Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
-			Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
-			Client._socket.on(Message.TYPE.ATTACK_RESULT, Client.attack_result);
 
 			// get game info for rendering purposes
 			Client._downloader.getGameInfo(gameId, Client.gameInfoCB);
@@ -116,29 +114,7 @@ $(function() {
 			Globals.debug("=> create_human", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		},
 
-		// @msg: {playerId:, stateId:}
-		start_turn: function(msg) {
-			Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-			if (Client._players.hasOwnProperty(msg.playerId) && Client._players[msg.playerId]) {
-				Client._players[msg.playerId].startTurn(msg.stateId);
-			} else {
-				Globals.debug("Got start_turn for playerId that we don't have", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT_SOCKET);
-			}
-		},
-
-		// @msg: {playerId:, success:, stateId:}
-		attack_result: function(msg) {
-			Globals.debug("=> attack_result", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-			if (Client._players.hasOwnProperty(msg.playerId) && Client._players[msg.playerId]) {
-				// wait until the state for this attack has been downloaded. Otherwise the AI will
-				// request a stateId that we don't have
-				Client._history.getState(msg.stateId, function(state) {
-					Client._players[msg.playerId].attackDone(msg.success);
-				});
-			} else {
-				Globals.debug("Got attack_result for playerId that we don't have", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT_SOCKET);
-			}	
-		},
+		
 		// END: Socket events ---------------
 
 
@@ -197,17 +173,46 @@ $(function() {
 	var SocketAIController = function(socket, history, ai, playerId, trusted) {
 		this._aiWrapper = new AIWrapper(ai, this, playerId, trusted);
 		this._socket = socket;
+		this._id = playerId;
 		this._history = history;
 		this._started = false;
 		this._startTurnPending = false;
 		this._startTurnPendingStateId = -1;
 		this._attackPending = false;
 
+		socket.on(Message.TYPE.START_TURN, this.start_turn.bind(this));
+		socket.on(Message.TYPE.ATTACK_RESULT, this.attack_result.bind(this));
+
 		Globals.ASSERT(Globals.implements(this, Engine.PlayerWrapper));
 		Globals.ASSERT(Globals.implements(this, AIWrapper.ControllerInterface));
 	};
 
+	//
+	// socket events
+	//
+
+	// @msg: {playerId:, stateId:}
+	SocketAIController.prototype.start_turn = function(msg) {
+		if (msg.playerId == this._id) {
+			Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			this.startTurn(msg.stateId);
+		} 
+	};
+
+	// @msg: {playerId:, success:, stateId:}
+	SocketAIController.prototype.attack_result = function(msg) {
+		var self = this;
+		if (msg.playerId == self._id) {
+			Globals.debug("=> attack_result", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			self._history.getState(msg.stateId, function(state) {
+				self.attackDone(msg.success);
+			});
+		}
+	};
+
+	//
 	// Implementing the Engine::PlayerWrapper interface
+	//
 
 	SocketAIController.prototype.getName = function(){return this._aiWrapper.getName();};
 	SocketAIController.prototype.isHuman = function(){return false;};
@@ -241,6 +246,7 @@ $(function() {
 			self._startTurnPendingStateId = state_id;
 		}
 	};
+
 	SocketAIController.prototype.attackDone = function(success){
 		Globals.ASSERT(this._attackPending);
 		this._attackPending = false;
