@@ -68,22 +68,7 @@ $(function() {
 		// @msg: {stateId:, gameId:}
 		state: function(msg) {
 			Globals.debug("=> Socket state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-			Client._history.getState(msg.stateId, function(gamestate) {
-				if (gamestate.attack()) {
-					
-					// TODO: FIXME: are there synchronization issues here? What if this is an old state?
-
-					// send result to attacking player
-					var id = gamestate.currentPlayerId();
-					var attack = gamestate.attack();
-					var fromTotal = attack.fromRollArray.reduce(function(total, die) { return total + die; });
-					var toTotal = attack.toRollArray.reduce(function(total, die) { return total + die; });
-
-					if (Client._players.hasOwnProperty(id) && Client._players[id]) {
-						Client._players[id].attackDone(fromTotal > toTotal);
-					}
-				}
-			});
+			Client._history.getState(msg.stateId);
 		},
 
 		// @msg: {name: AI.getName(), playerId: <int>}
