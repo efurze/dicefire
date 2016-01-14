@@ -21,6 +21,7 @@ $(function() {
 		_canvas: document.getElementById("c"),
 		_socket: null,
 		_downloader: null,
+		_history: null,
 		_gameId: null,	
 		_latestStateId: -1,
 
@@ -32,6 +33,7 @@ $(function() {
 			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 			
 			Client._downloader = new Downloader();
+			Client._history = new History(gameId);
 
 			Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
 			Client._socket.on('error', Client.socket_error);
@@ -41,6 +43,7 @@ $(function() {
 			Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
 			Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
 			Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
+			Client._socket.on(Message.TYPE.ATTACK_RESULT, Client.attack_result);
 		},
 
 		//====================================================================================================
@@ -62,8 +65,25 @@ $(function() {
 			}
 		},
 
+		// @msg: {stateId:, gameId:}
 		state: function(msg) {
 			Globals.debug("=> Socket state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Client._history.getState(msg.stateId, function(gamestate) {
+				if (gamestate.attack()) {
+					
+					// TODO: FIXME: are there synchronization issues here? What if this is an old state?
+
+					// send result to attacking player
+					var id = gamestate.currentPlayerId();
+					var attack = gamestate.attack();
+					var fromTotal = attack.fromRollArray.reduce(function(total, die) { return total + die; });
+					var toTotal = attack.toRollArray.reduce(function(total, die) { return total + die; });
+
+					if (Client._players.hasOwnProperty(id) && Client._players[id]) {
+						Client._players[id].attackDone(fromTotal > toTotal);
+					}
+				}
+			});
 		},
 
 		// @msg: {name: AI.getName(), playerId: <int>}
@@ -77,7 +97,7 @@ $(function() {
 					Globals.debug("Already have a player", id, "re-initializing bot", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				}
 
-				Client._players[id] = new SocketAIController(Client._socket, AIMap[aiName], id, false); 
+				Client._players[id] = new SocketAIController(Client._socket, Client._history, AIMap[aiName], id, false); 
 				if (Client._map) {
 					Client._players[id].start();
 				}
@@ -95,10 +115,24 @@ $(function() {
 		start_turn: function(msg) {
 			Globals.debug("=> Socket start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			if (Client._players.hasOwnProperty(msg.playerId) && Client._players[msg.playerId]) {
-				Client._players[msg.playerId].startTurn();
+				Client._players[msg.playerId].startTurn(msg.stateId);
 			} else {
 				Globals.debug("Got start_turn for playerId that we don't have", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT_SOCKET);
 			}
+		},
+
+		// @msg: {playerId:, success:, stateId:}
+		attack_result: function(msg) {
+			Globals.debug("=> Socket attack_result", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			if (Client._players.hasOwnProperty(msg.playerId) && Client._players[msg.playerId]) {
+				// wait until the state for this attack has been downloaded. Otherwise the AI will
+				// request a stateId that we don't have
+				Client._history.getState(msg.stateId, function(state) {
+					Client._players[msg.playerId].attackDone(msg.success);
+				});
+			} else {
+				Globals.debug("Got attack_result for playerId that we don't have", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT_SOCKET);
+			}	
 		},
 		// END: Socket events ---------------
 
@@ -136,11 +170,14 @@ $(function() {
 	// 						Implelments Engine::PlayerWrapper so client can use it
 	/*========================================================================================================================================*/
 	
-	var SocketAIController = function(socket, ai, playerId, trusted) {
+	var SocketAIController = function(socket, history, ai, playerId, trusted) {
 		this._aiWrapper = new AIWrapper(ai, this, playerId, trusted);
 		this._socket = socket;
+		this._history = history;
 		this._started = false;
 		this._startTurnPending = false;
+		this._startTurnPendingStateId = -1;
+		this._attackPending = false;
 
 		Globals.ASSERT(Globals.implements(this, Engine.PlayerWrapper));
 		Globals.ASSERT(Globals.implements(this, AIWrapper.ControllerInterface));
@@ -155,8 +192,9 @@ $(function() {
 			this._started = true;
 			this._aiWrapper.start();
 			if (this._startTurnPending) {
+				this.startTurn(this._startTurnPendingStateId);
 				this._startTurnPending = false;
-				this.startTurn();
+				this._startTurnPendingStateId = -1;
 			}
 		}
 	};
@@ -164,17 +202,26 @@ $(function() {
 		this._started = false;
 		this._aiWrapper.stop();
 	};
-	SocketAIController.prototype.startTurn = function(state){
+	SocketAIController.prototype.startTurn = function(state_id){
+		
 		// The AI can't start until the map is downloaded, and sometimes the first
 		// start_turn event from the server comes first. This is an attempt
 		// to deal with that
-		if (this._started) {
-			this._aiWrapper.startTurn(state);
+		var self = this;
+		if (self._started) {
+			self._history.getState(state_id, function(state) {
+				self._aiWrapper.startTurn(state);
+			});
 		} else {
-			this._startTurnPending = true;
+			self._startTurnPending = true;
+			self._startTurnPendingStateId = state_id;
 		}
 	};
-	SocketAIController.prototype.attackDone = function(success){this._aiWrapper.attackDone(success);};
+	SocketAIController.prototype.attackDone = function(success){
+		Globals.ASSERT(this._attackPending);
+		this._attackPending = false;
+		this._aiWrapper.attackDone(success);
+	};
 	SocketAIController.prototype.turnEnded = function() {this._aiWrapper.turnEnded();};
 	SocketAIController.prototype.loses = function(){this._aiWrapper.loses();};
 	
@@ -186,7 +233,7 @@ $(function() {
 	};
 		
 	SocketAIController.prototype.getState = function() {
-		return Client._history.getState(Client._currentState);
+		return Client._history.getLatest();
 	};
 	
 	SocketAIController.prototype.endTurn = function(playerId){
@@ -195,8 +242,9 @@ $(function() {
 	
 	// @callback: function(success){}
 	SocketAIController.prototype.attack = function(from, to, callback){
-		Client._attackCallback = callback;
-		Globals.debug("<= attack", from, "=>", to, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+		Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+		Globals.ASSERT(!this._attackPending);
+		this._attackPending = true;
 		this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id()));
 	};
 

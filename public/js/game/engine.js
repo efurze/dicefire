@@ -49,7 +49,14 @@ Engine.prototype.isAttacking = function() {return this._attackInProgress;};
 Engine.prototype.isInitialized = function() {return this._initialized;};
 Engine.prototype.setKeepHistory = function(keep) { this._keepHistory = keep;};	
 Engine.prototype.setEnforceTime = function(enforce) { this._enforceTimeLimits = enforce;};	
-	
+Engine.prototype.currentStateId = function() {
+	if (this._history.length) {
+		return this._history[this._history.length-1].stateId();
+	} else {
+		return 0;
+	}
+};
+
 Engine.prototype.setCurrentPlayer = function(id) {
 	Globals.debug("Current player set to " + id, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 	this._currentPlayerId = id;

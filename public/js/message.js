@@ -9,6 +9,7 @@ var Message = {
 		'CREATE_BOT': 'create_bot',
 		'CREATE_HUMAN': 'create_human',
 		'START_TURN': 'start_turn',
+		'ATTACK_RESULT': 'attack_result',
 		'TURN_ENDED': 'turn_ended',
 
 		'ATTACK': 'attack',
@@ -34,9 +35,24 @@ var Message = {
 		};
 	},
 
+	state: function(stateId, gameId) {
+		return {
+			stateId: stateId,
+			gameId: gameId,
+		};
+	},
+
 	startTurn: function(playerId, stateId) {
 		return {
 			playerId: playerId,
+			stateId: stateId
+		};
+	},
+
+	attackResult: function(playerId, success, stateId) {
+		return {
+			playerId: playerId,
+			success: success,
 			stateId: stateId
 		};
 	},

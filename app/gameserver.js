@@ -151,16 +151,19 @@ AISocketWrapper.prototype.isHuman = function() {return false;};
 AISocketWrapper.prototype.start = function() {};
 AISocketWrapper.prototype.stop = function() {};
 AISocketWrapper.prototype.startTurn = function(state) {
-	logger.log("startTurn", this._id, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER);
 	if (this._socket) {
-		logger.log("Sending startTurn for player", this._id, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER);
 		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
 	}
 };
-AISocketWrapper.prototype.attackDone = function(success) {};
+AISocketWrapper.prototype.attackDone = function(success, stateId) {
+	if (this._socket) {
+		var msg = Message.attackResult(this._id, success, stateId);
+		console.log("AttackDone:", msg);
+		this._socket.emit(Message.TYPE.ATTACK_RESULT, msg);
+	}
+};
 AISocketWrapper.prototype.turnEnded = function() {
 	if (this._socket) {
-		logger.log("=> turn_ended, player", this._id, logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET);
 		this._socket.emit(Message.TYPE.TURN_ENDED, {playerId: this._id, stateId: state.stateId()});
 	}
 }; 
@@ -507,7 +510,7 @@ GameServer.prototype.attack = function(socketWrapper, data) {
 	try {
 		var self = this;
 		logger.log("Got attack msg", socketWrapper.id(), JSON.stringify(data), logger.LEVEL.TRACE, logger.CHANNEL.SERVER, self._gameId);
-		self._engine.attack(parseInt(data.from), parseInt(data.to), null);
+		self._engine.attack(parseInt(data.from), parseInt(data.to), self.attackDone.bind(self));
 	} catch (err) {
 		logger.log("GameServer::attack error", err,  err.stack,logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
 	}
@@ -519,6 +522,12 @@ GameServer.prototype.socketError = function(socketWrapper, err) {
 };
 
 // from engine
+GameServer.prototype.attackDone = function(success) {
+	var self = this;
+	self._playerMap[self._engine.currentPlayerId()].attackDone(success, self._engine.currentStateId());	
+};
+
+// from engine
 GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
 	logger.log("engineUpdate, stateId", stateId, 'currentPlayer', gamestate.currentPlayerId(), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
@@ -526,10 +535,10 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 		var stateData = JSON.stringify(gamestate.serialize());
 		rwClient.saveState(self._gameId, stateId, stateData)
 			.then(function(reply) {
-				logger.log("sending state update, stateId", stateId, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
+				logger.log("<= state", stateId, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER_SOCKET, self._gameId);
 				// brodcast to all
-				self._ns.emit(Message.TYPE.STATE, stateId);
-				self._watchersNs.emit(Message.TYPE.STATE, stateId);
+				self._ns.emit(Message.TYPE.STATE, Message.state(stateId, self._gameId));
+				self._watchersNs.emit(Message.TYPE.STATE, Message.state(stateId, self._gameId));
 			}).catch(function(err) {
 				logger.log("ERROR saving engine state to Redis:", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
 			});
