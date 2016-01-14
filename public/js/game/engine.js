@@ -304,8 +304,10 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 		var fromRollArray = Player.rollDice(fromNumDice);
 		var toRollArray = Player.rollDice(toNumDice);
 
-		var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
-		var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
+		Globals.ASSERT(fromRollArray && fromRollArray.length > 1);
+
+		var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; }, 0);
+		var toRoll = toRollArray.reduce(function(total, die) { return total + die; }, 0);
 
 		var attack = {
 			fromCountryId: fromCountry._id,
