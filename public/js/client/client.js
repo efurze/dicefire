@@ -31,13 +31,21 @@ $(function() {
 		_currentViewState: -1,
 		_rendering: false,
 
+		_historyController: null,
+
 		init: function (gameId, replay) {
 			Client._gameId = gameId;
 			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-			
-			Client._downloader = new Downloader();
-			Client._history = new History(gameId);
 
+			// initialize the history controller
+			Client._history = new History(gameId);
+			Client._historyController = new HistoryController(Client._history, gameId);
+
+			// get game info for rendering purposes
+			Client._downloader = new Downloader();
+			Client._downloader.getGameInfo(gameId, Client.gameInfoCB);
+
+			// connect socket
 			Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
 			Client._socket.on('error', Client.socket_error);
 			Client._socket.on('disconnect', Client.disconnect);
@@ -46,10 +54,8 @@ $(function() {
 			Client._socket.on(Message.TYPE.STATE, Client.state);
 			Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
 			Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
-
-			// get game info for rendering purposes
-			Client._downloader.getGameInfo(gameId, Client.gameInfoCB);
 		},
+
 
 		initRenderer: function() {
 			if (!Client._rendererInitialized) {
@@ -69,7 +75,7 @@ $(function() {
 		}, 
 
 		processNextState: function() {
-			if (Client._rendererInitialized && !Client._rendering) {
+			if (Client._rendererInitialized && !Client._rendering && !Client._historyController.viewingHistory()) {
 				if (!Client.upToDate()) {
 					if (Client._currentViewState < 0) {
 						Client._currentViewState = Client._history.latestId();
@@ -77,13 +83,14 @@ $(function() {
 						Client._currentViewState ++;
 					}
 					Globals.debug("viewState", Client._currentViewState, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+					Client._historyController.setViewState(Client._currentViewState);
 					Client._history.getState(Client._currentViewState, Client.render);
 				}
 			}
 		},  
 
 		render: function(state) {
-			if (!Client._rendererInitialized || !state) {
+			if (!Client._rendererInitialized || !state || Client._historyController.viewingHistory()) {
 				return;
 			}
 
@@ -140,6 +147,7 @@ $(function() {
 		// @msg: {stateId:, gameId:}
 		state: function(msg) {
 			Globals.debug("=> state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Client._historyController.updateStateCount(msg.stateId);
 			Client._history.getState(msg.stateId, function(state) {
 				Client.processNextState();
 			});

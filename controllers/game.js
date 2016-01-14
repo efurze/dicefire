@@ -36,7 +36,7 @@ module.exports = {
 			gameId: gameId,
 			replay: false,
 			scripts: [
-				{ path: "/js/controllers/clientcontroller.js" },
+				{ path: "/js/controllers/historyController.js" },
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
 				{ path: "/js/message.js" },
@@ -92,7 +92,7 @@ module.exports = {
 			gameId: gameId,
 			replay: true,
 			scripts: [
-				{ path: "/js/controllers/clientcontroller.js" },
+				{ path: "/js/controllers/historyController.js" },
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
 				{ path: "/js/message.js" },
