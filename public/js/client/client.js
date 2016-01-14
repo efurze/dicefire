@@ -39,6 +39,7 @@ $(function() {
 			Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
 			Client._socket.on('error', Client.socket_error);
 			Client._socket.on('disconnect', Client.disconnect);
+			Client._socket.on('connect', Client.connect);
 			Client._socket.on(Message.TYPE.MAP, Client.map_update);
 			Client._socket.on(Message.TYPE.STATE, Client.state);
 			Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
@@ -69,6 +70,15 @@ $(function() {
 
 		disconnect: function() {
 			Globals.debug("=> Socket DISCONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+
+			// tell all the AI's to chill
+			Object.keys(Client._players).forEach(function(id) {
+				Client._players[id].turnEnded();
+			});
+		},
+
+		connect: function() {
+			Globals.debug("=> Socket CONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		},
 
 		// @msg: {gameId: <string>}
@@ -97,7 +107,16 @@ $(function() {
 				var id = parseInt(msg['playerId']);
 				Globals.debug("Initializing new bot", aiName, "with playerId:", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				if (Client._players.hasOwnProperty(id)) {
-					Globals.debug("Already have a player", id, "re-initializing bot", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+					Globals.debug("Already have a player", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+					if (Client._players[id].getName() == aiName) {
+						Globals.debug("Same AI, not re-initializing", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+						return;
+					} else {
+						Globals.debug("Different AI", Client._players[id].getName(), 
+							"re-initializing player", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+						Client._players[id].stop();
+						Client._players[id] = null;
+					}
 				}
 
 				Client._players[id] = new SocketAIController(Client._socket, Client._history, AIMap[aiName], id, false); 

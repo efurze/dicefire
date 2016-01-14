@@ -311,7 +311,6 @@ GameServer.prototype.connectWatcher = function(socket) {
 	var self = this;
 	var sock = new SocketWrapper(socket, self._gameId);
 	self._sockets[sock.id()] = sock;
-	
 };
 
 GameServer.prototype.connectPlayer = function(socket) {
@@ -535,7 +534,7 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 		var stateData = JSON.stringify(gamestate.serialize());
 		rwClient.saveState(self._gameId, stateId, stateData)
 			.then(function(reply) {
-				logger.log("<= state", stateId, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER_SOCKET, self._gameId);
+				logger.log("<= state", stateId, logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, self._gameId);
 				// brodcast to all
 				self._ns.emit(Message.TYPE.STATE, Message.state(stateId, self._gameId));
 				self._watchersNs.emit(Message.TYPE.STATE, Message.state(stateId, self._gameId));

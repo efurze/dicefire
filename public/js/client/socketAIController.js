@@ -37,7 +37,7 @@
 	// @msg: {playerId:, success:, stateId:}
 	SocketAIController.prototype.attack_result = function(msg) {
 		var self = this;
-		if (msg.playerId == self._id) {
+		if (msg.playerId == self._id && self._attackPending) {
 			Globals.debug("=> attack_result", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			self._history.getState(msg.stateId, function(state) {
 				self.attackDone(msg.success);
@@ -64,6 +64,8 @@
 	};
 	SocketAIController.prototype.stop = function(){
 		this._started = false;
+		this._socket.removeListener(Message.TYPE.START_TURN, this.start_turn);
+		this._socket.removeListener(Message.TYPE.ATTACK_RESULT, this.attack_result);
 		this._aiWrapper.stop();
 	};
 	SocketAIController.prototype.startTurn = function(state_id){
@@ -87,7 +89,10 @@
 		this._attackPending = false;
 		this._aiWrapper.attackDone(success);
 	};
-	SocketAIController.prototype.turnEnded = function() {this._aiWrapper.turnEnded();};
+	SocketAIController.prototype.turnEnded = function() {
+		this._attackPending = false;
+		this._aiWrapper.turnEnded();
+	};
 	SocketAIController.prototype.loses = function(){this._aiWrapper.loses();};
 	
 	// Implementing the AIController interface

@@ -202,7 +202,7 @@ Engine.prototype.startTurn = function(playerId, callback) {
 	self.pushHistory();
 
 	self._timeout(function() {
-		if (!self.isHuman(playerId)) {
+		if (!self.isHuman(playerId) && self._enforceTimeLimits) {
 			self._players[playerId].setTimeBudget(MOVE_TIME_BUDGET);
 			self._startClock(playerId);
 		}
