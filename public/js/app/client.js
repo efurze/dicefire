@@ -14,7 +14,6 @@ $(function() {
 		AIMap[ai.getName()] = ai;
 	});
 	
-
 	
 	window.Client = {
 		
@@ -23,10 +22,12 @@ $(function() {
 		_downloader: null,
 		_history: null,
 		_gameId: null,	
-		_latestStateId: -1,
 
 		_map: null,
+		_gameInfo: null,
 		_players: {}, // playerId => SocketAIController
+
+		_rendererInitialized: false,
 
 		init: function (gameId, replay) {
 			Client._gameId = gameId;
@@ -44,6 +45,21 @@ $(function() {
 			Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
 			Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
 			Client._socket.on(Message.TYPE.ATTACK_RESULT, Client.attack_result);
+
+			// get game info for rendering purposes
+			Client._downloader.getGameInfo(gameId, Client.gameInfoCB);
+		},
+
+		initRenderer: function() {
+			if (!Client._rendererInitialized) {
+				Globals.debug("Initializing renderer", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+				$('#game').css('display', 'block');
+				Client._rendererInitialized = true;
+				Renderer.init(Client._gameInfo.players.length,
+							Client._canvas,
+							Client._map,
+							Client._gameInfo.players);
+			}
 		},
 
 		//====================================================================================================
@@ -68,7 +84,11 @@ $(function() {
 		// @msg: {stateId:, gameId:}
 		state: function(msg) {
 			Globals.debug("=> state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-			Client._history.getState(msg.stateId);
+			Client._history.getState(msg.stateId, function(state) {
+				if (Client._rendererInitialized) {
+					Renderer.render(state);
+				}
+			});
 		},
 
 		// @msg: {name: AI.getName(), playerId: <int>}
@@ -137,6 +157,10 @@ $(function() {
 						Client._players[id].start();
 					});
 
+					if (Client._gameInfo) {
+						Client.initRenderer();
+					}
+
 				} else {
 					Globals.debug("Got map when we already had one", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 				}
@@ -145,7 +169,22 @@ $(function() {
 			}
 		},
 
+		gameInfoCB: function(success, data) {
+			if (success) {
+				if (!Client._gameInfo) {
+					Globals.debug("Got gameInfo from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+					Client._gameInfo = JSON.parse(data);
+
+					if (Client._map) {
+						Client.initRenderer();
+					}
+				}
+			} else {
+				Globals.debug("Get gameInfo error", data, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+			}
+		},
 	};
+
 
 
 
