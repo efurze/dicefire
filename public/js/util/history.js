@@ -28,17 +28,21 @@ History.prototype.getState = function(id, callback /*optional*/) {
 	}
 };
 
+History.prototype.latestId = function() {
+	return this._mostRecentStateId;
+};
+
 History.prototype.getLatest = function() {
 	var self = this;
 	return self._states[self._mostRecentStateId];
-}
+};
 
 History.prototype._stateDownload = function(success, data) {
 	var self = this;
 	if (success) {
 		var gamestate = Gamestate.deserialize(JSON.parse(data.data));
 		var id = parseInt(data.id); // 0-based. First state is state 0.
-		Globals.debug("Downloaded state", id, Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+		Globals.debug("Downloaded state", id, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
 
 		if (id > self._mostRecentStateId) { self._mostRecentStateId = id; }
 

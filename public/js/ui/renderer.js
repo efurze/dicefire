@@ -120,7 +120,7 @@ $(function(){
 				callback();
 				return;
 			}
-			Globals.debug("renderAttack", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			Globals.debug("renderAttack", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 			
 			var self = this;
 			var fromCountry = state.attack().fromCountryId;

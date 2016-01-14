@@ -64,8 +64,11 @@
 	};
 	SocketAIController.prototype.stop = function(){
 		this._started = false;
+
+		// these remove calls don't work. It's a socket.io bug.
 		this._socket.removeListener(Message.TYPE.START_TURN, this.start_turn);
 		this._socket.removeListener(Message.TYPE.ATTACK_RESULT, this.attack_result);
+		
 		this._aiWrapper.stop();
 	};
 	SocketAIController.prototype.startTurn = function(state_id){
@@ -85,9 +88,10 @@
 	};
 
 	SocketAIController.prototype.attackDone = function(success){
-		Globals.ASSERT(this._attackPending);
-		this._attackPending = false;
-		this._aiWrapper.attackDone(success);
+		if (this._attackPending) {
+			this._attackPending = false;
+			this._aiWrapper.attackDone(success);
+		}
 	};
 	SocketAIController.prototype.turnEnded = function() {
 		this._attackPending = false;
@@ -113,7 +117,6 @@
 	// @callback: function(success){}
 	SocketAIController.prototype.attack = function(from, to, callback){
 		Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-		Globals.ASSERT(!this._attackPending);
 		this._attackPending = true;
 		this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id()));
 	};

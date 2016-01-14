@@ -350,6 +350,11 @@ GameServer.prototype.connectPlayer = function(socket) {
 			}
 		}
 	}
+
+	if (id >= 0 && self._started) {
+		// push the latest gamestate to them
+		sock.emit(Message.TYPE.STATE, Message.state(self._engine.currentStateId(), self._gameId));
+	}
 	
 	sock.emit(Message.TYPE.MAP, Message.map(self._gameId));
 	if (self._currentHumans == self._expectedHumans && !self._started) {

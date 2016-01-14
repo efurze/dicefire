@@ -28,6 +28,8 @@ $(function() {
 		_players: {}, // playerId => SocketAIController
 
 		_rendererInitialized: false,
+		_currentViewState: -1,
+		_rendering: false,
 
 		init: function (gameId, replay) {
 			Client._gameId = gameId;
@@ -58,8 +60,54 @@ $(function() {
 							Client._canvas,
 							Client._map,
 							Client._gameInfo.players);
+				Client.processNextState();
 			}
 		},
+
+		upToDate: function() {
+			return (Client._currentViewState == Client._history.latestId());
+		}, 
+
+		processNextState: function() {
+			if (Client._rendererInitialized && !Client._rendering) {
+				if (!Client.upToDate()) {
+					if (Client._currentViewState < 0) {
+						Client._currentViewState = Client._history.latestId();
+					} else {
+						Client._currentViewState ++;
+					}
+					Globals.debug("viewState", Client._currentViewState, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+					Client._history.getState(Client._currentViewState, Client.render);
+				}
+			}
+		},  
+
+		render: function(state) {
+			if (!Client._rendererInitialized || !state) {
+				return;
+			}
+
+			if (!Client._rendering) {
+
+				if (state.attack()) {
+					Client._rendering = true;
+				}
+
+				Globals.debug("render state", state.stateId(), Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+				Renderer.render(state, function() {
+					// render done
+					Client._rendering = false;
+					if (!Client.upToDate()) {
+						Client.processNextState();
+					}
+				});
+
+				if (!state.attack()) {
+					Client.processNextState();
+				}
+			}
+		},
+
 
 		//====================================================================================================
 		// Socket events
@@ -93,9 +141,7 @@ $(function() {
 		state: function(msg) {
 			Globals.debug("=> state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			Client._history.getState(msg.stateId, function(state) {
-				if (Client._rendererInitialized) {
-					Renderer.render(state);
-				}
+				Client.processNextState();
 			});
 		},
 
