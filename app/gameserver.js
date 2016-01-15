@@ -5,9 +5,10 @@ var GAME_LINGER_TIMEOUT = 600000; // 10 minutes in milliseconds
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var Globals = require('../public/js/globals.js');
-var Message = require('../public/js/message.js');
+var Message = require('../public/js/network/message.js');
 var Map = require('../public/js/game/map.js');
 var Gamestate = require('../public/js/game/gamestate.js');
+var SocketWrapper = require('../public/js/network/socket.js');
 var AISocketWrapper = require('./aiSocketWrapper');
 var PlayerWrapper = require('./playerSocketWrapper');
 
@@ -107,70 +108,6 @@ var SocketHandler = function() {
 }();
 
 
-
-
-/*========================================================================================================================================*/
-// SocketWrapper: wraps a Socket.IO socket
-/*========================================================================================================================================*/
-var SocketWrapper = function(socket, gameId) {
-	this._socket = socket;
-	this._gameId = gameId;
-	this._id = socket.id;
-	this._callbacks = {}; // map from event => array of callbacks
-};
-
-SocketWrapper.prototype.id = function() {return this._id;}
-
-SocketWrapper.prototype.ip= function() {
-	if (this._socket) {
-		return this._socket.handshake.address;
-	} 
-}
-
-SocketWrapper.prototype.on = function(event, callback) {
-	var self = this;
-
-	if (self._callbacks.hasOwnProperty(event)) {
-		// add this callback to the list for this event
-		self._callbacks[event].push(callback);
-	} else {
-		// create a callback list for this event
-		self._callbacks[event] = [callback];
-
-		// start listening for this event
-		self._socket.on(event, function() {
-			logger.log("=>", event, JSON.stringify(arguments), logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, self._gameId);
-			
-			// marshall the callback arguments
-			var args = [];
-			args.push(self);
-			var count = Object.keys(arguments).length;
-			for (var i=0; i < count; i++) {
-				args.push(arguments[i]);
-			}
-
-			// callback everyone who's listening
-			self._callbacks[event].forEach(function(cb) {
-				cb.apply(null, args);
-			});
-		});
-	}
-};
-
-SocketWrapper.prototype.emit = function(event, data) {
-	logger.log("<=", event, JSON.stringify(data), logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, this._gameId);
-	this._socket.emit(event, data);
-};
-
-SocketWrapper.prototype.disconnect = function() {
-	var self = this;
-	this._callbacks = {};
-	if (self._socket) {
-		self._socket.disconnect();
-		delete self._socket;
-		self._socket = null;
-	}
-}
 
 /*========================================================================================================================================*/
 // GameServer - one of these for each active game

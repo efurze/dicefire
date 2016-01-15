@@ -27,18 +27,16 @@
 	//
 
 	// @msg: {playerId:, stateId:}
-	SocketAIController.prototype.start_turn = function(msg) {
+	SocketAIController.prototype.start_turn = function(sock, msg) {
 		if (msg.playerId == this._id) {
-			Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			this.startTurn(msg.stateId);
 		} 
 	};
 
 	// @msg: {playerId:, success:, stateId:}
-	SocketAIController.prototype.attack_result = function(msg) {
+	SocketAIController.prototype.attack_result = function(sock, msg) {
 		var self = this;
 		if (msg.playerId == self._id && self._attackPending) {
-			Globals.debug("=> attack_result", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 			self._history.getState(msg.stateId, function(state) {
 				self.attackDone(msg.success);
 			});
@@ -65,7 +63,6 @@
 	SocketAIController.prototype.stop = function(){
 		this._started = false;
 
-		// these remove calls don't work. It's a socket.io bug.
 		this._socket.removeListener(Message.TYPE.START_TURN, this.start_turn);
 		this._socket.removeListener(Message.TYPE.ATTACK_RESULT, this.attack_result);
 		
@@ -112,13 +109,11 @@
 	
 	SocketAIController.prototype.endTurn = function(playerId){
 		var msg = Message.endTurn(this._id);
-		Globals.debug("<= end_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		this._socket.emit(Message.TYPE.END_TURN, msg);
 	};
 	
 	// @callback: function(success){}
 	SocketAIController.prototype.attack = function(from, to, callback){
-		Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		this._attackPending = true;
 		this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), this._id));
 	};

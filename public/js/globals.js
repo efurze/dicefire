@@ -24,20 +24,33 @@ var Globals = {
 					redirectFn.apply(null, arguments);
 				} else {
 					var argc = arguments.length;
+
+					var gameId = "";
+					var gameIdx = argc-1;
+					if (typeof arguments[gameIdx] == 'string') {
+						gameIdx = argc - 1;
+						gameId = arguments[gameIdx];
+					} else {
+						gameIdx = argc;
+						gameId = GAME_ID;
+					}
+
+					var channelIdx = gameIdx - 1;
+					var levelIdx = channelIdx - 1;
 		
-					if (argc >= 3 
-						&& (typeof arguments[argc-1]) == 'number'
-						&& (typeof arguments[argc-2]) == 'number'
-						&& arguments[argc-1] < Globals.channels.length
+					if (levelIdx >= 1 
+						&& (typeof arguments[channelIdx]) == 'number'
+						&& (typeof arguments[levelIdx]) == 'number'
+						&& arguments[channelIdx] < Globals.channelNames.length
 						) {
 				
-						var channel = arguments[argc-1];
-						var level = arguments[argc-2];
+						var channel = arguments[channelIdx];
+						var level = arguments[levelIdx];
 				
 						var msg = ""
 						var args = arguments;
 						Object.keys(arguments).forEach(function(key, idx) {
-							if (idx < argc-2) {
+							if (idx < levelIdx) {
 								msg += args[key] + " ";
 							}
 						});
@@ -140,7 +153,7 @@ Object.keys(Globals.CHANNEL).forEach(function(name, idx) {
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
 Globals.channels = [
-	0, //"ENGINE",
+	4, //"ENGINE",
 	0, //"MAP",
 	0, //"HEX",
 	0, //"COUNTRY",

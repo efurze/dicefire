@@ -2,7 +2,7 @@
 
 var Globals = require('../public/js/globals.js');
 var Engine = require('../public/js/game/engine.js');
-var Message = require('../public/js/message.js');
+var Message = require('../public/js/network/message.js');
 
 /*========================================================================================================================================*/
 // PlayerWrapper: implements Engine::PlayerInterface. This allows the engine to communicate with a human player over a socket.

@@ -49,7 +49,7 @@ $(function() {
 			Client._downloader.getGameInfo(gameId, Client.gameInfoCB);
 
 			// connect socket
-			Client._socket = io.connect(window.location.hostname + ":5001/" + Client._gameId);
+			Client._socket = new SocketWrapper(io.connect(window.location.hostname + ":5001/" + gameId), gameId);
 			Client._socket.on('error', Client.socket_error);
 			Client._socket.on('disconnect', Client.disconnect);
 			Client._socket.on('connect', Client.connect);
@@ -153,7 +153,7 @@ $(function() {
 			
 			attack: function(from, to, callback){
 				if (Client._isMyTurn) {
-					Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+					//Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 					Client._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), Client._playerId));
 				}
 			},
@@ -171,11 +171,11 @@ $(function() {
 		//====================================================================================================
 		// Socket events
 		//====================================================================================================
-		socket_error: function(err) {
+		socket_error: function(sock, err) {
 			Globals.debug("=> Socket ERROR:", err, Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT_SOCKET);
 		},
 
-		disconnect: function() {
+		disconnect: function(sock) {
 			Globals.debug("=> Socket DISCONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 
 			// tell all the AI's to chill
@@ -188,21 +188,19 @@ $(function() {
 			Client._isMyTurn = false;
 		},
 
-		connect: function() {
+		connect: function(sock) {
 			Globals.debug("=> Socket CONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		},
 
 		// @msg: {gameId: <string>}
-		map_update: function(msg) {
-			Globals.debug("=> map", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+		map_update: function(sock, msg) {
 			if (!Client._map) {
 				Client._downloader.getMap(Client._gameId, Client.mapData);
 			}
 		},
 
 		// @msg: {stateId:, gameId:}
-		state: function(msg) {
-			Globals.debug("=> state", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+		state: function(sock, msg) {
 			Client._historyController.updateStateCount(msg.stateId);
 			Client._history.getState(msg.stateId, function(state) {
 				Client.processNextState();
@@ -210,8 +208,7 @@ $(function() {
 		},
 
 		// @msg: {name: AI.getName(), playerId: <int>}
-		create_bot: function(msg) {
-			Globals.debug("=> create_bot", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+		create_bot: function(sock, msg) {
 			var aiName = msg['name'];
 			if (AIMap.hasOwnProperty(aiName)) {
 				var id = parseInt(msg['playerId']);
@@ -240,9 +237,7 @@ $(function() {
 		},
 		
 		// @msg: {playerId:, name:}
-		create_human: function(msg) {
-			Globals.debug("=> create_human", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-
+		create_human: function(sock, msg) {
 			if (Client._playerId != msg.playerId) {
 				Client._playerId = msg.playerId;
 				Client._players[msg.playerId] = Engine.PlayerInterface;
@@ -252,9 +247,8 @@ $(function() {
 		},
 
 		// @msg: {playerId:, stateId:}
-		start_turn: function(msg) {
+		start_turn: function(sock, msg) {
 			if (msg.playerId == Client._playerId) {
-				Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 				Client._history.getState(msg.stateId, function(state) {
 					Client._isMyTurn = true;
 				});

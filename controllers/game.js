@@ -39,7 +39,8 @@ module.exports = {
 				{ path: "/js/controllers/historyController.js" },
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
-				{ path: "/js/message.js" },
+				{ path: "/js/network/message.js" },
+				{ path: "/js/network/socket.js" },
 				{ path: "/js/controllers/socketAIController.js" },
 				{ path: "/js/app/client.js" }
 			]
@@ -95,7 +96,8 @@ module.exports = {
 				{ path: "/js/controllers/historyController.js" },
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
-				{ path: "/js/message.js" },
+				{ path: "/js/network/message.js" },
+				{ path: "/js/network/socket.js" },
 				{ path: "/js/controllers/socketAIController.js" },
 				{ path: "/js/app/client.js" }
 			]
