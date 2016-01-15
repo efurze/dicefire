@@ -120,10 +120,13 @@ PlayerWrapper.prototype.socket = function() {return this._socket;};
 
 PlayerWrapper.prototype.getName = function() {return "human";};
 PlayerWrapper.prototype.isHuman = function() {return true;};
-PlayerWrapper.prototype.start = function() {};
+PlayerWrapper.prototype.start = function() {
+	if (this._socket) {
+		this._socket.emit(Message.TYPE.CREATE_HUMAN, Message.createHuman(this.getName(), this._id));
+	}
+};
 PlayerWrapper.prototype.stop = function() {};
 PlayerWrapper.prototype.startTurn = function(state) {
-	logger.log("startTurn", this._id, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER);
 	if (this._socket) {
 		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
 	}
@@ -379,6 +382,8 @@ GameServer.prototype.reconnect = function(socketWrapper) {
 
 					if (!self._socketMap[socketWrapper.id()]) { self._socketMap[socketWrapper.id()] = []; }
 					self._socketMap[socketWrapper.id()].push(playerId);
+
+					self._playerMap[playerId].start();
 					
 					self._currentHumans ++; 
 					humanAssignedTo = playerId;
@@ -434,18 +439,18 @@ GameServer.prototype.startGame = function() {
 	
 	logger.log('startGame', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	
-	// farm out the AIs to various players
-	var bots = self._playerMap.filter(function(player, id) {
-		return !player.isHuman();
-	});
-	
-	bots.forEach(function(bot) {
-		Globals.ASSERT(bot instanceof AISocketWrapper);
-		if (!bot.hasSocket()) {
-			self.assignBot(bot)
+	self._playerMap.forEach(function(player, id) {
+		if (player.isHuman()) {
+			player.start(); // sends 'create_human' message
+		} else {
+			// farm out the AIs to various players
+			Globals.ASSERT(player instanceof AISocketWrapper);
+			if (!player.hasSocket()) {
+				self.assignBot(player)
+			}	
 		}
 	});
-	
+		
 	var current = self._engine.currentPlayerId();
 	logger.log('Game started, currentPlayer=', current, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	self._started = true;

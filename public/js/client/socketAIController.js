@@ -2,7 +2,7 @@
 
 /*========================================================================================================================================*/
 	// SocketAIController: 	Implements AIController so AIWrapper can connect to it.
-	// 						Implelments Engine::PlayerWrapper so client can use it
+	// 						Implelments Engine::PlayerInterface so client can use it
 	/*========================================================================================================================================*/
 	
 	var SocketAIController = function(socket, history, ai, playerId, trusted) {

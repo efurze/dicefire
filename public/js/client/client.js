@@ -25,13 +25,16 @@ $(function() {
 
 		_map: null,
 		_gameInfo: null,
-		_players: {}, // playerId => SocketAIController
+		_players: {}, // playerId => Engine::PlayerInterface
 
 		_rendererInitialized: false,
 		_currentViewState: -1,
 		_rendering: false,
-
 		_historyController: null,
+
+		_playerId: -1,
+		_isMyTurn: false,
+		_mapController: null,
 
 		init: function (gameId, replay) {
 			Client._gameId = gameId;
@@ -54,6 +57,7 @@ $(function() {
 			Client._socket.on(Message.TYPE.STATE, Client.state);
 			Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
 			Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
+			Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
 		},
 
 
@@ -77,14 +81,13 @@ $(function() {
 		processNextState: function() {
 			if (Client._rendererInitialized && !Client._rendering && !Client._historyController.viewingHistory()) {
 				if (!Client.upToDate()) {
+					var nextState = 0;
 					if (Client._currentViewState < 0) {
-						Client._currentViewState = Client._history.latestId();
+						nextState = Client._history.latestId();
 					} else {
-						Client._currentViewState ++;
+						nextState = Client._currentViewState + 1;
 					}
-					Globals.debug("viewState", Client._currentViewState, Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
-					Client._historyController.setViewState(Client._currentViewState);
-					Client._history.getState(Client._currentViewState, Client.render);
+					Client._history.getState(nextState, Client.render);
 				}
 			}
 		},  
@@ -95,12 +98,14 @@ $(function() {
 			}
 
 			if (!Client._rendering) {
+				Client._currentViewState = state.stateId();
+				Client._historyController.setViewState(Client._currentViewState);
 
 				if (state.attack()) {
 					Client._rendering = true;
 				}
 
-				Globals.debug("render state", state.stateId(), Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);
+				Globals.debug("render state", state.stateId(), Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 				Renderer.render(state, function() {
 					// render done
 					Client._rendering = false;
@@ -112,6 +117,48 @@ $(function() {
 				if (!state.attack()) {
 					Client.processNextState();
 				}
+			}
+		},
+
+		endTurnClicked: function() {
+			if (Client._isMyTurn) {
+				Client._isMyTurn = false;
+				this._socket.emit(Message.TYPE.END_TURN, Message.endTurn(Client._playerId));
+			}
+		},
+
+
+		//====================================================================================================
+		// MapcontrollerInterface
+		//====================================================================================================
+		
+		MapControllerInterface: {
+
+			currentPlayerId: function() { return Client._history.getState(Client._currentViewState).currentPlayerId();},
+
+			update: function() {
+				if (!Client._rendering) {
+					var state = Client._history.getState(Client._currentViewState);
+					var curr = state.currentPlayerId();
+					if (Client._players[curr] && Client._players[curr].isHuman()) {
+						Client.render(state);
+					}
+				}
+			},
+			
+			attack: function(fromId, toId, callback){
+				if (Client._isMyTurn) {
+					Globals.debug("<= attack", fromId, "to", toId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+					Client._socket.emit(Message.TYPE.ATTACK, Message.attack(fromId, toId));
+				}
+			},
+			
+			clickable: function() {
+				if (Client._rendering || !Client._isMyTurn || Client._historyController.viewingHistory()) {
+					return false;
+				}
+
+				return true;
 			}
 		},
 
@@ -128,8 +175,12 @@ $(function() {
 
 			// tell all the AI's to chill
 			Object.keys(Client._players).forEach(function(id) {
-				Client._players[id].turnEnded();
+				if (Client._players[id]) {
+					Client._players[id].turnEnded();
+				}
 			});
+
+			Client._isMyTurn = false;
 		},
 
 		connect: function() {
@@ -183,8 +234,31 @@ $(function() {
 			}
 		},
 		
+		// @msg: {playerId:, name:}
 		create_human: function(msg) {
 			Globals.debug("=> create_human", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+
+			if (Client._playerId != msg.playerId) {
+				Client._playerId = msg.playerId;
+				Client._players[msg.playerId] = Engine.PlayerInterface;
+				$('#end_turn').click(Client.endTurnClicked);
+				$('#game_controls').css('display', 'block');
+
+				if (Client._map) {
+					// create map controller
+					Client._mapController = new Mapcontroller(msg.playerId, Client._canvas, Client._map, Client.MapControllerInterface);
+				}
+			}
+		},
+
+		// @msg: {playerId:, stateId:}
+		start_turn: function(msg) {
+			if (msg.playerId == Client._playerId) {
+				Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+				Client._history.getState(msg.stateId, function() {
+					Client._isMyTurn = true;
+				});
+			}
 		},
 
 		
@@ -203,11 +277,17 @@ $(function() {
 
 					// start all the AI's
 					Object.keys(Client._players).forEach(function(id) {
+						Globals.ASSERT(Client._players[id]);
 						Client._players[id].start();
 					});
 
 					if (Client._gameInfo) {
 						Client.initRenderer();
+					}
+
+					if (Client._playerId >= 0 && !Client._mapController) {
+						// create map controller
+						Client._mapController = new Mapcontroller(Client._playerId, Client._canvas, Client._map, Client.MapControllerInterface);
 					}
 
 				} else {

@@ -35,6 +35,13 @@ var Message = {
 		};
 	},
 
+	createHuman: function(name, playerId) {
+		return {
+			name: name,
+			playerId: playerId
+		};
+	},
+
 	state: function(stateId, gameId) {
 		return {
 			stateId: stateId,
