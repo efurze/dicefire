@@ -66,8 +66,9 @@ var Message = {
 
 
 
-	attack: function(fromId, toId) {
+	attack: function(fromId, toId, playerId) {
 		return {
+			playerId: playerId,
 			from: fromId,
 			to: toId
 		};

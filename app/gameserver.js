@@ -8,6 +8,8 @@ var Globals = require('../public/js/globals.js');
 var Message = require('../public/js/message.js');
 var Map = require('../public/js/game/map.js');
 var Gamestate = require('../public/js/game/gamestate.js');
+var AISocketWrapper = require('./aiSocketWrapper');
+var PlayerWrapper = require('./playerSocketWrapper');
 
 // redirect the Engine logs to the server-side logger
 Globals.setLogRedirect(logger.log.bind(logger));
@@ -105,72 +107,7 @@ var SocketHandler = function() {
 }();
 
 
-/*========================================================================================================================================*/
-// PlayerWrapper: implements Engine::PlayerInterface
-/*========================================================================================================================================*/
-var PlayerWrapper = function (id) {
-	this._socket = null;
-	this._id = id;
-};
 
-PlayerWrapper.prototype.id = function() {return this._id};
-PlayerWrapper.prototype.setSocket = function(socket) {this._socket = socket;};
-PlayerWrapper.prototype.hasSocket = function() {return (this._socket != null);};
-PlayerWrapper.prototype.socket = function() {return this._socket;};
-
-PlayerWrapper.prototype.getName = function() {return "human";};
-PlayerWrapper.prototype.isHuman = function() {return true;};
-PlayerWrapper.prototype.start = function() {
-	if (this._socket) {
-		this._socket.emit(Message.TYPE.CREATE_HUMAN, Message.createHuman(this.getName(), this._id));
-	}
-};
-PlayerWrapper.prototype.stop = function() {};
-PlayerWrapper.prototype.startTurn = function(state) {
-	if (this._socket) {
-		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
-	}
-};
-PlayerWrapper.prototype.attackDone = function(success) {};
-PlayerWrapper.prototype.turnEnded = function() {};
-PlayerWrapper.prototype.loses = function() {};
-
-/*========================================================================================================================================*/
-// AISocketWrapper: implements Engine::PlayerInterface
-/*========================================================================================================================================*/
-var AISocketWrapper = function (aiName, id) {
-	this._socket = null;
-	this._name = aiName;
-	this._id = id;
-};
-
-AISocketWrapper.prototype.id = function() {return this._id};
-AISocketWrapper.prototype.setSocket = function(socket) {this._socket = socket;};
-AISocketWrapper.prototype.hasSocket = function() {return (this._socket != null);};
-AISocketWrapper.prototype.socket = function() {return this._socket;};
-
-AISocketWrapper.prototype.getName = function() {return this._name;};
-AISocketWrapper.prototype.isHuman = function() {return false;};
-AISocketWrapper.prototype.start = function() {};
-AISocketWrapper.prototype.stop = function() {};
-AISocketWrapper.prototype.startTurn = function(state) {
-	if (this._socket) {
-		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
-	}
-};
-AISocketWrapper.prototype.attackDone = function(success, stateId) {
-	if (this._socket) {
-		var msg = Message.attackResult(this._id, success, stateId);
-		console.log("AttackDone:", msg);
-		this._socket.emit(Message.TYPE.ATTACK_RESULT, msg);
-	}
-};
-AISocketWrapper.prototype.turnEnded = function() {
-	if (this._socket) {
-		this._socket.emit(Message.TYPE.TURN_ENDED, {playerId: this._id, stateId: state.stateId()});
-	}
-}; 
-AISocketWrapper.prototype.loses = function() {};
 
 /*========================================================================================================================================*/
 // SocketWrapper: wraps a Socket.IO socket
@@ -179,7 +116,7 @@ var SocketWrapper = function(socket, gameId) {
 	this._socket = socket;
 	this._gameId = gameId;
 	this._id = socket.id;
-	this._callbacks = {};
+	this._callbacks = {}; // map from event => array of callbacks
 };
 
 SocketWrapper.prototype.id = function() {return this._id;}
@@ -192,16 +129,32 @@ SocketWrapper.prototype.ip= function() {
 
 SocketWrapper.prototype.on = function(event, callback) {
 	var self = this;
-	self._socket.on(event, function() {
-		logger.log("=>", event, JSON.stringify(arguments), logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, self._gameId);
-		var args = [];
-		args.push(self);
-		var count = Object.keys(arguments).length;
-		for (var i=0; i < count; i++) {
-			args.push(arguments[i]);
-		}
-		callback.apply(null, args);
-	});
+
+	if (self._callbacks.hasOwnProperty(event)) {
+		// add this callback to the list for this event
+		self._callbacks[event].push(callback);
+	} else {
+		// create a callback list for this event
+		self._callbacks[event] = [callback];
+
+		// start listening for this event
+		self._socket.on(event, function() {
+			logger.log("=>", event, JSON.stringify(arguments), logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, self._gameId);
+			
+			// marshall the callback arguments
+			var args = [];
+			args.push(self);
+			var count = Object.keys(arguments).length;
+			for (var i=0; i < count; i++) {
+				args.push(arguments[i]);
+			}
+
+			// callback everyone who's listening
+			self._callbacks[event].forEach(function(cb) {
+				cb.apply(null, args);
+			});
+		});
+	}
 };
 
 SocketWrapper.prototype.emit = function(event, data) {
@@ -211,9 +164,12 @@ SocketWrapper.prototype.emit = function(event, data) {
 
 SocketWrapper.prototype.disconnect = function() {
 	var self = this;
-	self._socket.disconnect();
-	delete self._socket;
-	self._socket = null;
+	this._callbacks = {};
+	if (self._socket) {
+		self._socket.disconnect();
+		delete self._socket;
+		self._socket = null;
+	}
 }
 
 /*========================================================================================================================================*/
@@ -224,8 +180,6 @@ var Engine = require('../public/js/game/engine.js');
 var Plyer = require('../public/js/ai/plyer.js');
 var Greedy = require('../public/js/ai/greedy.js');
 var Aggressive = require('../public/js/ai/aggressive.js');
-var Human = require('../public/js/ai/human.js');
-var AIWrapper = require('../public/js/game/aiwrapper.js');
 
 
 var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*optional*/, map /*optional*/) {
@@ -263,12 +217,12 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 					self._gameInfo['players'].forEach(function(playerName, id) {
 						if (playerName === "human") {
 							self._expectedHumans ++;
-							var pw = new PlayerWrapper(id);
+							var pw = new PlayerWrapper(id, self._engine);
 							logger.log("Inserted human at position " + pw.id(), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 							players.push(pw);
 							self._playerMap.push(pw);
 						} else {
-							var ai = new AISocketWrapper(playerName, id);
+							var ai = new AISocketWrapper(playerName, id, self._engine);
 							players.push(ai);
 							self._playerMap.push(ai);
 						}
@@ -325,8 +279,6 @@ GameServer.prototype.connectPlayer = function(socket) {
 	self._connectionCount ++;
 	sock.on('error', this.socketError.bind(this));
 	sock.on('disconnect', this.disconnect.bind(this));
-	sock.on('end_turn', this.endTurn.bind(this));
-	sock.on('attack', this.attack.bind(this));
 	
 	if (self._watchdogTimerId >= 0) {
 		clearTimeout(self._watchdogTimerId);
@@ -467,6 +419,7 @@ GameServer.prototype.assignBot = function(bot, socket) {
 	});
 
 	if (!socket) {
+		// TODO: FIXME: make this round robin
 		// randomly pick a socket to assign it to
 		var index = Math.round(Math.random() * (socketIds.length - 1));
 		socket = self._sockets[socketIds[index]];
@@ -488,6 +441,12 @@ GameServer.prototype.close = function() {
 	var self = this;
 	logger.log('GameServer::close', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	self._engine.registerStateCallback(null);
+
+	Object.keys(self._playerMap).forEach(function(id) {
+		if (self._playerMap[id]) {
+			self._playerMap[id].stop();
+		}
+	});
 	
 	Object.keys(self._sockets).forEach(function(id) {
 		self._sockets[id].disconnect();
@@ -504,40 +463,13 @@ GameServer.prototype.close = function() {
 	self._watchersNs = null;
 };
 
-// from socket
-GameServer.prototype.endTurn = function(socketWrapper, data) {
-	var self = this;
-	try {
-		logger.log("Player " + data.playerId + " ending turn", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
-		self._engine.endTurn();
-	} catch (err) {
-		logger.log("GameServer::endTurn error", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
-	}
-};
-
-// from socket
-GameServer.prototype.attack = function(socketWrapper, data) {
-	try {
-		var self = this;
-		logger.log("Got attack msg", socketWrapper.id(), JSON.stringify(data), logger.LEVEL.TRACE, logger.CHANNEL.SERVER, self._gameId);
-		self._engine.attack(parseInt(data.from), parseInt(data.to), self.attackDone.bind(self));
-	} catch (err) {
-		logger.log("GameServer::attack error", err,  err.stack,logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
-	}
-};
 
 // from socket
 GameServer.prototype.socketError = function(socketWrapper, err) {
 	logger.log("Socket error: " + err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, this._gameId);
 };
 
-// from engine
-GameServer.prototype.attackDone = function(success) {
-	var self = this;
-	self._playerMap[self._engine.currentPlayerId()].attackDone(success, self._engine.currentStateId());	
-};
-
-// from engine
+// from engine. State update that we broadcast to everyone connected to this game
 GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
 	logger.log("engineUpdate, stateId", stateId, 'currentPlayer', gamestate.currentPlayerId(), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);

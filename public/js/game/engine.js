@@ -28,17 +28,29 @@ var Engine = function(trusted) {
 	this._map = null;
 	this._watchdogTimerID = -1;
 	this._enforceTimeLimits = false;
+
+	Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface))
 };
 
+// This is what must be passed into init(). This interface allows the Engine to control bots
+// and human players
 Engine.PlayerInterface = {
 	getName: function(){return "human";},
 	isHuman: function(){return true;},
 	start: function(){},
 	stop: function(){},
 	startTurn: function(state){},
-	attackDone: function(success){},
+	attackDone: function(success, stateId){},
 	turnEnded: function() {},
 	loses: function(){}
+};
+
+// Engine implements this. This allows bots to call back into the Engine.
+Engine.ControllerInterface = {
+	map: function(){},
+	getState: function(){},
+	endTurn: function(){},
+	attack: function(from, to, callback){} // callback: function(success){}
 };
         
 Engine.prototype.map = function() { return this._map; };
@@ -62,7 +74,7 @@ Engine.prototype.setCurrentPlayer = function(id) {
 	this._currentPlayerId = id;
 };
 
-// @players =  array[object] of PlayerWrappers
+// @players =  array[object] of PlayerInterface
 // @callback = function(winningAI, winningID), called when game is over
 Engine.prototype.init = function(players, callback) {
 	console.time("DICEFIRE");
@@ -101,7 +113,6 @@ Engine.prototype.registerStateCallback = function(cb) {
 	this._stateCallback = cb;
 };
 
-// @AIs (optional): array of AIWrapper
 Engine.prototype.setup = function(initialMap, initialState) {
 	Globals.debug("Engine setup", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	var self = this;
@@ -251,7 +262,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	if (fromPlayer.id() != self._currentPlayerId) {
 		Globals.debug("Attacking player not current player", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		if (self._attackCallback) {
-			self._attackCallback(false);
+			self._attackCallback(false, self.currentStateId());
 		}
 		return;
 	}
@@ -294,7 +305,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 		//Globals.ASSERT(false);
 		Globals.debug("Illegal attack", fromCountry.id(), toCountry.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		if (self._attackCallback) {
-			self._attackCallback(false);
+			self._attackCallback(false, self.currentStateId());
 		}		
 		self._startClock(self._currentPlayerId);
 		
@@ -394,7 +405,7 @@ Engine.prototype.finishAttack = function(attack) {
 	if (self._attackCallback) {
 		var temp = self._attackCallback;
 		self._attackCallback = null;
-		temp(fromRoll > toRoll);
+		temp(fromRoll > toRoll, self.currentStateId());
 	}
 };
 
@@ -511,7 +522,7 @@ Engine.prototype.setState = function(gamestate) {
 		player._storedDice = gamestate.storedDice(playerId);
 		player._numContiguousCountries = gamestate.numContiguous(playerId);
 		self._players[playerId] = player;
-		Globals.debug("Deserialized player: " + player, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+		Globals.debug("Deserialized player", playerId, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	});
 	
 	self._stateCount = gamestate.stateId();

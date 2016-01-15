@@ -24,11 +24,11 @@ var AIInterface = function(aiwrapper) {
 // @ai: EITHER an AI class OR a string representing the hash of an AI stored on the server. 
 //		If it's a hash, then @name must be defined
 //
-// @controller: must implement ControllerInterface above
+// @controller: must implement Engine.ControllerInterface
 //--------------------------------------------------------------------------------------
 var AIWrapper = function(ai, controller, playerId, trusted, name) {
 	Globals.debug("AIWrapper()", (typeof ai == 'string') ? ai : ai.getName(), playerId, trusted, name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
-	Globals.ASSERT(Globals.implements(controller, AIWrapper.ControllerInterface));
+	Globals.ASSERT(Globals.implements(controller, Engine.ControllerInterface));
 	this._trusted = trusted;
 	this._isMyTurn = false;
 	this._controller = controller;
@@ -49,12 +49,7 @@ var AIWrapper = function(ai, controller, playerId, trusted, name) {
 	}
 };
 
-AIWrapper.ControllerInterface = {
-	map: function(){},
-	getState: function(){},
-	endTurn: function(){},
-	attack: function(from, to, callback){} // callback: function(success){}
-};
+
 
 AIWrapper.prototype.getName = function() {
 	return this._name;
@@ -93,7 +88,7 @@ AIWrapper.prototype.stop = function() {
 
 // from engine
 AIWrapper.prototype.startTurn = function(state) {
-	Globals.ASSERT(!this._isMyTurn);
+	//Globals.ASSERT(!this._isMyTurn);
 	this._isMyTurn = true;
 	if (this._trusted) {
 		this._ai.startTurn(AIInterface(this));

@@ -154,7 +154,7 @@ $(function() {
 			attack: function(from, to, callback){
 				if (Client._isMyTurn) {
 					Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-					Client._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id()));
+					Client._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), Client._playerId));
 				}
 			},
 			

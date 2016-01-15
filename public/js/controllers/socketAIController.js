@@ -1,8 +1,8 @@
 'use strict'
 
 /*========================================================================================================================================*/
-	// SocketAIController: 	Implements AIController so AIWrapper can connect to it.
-	// 						Implelments Engine::PlayerInterface so client can use it
+	// SocketAIController: 	Implements Engine.ControllerInterface so AIWrapper can connect to it.
+	// 						Implelments Engine.PlayerInterface so client can use it
 	/*========================================================================================================================================*/
 	
 	var SocketAIController = function(socket, history, ai, playerId, trusted) {
@@ -19,7 +19,7 @@
 		socket.on(Message.TYPE.ATTACK_RESULT, this.attack_result.bind(this));
 
 		Globals.ASSERT(Globals.implements(this, Engine.PlayerWrapper));
-		Globals.ASSERT(Globals.implements(this, AIWrapper.ControllerInterface));
+		Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface));
 	};
 
 	//
@@ -111,12 +111,14 @@
 	};
 	
 	SocketAIController.prototype.endTurn = function(playerId){
-		this._socket.emit(Message.TYPE.END_TURN, Message.endTurn(playerId));
+		var msg = Message.endTurn(this._id);
+		Globals.debug("<= end_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+		this._socket.emit(Message.TYPE.END_TURN, msg);
 	};
 	
 	// @callback: function(success){}
 	SocketAIController.prototype.attack = function(from, to, callback){
 		Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		this._attackPending = true;
-		this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id()));
+		this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), this._id));
 	};
