@@ -256,9 +256,6 @@ $(function() {
 			if (msg.playerId == Client._playerId) {
 				Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 				Client._history.getState(msg.stateId, function(state) {
-					if (Client._map) {
-						Client._map.setState(state);
-					}
 					Client._isMyTurn = true;
 				});
 			}

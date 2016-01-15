@@ -40,8 +40,8 @@ module.exports = {
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
 				{ path: "/js/message.js" },
-				{ path: "/js/client/socketAIController.js" },
-				{ path: "/js/client/client.js" }
+				{ path: "/js/controllers/socketAIController.js" },
+				{ path: "/js/app/client.js" }
 			]
 		});
 	},
@@ -96,8 +96,8 @@ module.exports = {
 				{ path: "/js/util/downloader.js" },
 				{ path: "/js/util/history.js" },
 				{ path: "/js/message.js" },
-				{ path: "/js/client/socketAIController.js" },
-				{ path: "/js/client/client.js" }
+				{ path: "/js/controllers/socketAIController.js" },
+				{ path: "/js/app/client.js" }
 			]
 		});
 	},
