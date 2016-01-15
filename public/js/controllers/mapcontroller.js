@@ -135,8 +135,9 @@ $(function(){
                         }
                     } else {
                         // Attacks.
-						self._iface.attack(self.selectedCountry(), country, function() {
-                            var prevCountry = self.selectedCountry();
+                        var sel = self.selectedCountry();
+                        self.setSelectedCountry(null);
+						self._iface.attack(sel, country, function() {
                             self.setSelectedCountry(null);
                             $('#end_turn').prop('disabled', false);
 							self._iface.update();

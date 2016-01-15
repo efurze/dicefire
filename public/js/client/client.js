@@ -123,7 +123,7 @@ $(function() {
 		endTurnClicked: function() {
 			if (Client._isMyTurn) {
 				Client._isMyTurn = false;
-				this._socket.emit(Message.TYPE.END_TURN, Message.endTurn(Client._playerId));
+				Client._socket.emit(Message.TYPE.END_TURN, Message.endTurn(Client._playerId));
 			}
 		},
 
@@ -146,10 +146,10 @@ $(function() {
 				}
 			},
 			
-			attack: function(fromId, toId, callback){
+			attack: function(from, to, callback){
 				if (Client._isMyTurn) {
-					Globals.debug("<= attack", fromId, "to", toId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-					Client._socket.emit(Message.TYPE.ATTACK, Message.attack(fromId, toId));
+					Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+					Client._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id()));
 				}
 			},
 			
@@ -255,7 +255,10 @@ $(function() {
 		start_turn: function(msg) {
 			if (msg.playerId == Client._playerId) {
 				Globals.debug("=> start_turn", JSON.stringify(msg), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-				Client._history.getState(msg.stateId, function() {
+				Client._history.getState(msg.stateId, function(state) {
+					if (Client._map) {
+						Client._map.setState(state);
+					}
 					Client._isMyTurn = true;
 				});
 			}
@@ -286,6 +289,10 @@ $(function() {
 					}
 
 					if (Client._playerId >= 0 && !Client._mapController) {
+						var state = Client._history.getState(0);
+						if (state) {
+							Client._map.setState(state);
+						}
 						// create map controller
 						Client._mapController = new Mapcontroller(Client._playerId, Client._canvas, Client._map, Client.MapControllerInterface);
 					}

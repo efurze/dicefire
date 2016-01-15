@@ -389,9 +389,10 @@ GameServer.prototype.reconnect = function(socketWrapper) {
 					humanAssignedTo = playerId;
 				} else { 
 					self.assignBot(self._playerMap[playerId], socketWrapper);
-					if (self._started && self._engine.currentPlayerId() == playerId) {
-						self._playerMap[playerId].startTurn(self._engine.getState());
-					}
+				}
+
+				if (self._started && self._engine.currentPlayerId() == playerId) {
+					self._playerMap[playerId].startTurn(self._engine.getState());
 				}
 			}
 		});
