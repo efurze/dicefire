@@ -46,6 +46,7 @@ $(function(){
 		_canvas: null,
 		_context: null,
 		_initialized: false,
+		_isAnimatingAttack: false,
 		_mouseOverCountry: -1,
 		_selectedCountry: -1,
 		_names: [],
@@ -98,7 +99,7 @@ $(function(){
 		},
 		
 		render: function(state, attackCallback) {
-			if (Globals.suppress_ui || !this._initialized) {
+			if (Globals.suppress_ui || !this._initialized || this._isAnimatingAttack) {
 				return;
 			}
 			Globals.debug("render()", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
@@ -147,6 +148,9 @@ $(function(){
 			if (Globals.play_sounds && callback) {
 	            $.playSound('/sounds/2_dice_throw_on_table');
 	        }
+
+	        self._isAnimatingAttack = true;
+
 			var timeout = callback ? Globals.timeout : 0;
 	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
 	
@@ -178,6 +182,8 @@ $(function(){
 	                    $.playSound('/sounds/wood_hit_brick_1');               
 	                }
 	            }
+
+	            self._isAnimatingAttack = false;
 				if (callback) {
 					callback(state.attack());
 				}

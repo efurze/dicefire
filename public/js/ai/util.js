@@ -31,10 +31,13 @@ AI.Util =  {
 			Globals.ASSERT(attack instanceof Attack);
 			var a = state.countryDice(attack.from());
 			var d = state.countryDice(attack.to());
-			Globals.ASSERT(a > 0 && d > 0);
-			var o = AI.Util.ODDS_ARRAY[a - 1][d - 1];
-			//Globals.debug("Attack odds for " + a + " vs " + d + " = " + o, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-			return o;
+			if (a > 0 && d > 0) {
+				var o = AI.Util.ODDS_ARRAY[a - 1][d - 1];
+				//Globals.debug("Attack odds for " + a + " vs " + d + " = " + o, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
+				return o;
+			} else {
+				return 0;
+			}
 		} else {
 			return 1;
 		}

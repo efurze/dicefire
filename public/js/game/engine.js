@@ -305,6 +305,10 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 		var toRollArray = Player.rollDice(toNumDice);
 
 		Globals.ASSERT(fromRollArray && fromRollArray.length > 1);
+		Globals.ASSERT(fromNumDice == fromRollArray.length);
+		
+		Globals.debug("Attack roll", fromRollArray, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+		Globals.debug("Defend roll", toRollArray, Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 
 		var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; }, 0);
 		var toRoll = toRollArray.reduce(function(total, die) { return total + die; }, 0);
