@@ -87,7 +87,12 @@ $(function() {
 					} else {
 						nextState = Client._currentViewState + 1;
 					}
-					Client._history.getState(nextState, Client.render);
+					Client._history.getState(nextState, function(state) {
+						if (Client._map) {
+							Client._map.setState(state);
+						}
+						Client.render(state);
+					});
 				}
 			}
 		},  
@@ -243,11 +248,6 @@ $(function() {
 				Client._players[msg.playerId] = Engine.PlayerInterface;
 				$('#end_turn').click(Client.endTurnClicked);
 				$('#game_controls').css('display', 'block');
-
-				if (Client._map) {
-					// create map controller
-					Client._mapController = new Mapcontroller(msg.playerId, Client._canvas, Client._map, Client.MapControllerInterface);
-				}
 			}
 		},
 
@@ -289,10 +289,6 @@ $(function() {
 					}
 
 					if (Client._playerId >= 0 && !Client._mapController) {
-						var state = Client._history.getState(0);
-						if (state) {
-							Client._map.setState(state);
-						}
 						// create map controller
 						Client._mapController = new Mapcontroller(Client._playerId, Client._canvas, Client._map, Client.MapControllerInterface);
 					}
