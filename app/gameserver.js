@@ -1,13 +1,15 @@
 "use strict"
 
-var GAME_LINGER_TIMEOUT = 600000; // 10 minutes in milliseconds
+var GAME_LINGER_TIMEOUT = 60000; // milliseconds
 
 var rwClient = require('../lib/redisWrapper.js');
+var gameController = require('../controllers/game.js');
 var logger = require('../lib/logger.js');
 var Globals = require('../public/js/globals.js');
 var Message = require('../public/js/network/message.js');
 var Map = require('../public/js/game/map.js');
 var Gamestate = require('../public/js/game/gamestate.js');
+var Gameinfo = require('../public/js/game/gameinfo.js');
 var SocketWrapper = require('../public/js/network/socket.js');
 var AISocketWrapper = require('./aiSocketWrapper');
 var PlayerWrapper = require('./playerSocketWrapper');
@@ -98,6 +100,7 @@ var SocketHandler = function() {
 		
 		removeGame: function(gameId) {
 			if(games.hasOwnProperty(gameId)) {
+				logger.log("Cleaning up game", gameId, logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
 				games[gameId].close();
 				delete games[gameId];
 			}
@@ -128,7 +131,7 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 	self._socketMap = {}; // socketId to array of playerIds
 	self._ipMap = {}; // IP address to array of playerIds
 	self._gameInfo = null;
-	self._playerMap = []; // array of PlayerInterface
+	self._players = []; // array of PlayerInterface
 	self._connectionCount = 0;
 	self._expectedHumans = 0;
 	self._currentHumans = 0;
@@ -157,22 +160,22 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 							var pw = new PlayerWrapper(id, self._engine);
 							logger.log("Inserted human at position " + pw.id(), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 							players.push(pw);
-							self._playerMap.push(pw);
+							self._players.push(pw);
 						} else {
 							var ai = new AISocketWrapper(playerName, id, self._engine);
 							players.push(ai);
-							self._playerMap.push(ai);
+							self._players.push(ai);
 						}
 					});
 				
 					logger.log("Players for game", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
-					Object.keys(self._playerMap).forEach(function(id) {
-						logger.log(JSON.stringify(self._playerMap[id]), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+					self._players.forEach(function(player) {
+						logger.log(JSON.stringify(player), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 					})
 				
 				
 					// initialize the game engine
-					self._engine.init(players);
+					self._engine.init(players, self.gameOver.bind(self));
 					self._engine.setup(map, restoreState);
 
 					// push the map data to redis
@@ -227,10 +230,10 @@ GameServer.prototype.connectPlayer = function(socket) {
 	
 	if (id < 0) {
 		for (var i=0; i < self._gameInfo.players.length; i++) {
-			if (self._playerMap[i].isHuman() && !self._playerMap[i].hasSocket()) {
+			if (self._players[i].isHuman() && !self._players[i].hasSocket()) {
 				logger.log('Assigning socket ' + sock.id() + ' to player ' + i, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 				self._currentHumans ++; 
-				self._playerMap[i].setSocket(sock);
+				self._players[i].setSocket(sock);
 				
 				if (!self._socketMap[sock.id()]) { self._socketMap[sock.id()] = []; }
 				self._socketMap[sock.id()].push(i);
@@ -263,25 +266,25 @@ GameServer.prototype.reconnect = function(socketWrapper) {
 		var playerIds = self._ipMap[socketWrapper.ip()];
 		playerIds.forEach(function(playerId) {
 			// try to reconnect all the players that were previously assigned to this IP
-			if (self._playerMap[playerId] && !self._playerMap[playerId].hasSocket()) {
+			if (self._players[playerId] && !self._players[playerId].hasSocket()) {
 				logger.log('Reconnecting socket ' + socketWrapper.id() + ' to player ' + playerId, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 				
-				if (self._playerMap[playerId].isHuman()) {
-					self._playerMap[playerId].setSocket(socketWrapper);
+				if (self._players[playerId].isHuman()) {
+					self._players[playerId].setSocket(socketWrapper);
 
 					if (!self._socketMap[socketWrapper.id()]) { self._socketMap[socketWrapper.id()] = []; }
 					self._socketMap[socketWrapper.id()].push(playerId);
 
-					self._playerMap[playerId].start();
+					self._players[playerId].start();
 					
 					self._currentHumans ++; 
 					humanAssignedTo = playerId;
 				} else { 
-					self.assignBot(self._playerMap[playerId], socketWrapper);
+					self.assignBot(self._players[playerId], socketWrapper);
 				}
 
 				if (self._started && self._engine.currentPlayerId() == playerId) {
-					self._playerMap[playerId].startTurn(self._engine.getState());
+					self._players[playerId].startTurn(self._engine.getState());
 				}
 			}
 		});
@@ -303,9 +306,9 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 		
 		var playerIds = self._socketMap[socketWrapper.id()];
 		playerIds.forEach(function(playerId) {
-			if (self._playerMap[playerId]) {
+			if (self._players[playerId]) {
 				logger.log('Socket disconnect orphaning player', playerId, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
-				self._playerMap[playerId].setSocket(null);
+				self._players[playerId].setSocket(null);
 			}
 		});
 		delete self._socketMap[socketWrapper.id()];
@@ -329,7 +332,7 @@ GameServer.prototype.startGame = function() {
 	
 	logger.log('startGame', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	
-	self._playerMap.forEach(function(player, id) {
+	self._players.forEach(function(player, id) {
 		if (player.isHuman()) {
 			player.start(); // sends 'create_human' message
 		} else {
@@ -345,6 +348,17 @@ GameServer.prototype.startGame = function() {
 	logger.log('Game started, currentPlayer=', current, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	self._started = true;
 	self._engine.startTurn(current);
+};
+
+
+GameServer.prototype.gameOver = function(winner, id) {
+	var self = this;
+	logger.log('gameOver', winner, id, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
+	var results = new Gameinfo(self._players.map(function(p){return p.getName();}), id);
+	gameController.saveGameInfo(self._gameId, results, "LADDER")
+		.then(function() {
+			SocketHandler.removeGame(self._gameId);
+		});
 };
 
 // @bot: AISocketWrapper
@@ -379,13 +393,14 @@ GameServer.prototype.close = function() {
 	logger.log('GameServer::close', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	self._engine.registerStateCallback(null);
 
-	Object.keys(self._playerMap).forEach(function(id) {
-		if (self._playerMap[id]) {
-			self._playerMap[id].stop();
+	self._players.forEach(function(player) {
+		if (player) {
+			player.stop();
 		}
 	});
 	
 	Object.keys(self._sockets).forEach(function(id) {
+		self._sockets[id].removeAll();
 		self._sockets[id].disconnect();
 		delete self._sockets[id];
 		self._sockets[id] = null;
@@ -393,11 +408,19 @@ GameServer.prototype.close = function() {
 	
 	self._sockets.length = 0;
 
-	delete self._ns;
-	self._ns = null;
+	if (self._ns) {
+		self._ns._events = null;
+		self._ns._eventsCount = 0;
+		delete self._ns;
+		self._ns = null;
+	}
 	
-	delete self._watchersNs;
-	self._watchersNs = null;
+	if (self._watchersNs) {
+		self._watchersNs._events = null;
+		self._watchersNs._eventsCount = 0;
+		delete self._watchersNs;
+		self._watchersNs = null;
+	}
 };
 
 

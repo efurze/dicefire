@@ -18,3 +18,7 @@ Gameinfo.prototype.serialize = function() {
 Gameinfo.prototype.toString = function() {
 	return JSON.stringify(this.serialize());
 }
+
+if (typeof module !== 'undefined' && module.exports){
+	module.exports = Gameinfo;
+}

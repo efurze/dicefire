@@ -124,49 +124,13 @@ module.exports = {
 		results.timestamp = Date.now();
 		logger.log("UploadGameInfo", "ratingCode:", ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 		
-		rwClient.saveGameInfo(gameId, JSON.stringify(results), ratingCode)
-		 	.then(function(reply) {
-				
-				if (typeof results.winner === 'undefined') {
-					res.status(200).send("{}");
-					return;
-				}
-				
-				var uniquePlayers = {};
-				// record the win and loss for each player
-				return Promise.each(results.players, function(player, idx) {
-					uniquePlayers[player] = true;
-					if (idx == results.winner) {
-						return submitter.recordWin(player);
-					} else {
-						return submitter.recordLoss(player);
-					}
-					
-				}).then(function() {
-					// Add the game to each AI's history
-					return Promise.each(Object.keys(uniquePlayers), function(player) {
-						return submitter.recordGameForAI(player, gameId);
-					});
-				}).then(function() {
-					// Add the game to the overall history
-					return submitter.recordGame(gameId);
-				}).then(function() {
-					if (ratingCode == "ARENA") {
-						// mark this game as an arena game for rating purposes
-						logger.log("Adding arena result", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-						return rwClient.addArenaGame(gameId);
-					}
-				}).then(function() {
-					res.status(200).send("{}");
-				}).catch(function(err){
-					logger.log("UploadGameInfo ERROR", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME, gameId);
-					res.status(500).send(err);
-				});
-				
-				
+		saveGameInfo(gameId, results, ratingCode)
+		 	.then(function() {
+				res.status(200).send("{}");
 			}).catch(function(err) {
 				if (err) {
-					logger.log("ERROR saving gameInfo to Redis", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME, gameId);
+					logger.log("ERROR saving gameInfo", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME, gameId);
+					res.status(500).send(err);
 				}
 			});
 	},
@@ -295,6 +259,49 @@ module.exports = {
 		var sha = req.params['hash'];
 		var replaced = aiWorker.replace('_replaceThisWithAIHash_', sha);
 		res.send(replaced);
+	},
+
+
+	saveGameInfo: function (gameId, results, ratingCode) {
+
+		 return rwClient.saveGameInfo(gameId, JSON.stringify(results), ratingCode)
+		 	.then(function(reply) {
+				
+				if (typeof results.winner === 'undefined') {
+					return;
+				}
+				
+				var uniquePlayers = {};
+
+				// record the win and loss for each player
+				return Promise.each(results.players, function(player, idx) {
+					uniquePlayers[player] = true;
+					if (idx == results.winner) {
+						return submitter.recordWin(player);
+					} else {
+						return submitter.recordLoss(player);
+					}
+					
+				}).then(function() {
+					// Add the game to each AI's history
+					return Promise.each(Object.keys(uniquePlayers), function(player) {
+						return submitter.recordGameForAI(player, gameId);
+					});
+				}).then(function() {
+					// Add the game to the overall history
+					return submitter.recordGame(gameId);
+				}).then(function() {
+					if (ratingCode == "ARENA") {
+						// mark this game as an arena game for rating purposes
+						logger.log("Adding arena result", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
+						return rwClient.addArenaGame(gameId);
+					} else if (ratingCode == "LADDER") {
+						// mark this game as ladder game for rating purposes
+						logger.log("Adding ladder result", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
+						return rwClient.addLadderGame(gameId);
+					}
+				});
+			});
 	},
 	
 };

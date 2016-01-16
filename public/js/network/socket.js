@@ -76,10 +76,22 @@ SocketWrapper.prototype.emit = function(event, data) {
 };
 
 
+SocketWrapper.prototype.removeAll = function() {
+	var self = this;
+	if (self._socket) {
+		Object.keys(self._callbacks).forEach(function(event) {
+			self._socket.removeAllListeners(event);
+		});
+	}
+	self._callbacks = {};
+};
+
 SocketWrapper.prototype.removeAllListeners = function(event) {
 	if (this._socket) {
 		this._socket.removeAllListeners(event);
 	}
+
+	delete this._callbacks[event];
 };
 
 SocketWrapper.prototype.removeListener = function(event, listener, context /*optional*/) {
