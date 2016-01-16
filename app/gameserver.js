@@ -355,8 +355,12 @@ GameServer.prototype.gameOver = function(winner, id) {
 	var self = this;
 	logger.log('gameOver', winner, id, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	var results = new Gameinfo(self._players.map(function(p){return p.getName();}), id);
-	gameController.saveGameInfo(self._gameId, results, "LADDER")
+	gameController.saveGameInfo(self._gameId, results.serialize(), "LADDER")
 		.then(function() {
+			SocketHandler.removeGame(self._gameId);
+		})
+		.catch(function(err) {
+			logger.log('Error saving gameInfo', err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
 			SocketHandler.removeGame(self._gameId);
 		});
 };

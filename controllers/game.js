@@ -121,7 +121,6 @@ module.exports = {
 		var gameId = req.query['gameId'];
 		var ratingCode = req.query['ratingCode'];
 		var results = req.body;
-		results.timestamp = Date.now();
 		logger.log("UploadGameInfo", "ratingCode:", ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 		
 		saveGameInfo(gameId, results, ratingCode)
@@ -261,17 +260,22 @@ module.exports = {
 		res.send(replaced);
 	},
 
-
+	// @results = {winner: <int>, players: name_array}
 	saveGameInfo: function (gameId, results, ratingCode) {
+		logger.log("saveGameInfo", results, ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
+		results.timestamp = Date.now();
 
 		 return rwClient.saveGameInfo(gameId, JSON.stringify(results), ratingCode)
 		 	.then(function(reply) {
 				
 				if (typeof results.winner === 'undefined') {
+					logger.log("no winner specified", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 					return;
 				}
 				
 				var uniquePlayers = {};
+
+				logger.log("recording player results", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 
 				// record the win and loss for each player
 				return Promise.each(results.players, function(player, idx) {
@@ -283,11 +287,17 @@ module.exports = {
 					}
 					
 				}).then(function() {
-					// Add the game to each AI's history
-					return Promise.each(Object.keys(uniquePlayers), function(player) {
-						return submitter.recordGameForAI(player, gameId);
-					});
+					if (ratingCode == "ARENA") {
+						logger.log("recording AI history", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
+						// Add the game to each AI's history
+						return Promise.each(Object.keys(uniquePlayers), function(player) {
+							return submitter.recordGameForAI(player, gameId);
+						});
+					} else {
+						return;
+					}
 				}).then(function() {
+					logger.log("creating entry in game log", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 					// Add the game to the overall history
 					return submitter.recordGame(gameId);
 				}).then(function() {

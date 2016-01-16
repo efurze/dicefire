@@ -2,15 +2,15 @@
 
 var Gameinfo = function(playerNameAry, winnerId) {
 	if (typeof winnerId !== 'undefined') {
-		this._winner = winnerId;
+		this.winner = winnerId;
 	}
-	this._players = JSON.parse(JSON.stringify(playerNameAry));
+	this.players = JSON.parse(JSON.stringify(playerNameAry));
 };
 
 Gameinfo.prototype.serialize = function() {
 	var ret = {
-		winner: this._winner,
-		players: this._players
+		winner: this.winner,
+		players: this.players
 	};
 	return ret;
 }
