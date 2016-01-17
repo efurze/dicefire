@@ -1,7 +1,6 @@
 var Promise = require('bluebird');
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
-var submitter = require('./submission.js');
 
 module.exports = {
 	
@@ -72,7 +71,7 @@ module.exports = {
 	
 	getAICode: function(req, res) {
 		var sha = req.params['hash'];
-		submitter.getAI(sha)
+		rwClient.getAI(sha)
 			.then(function(result) {
 				result = JSON.parse(result);
 				res.send(result.code);
@@ -83,14 +82,22 @@ module.exports = {
 	},
 	
 	resetAI: function(req, res) {
-		var sha = req.params['hash'];
-		submitter.resetAI(sha)
-			.then(function(reply) {
+		var hash = req.params['hash'];
+
+		return rwClient.delAIGames(hash)
+			.then(function(){
+				return rwClient.getAI(hash);
+			}).then(function(reply) {
+				var info = JSON.parse(reply);
+				info.wins = 0;
+				info.losses = 0;
+				return rwClient.saveAI(hash, JSON.stringify(info));
+			}).then(function(reply) {
 				res.send("Reset successful");
 			}).catch(function(err) {
 				logger.log("Error resetting AI", err, logger.LEVEL.ERROR, logger.CHANNEL.ADMIN);
 				res.status(500).send("Error resetting AI" + err);
-			});
+			});			
 	}
 
 };

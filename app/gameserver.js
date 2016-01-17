@@ -3,7 +3,6 @@
 var GAME_LINGER_TIMEOUT = 60000; // milliseconds
 
 var rwClient = require('../lib/redisWrapper.js');
-var gameController = require('../controllers/game.js');
 var logger = require('../lib/logger.js');
 var Globals = require('../public/js/globals.js');
 var Message = require('../public/js/network/message.js');
@@ -355,7 +354,7 @@ GameServer.prototype.gameOver = function(winner, id) {
 	var self = this;
 	logger.log('gameOver', winner, id, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	var results = new Gameinfo(self._players.map(function(p){return p.getName();}), id);
-	gameController.saveGameInfo(self._gameId, results.serialize(), "LADDER")
+	rwClient.recordGame(self._gameId, results.serialize(), "LADDER")
 		.then(function() {
 			SocketHandler.removeGame(self._gameId);
 		})

@@ -1,7 +1,5 @@
 var fs = require('fs');
 var Promise = require('bluebird');
-var submitter = require('./submission.js');
-var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var uuid = require('node-uuid');
@@ -123,7 +121,7 @@ module.exports = {
 		var results = req.body;
 		logger.log("UploadGameInfo", "ratingCode:", ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 		
-		saveGameInfo(gameId, results, ratingCode)
+		rwClient.recordGame(gameId, results, ratingCode)
 		 	.then(function() {
 				res.status(200).send("{}");
 			}).catch(function(err) {
@@ -206,111 +204,6 @@ module.exports = {
 			}).catch(function(err) {
 				logger.log("Error getting state count", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME, gameId);
 				res.status(500).send("Error getting state count " + err);
-			});
-	},
-	
-	
-	getAIList: function(req, res) {
-		submitter.getAIs().then(function(results) {
-			var parsedResults = results.map(function(result){return JSON.parse(result);});
-			res.render("ai_list", {
-				title: "AIs",
-				ais: parsedResults
-			});
-		}).catch(function(err) {
-			logger.log("Error retrieving AI list", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME);
-			res.status(500).send("Error retrieving AI list: " + err);
-		});
-	},
-	
-	getAIListJSON: function(req, res) {
-		submitter.getAIs().then(function(results) {
-			var parsedResults = results.map(function(result){return JSON.parse(result);});
-			res.send(parsedResults);
-		}).catch(function(err) {
-			logger.log("Error retrieving AI list JSON", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME);
-			res.status(500).send("Error retrieving AI list: " + err);
-		});
-	},
-	
-	getAIDetail: function(req, res) {
-		var sha = req.params['hash'];
-		var dataToRender = {};
-		submitter.getAI(sha)
-			.then(function(result) {
-				// append AI summary
-				var info = JSON.parse(result);
-				dataToRender.name = info.name;
-				dataToRender.wins = info.wins ? info.wins : 0;
-				dataToRender.losses = info.losses ? info.losses : 0;
-				// get Game history
-				return rwClient.getAIGames(sha);
-			}).then(function(result) {
-				dataToRender.games = result;
-				res.render("ai_detail", dataToRender);
-			}).catch(function(err) {
-				logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME);
-				res.status(500).send("Error retrieving AI detail: " + err);
-			});
-	},
-		
-	getAIWorker: function(req, res) {
-		var sha = req.params['hash'];
-		var replaced = aiWorker.replace('_replaceThisWithAIHash_', sha);
-		res.send(replaced);
-	},
-
-	// @results = {winner: <int>, players: name_array}
-	saveGameInfo: function (gameId, results, ratingCode) {
-		logger.log("saveGameInfo", results, ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-		results.timestamp = Date.now();
-
-		 return rwClient.saveGameInfo(gameId, JSON.stringify(results), ratingCode)
-		 	.then(function(reply) {
-				
-				if (typeof results.winner === 'undefined') {
-					logger.log("no winner specified", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-					return;
-				}
-				
-				var uniquePlayers = {};
-
-				logger.log("recording player results", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-
-				// record the win and loss for each player
-				return Promise.each(results.players, function(player, idx) {
-					uniquePlayers[player] = true;
-					if (idx == results.winner) {
-						return submitter.recordWin(player);
-					} else {
-						return submitter.recordLoss(player);
-					}
-					
-				}).then(function() {
-					if (ratingCode == "ARENA") {
-						logger.log("recording AI history", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-						// Add the game to each AI's history
-						return Promise.each(Object.keys(uniquePlayers), function(player) {
-							return submitter.recordGameForAI(player, gameId);
-						});
-					} else {
-						return;
-					}
-				}).then(function() {
-					logger.log("creating entry in game log", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-					// Add the game to the overall history
-					return submitter.recordGame(gameId);
-				}).then(function() {
-					if (ratingCode == "ARENA") {
-						// mark this game as an arena game for rating purposes
-						logger.log("Adding arena result", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-						return rwClient.addArenaGame(gameId);
-					} else if (ratingCode == "LADDER") {
-						// mark this game as ladder game for rating purposes
-						logger.log("Adding ladder result", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
-						return rwClient.addLadderGame(gameId);
-					}
-				});
 			});
 	},
 	

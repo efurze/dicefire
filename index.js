@@ -79,14 +79,14 @@ app.use(function(req, res, next) {
 app.get('/', gameController.index);					// Front Page
 app.get('/solo', gameController.solo);			// Individual Game
 app.get('/setup', gameController.setup);		// Ladder Game
-app.get('/ais', gameController.getAIList);	// AI List
 app.get('/replay', gameController.replay);	
-app.get('/ai/:hash', gameController.getAIDetail);
 
 app.get('/submit', submissionController.submissionForm);          // AI Submission form
 app.post('/submission', submissionController.submit); 						// submit the AI
 app.post('/testsubmission', submissionController.submitForTest); 	// submit for test
 app.get('/aitest', submissionController.testAI);									// instructions for testing a submitted AI
+app.get('/ais', submissionController.getAIList);                  // AI List
+app.get('/ai/:hash', submissionController.getAIDetail);
 
 // admin tools
 app.get('/errorReports', adminController.getErrorReportList);
@@ -108,8 +108,8 @@ app.get('/getMap', gameController.getMap);
 app.get('/getState', gameController.getState); 
 app.get('/getStateCount', gameController.getStateCount);
 app.post('/uploadErrorReport', adminController.uploadErrorReport);
-app.get('/aisjson', gameController.getAIListJSON);
-app.get('/aiworker/:hash', gameController.getAIWorker);
+app.get('/aisjson', submissionController.getAIListJSON);
+app.get('/aiworker/:hash', submissionController.getAIWorker);
 
 
 // other

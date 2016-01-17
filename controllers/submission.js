@@ -4,6 +4,8 @@ var Sandbox = require('sandbox');
 var Hashes = require('jshashes');
 var Promise = require('bluebird');
 var SHA1 = new Hashes.SHA1();
+var fs = require('fs');
+var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 
@@ -112,7 +114,7 @@ var doSubmit = function(req, res, test) {
 	code += className +".getName=function(){return '" + name + "';};";
 
 
-	getAI(codeHash)
+	rwClient.getAI(codeHash)
 		.then(function (result) {
 			if (result) {
 				return Promise.reject("Code duplicate");
@@ -168,75 +170,60 @@ var storeAI = function(codeStr, sha, name, temporary) {
 
 // erases AI's game history and win-loss record
 var resetAI = function(hash) {
-	return rwClient.delAIGames(hash)
-				.then(function(){
-					return rwClient.getAI(hash);
-				}).then(function(reply) {
-					var info = JSON.parse(reply);
-					info.wins = 0;
-					info.losses = 0;
-					return rwClient.saveAI(hash, JSON.stringify(info));
-				});
+	
 };
 
-// returns a promise
-var getAIs = function() {
-	return rwClient.getAIList();
+
+var getAIList = function(req, res) {
+	rwClient.getAIList().then(function(results) {
+		var parsedResults = results.map(function(result){return JSON.parse(result);});
+		res.render("ai_list", {
+			title: "AIs",
+			ais: parsedResults
+		});
+	}).catch(function(err) {
+		logger.log("Error retrieving AI list", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+		res.status(500).send("Error retrieving AI list: " + err);
+	});
 };
 
-var getAI = function(hash) {
-	return rwClient.getAI(hash);
+var getAIListJSON = function(req, res) {
+	rwClient.getAIList().then(function(results) {
+		var parsedResults = results.map(function(result){return JSON.parse(result);});
+		res.send(parsedResults);
+	}).catch(function(err) {
+		logger.log("Error retrieving AI list JSON", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+		res.status(500).send("Error retrieving AI list: " + err);
+	});
 };
 
-// adds entry to global game list "games"
-var recordGame = function(gameId) {
-	logger.log("recordGame", logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
-	return rwClient.pushGame(gameId)
-		.catch(function(err) {
-			logger.log("Error recording game", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
+var getAIDetail = function(req, res) {
+	var sha = req.params['hash'];
+	var dataToRender = {};
+	rwClient.getAI(sha)
+		.then(function(result) {
+			// append AI summary
+			var info = JSON.parse(result);
+			dataToRender.name = info.name;
+			dataToRender.wins = info.wins ? info.wins : 0;
+			dataToRender.losses = info.losses ? info.losses : 0;
+			// get Game history
+			return rwClient.getAIGames(sha);
+		}).then(function(result) {
+			dataToRender.games = result;
+			res.render("ai_detail", dataToRender);
+		}).catch(function(err) {
+			logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+			res.status(500).send("Error retrieving AI detail: " + err);
 		});
 };
 
-// adds entry to game list for given AI
-var recordGameForAI = function(hash, gameId) {
-	logger.log("recordGameForAI", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
-	return rwClient.pushAIGame(hash, gameId)
-		.catch(function(err) {
-			logger.log("Error recording AI game", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
-		});
+var getAIWorker = function(req, res) {
+	var sha = req.params['hash'];
+	var replaced = aiWorker.replace('_replaceThisWithAIHash_', sha);
+	res.send(replaced);
 };
 
-var recordWin = function(hash, gameId) {
-	logger.log("recordWin", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT, gameId);
-	return rwClient.getAI(hash)
-				.then(function(str) {
-					var info = JSON.parse(str);
-					if (!info.hasOwnProperty('wins')) {
-						info.wins = 0;
-					}
-					info.wins ++;
-					return rwClient.saveAI(hash, JSON.stringify(info));
-			
-				}).catch(function(err) {
-					logger.log("Error recording win", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT, gameId);
-				});
-};
-
-var recordLoss = function(hash) {
-	logger.log("recordLoss", hash, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
-	return rwClient.getAI(hash)
-				.then(function(str) {
-					var info = JSON.parse(str);
-					if (!info.hasOwnProperty('losses')) {
-						info.losses = 0;
-					}
-					info.losses ++;
-					return rwClient.saveAI(hash, JSON.stringify(info));
-			
-				}).catch(function(err) {
-					logger.log("Error recording loss", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
-				});
-};
 
 
 
@@ -245,12 +232,10 @@ module.exports = {
 	submit: submit,
 	submitForTest: submitForTest,
 	testAI: testAI,
-	getAIs: getAIs,
-	getAI: getAI,
-	recordGame: recordGame,
-	recordGameForAI: recordGameForAI,
-	recordWin: recordWin,
-	recordLoss: recordLoss,
+	getAIList: getAIList,
+	getAIListJSON: getAIListJSON,
+	getAIDetail: getAIDetail,
+	getAIWorker: getAIWorker,
 	resetAI: resetAI
 };
 
