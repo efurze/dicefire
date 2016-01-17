@@ -217,6 +217,7 @@ $(function() {
 					Globals.debug("Already have a player", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 					if (Client._players[id].getName() == aiName) {
 						Globals.debug("Same AI, not re-initializing", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+						Client._players[id].turnEnded();
 						return;
 					} else {
 						Globals.debug("Different AI", Client._players[id].getName(), 

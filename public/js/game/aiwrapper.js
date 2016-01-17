@@ -88,11 +88,13 @@ AIWrapper.prototype.stop = function() {
 
 // from engine
 AIWrapper.prototype.startTurn = function(state) {
-	//Globals.ASSERT(!this._isMyTurn);
+	Globals.ASSERT(!this._isMyTurn);
 	this._isMyTurn = true;
 	if (this._trusted) {
+		Globals.ASSERT(this._ai);
 		this._ai.startTurn(AIInterface(this));
 	} else {
+		Globals.ASSERT(this._worker);
 		this._worker.postMessage({command: 'startTurn', state: state.serialize()});
 	}
 };
@@ -102,6 +104,7 @@ AIWrapper.prototype.attackDone = function(success) {
 	if (this._trusted) {
 		this._aiCallback(success);
 	} else {
+		Globals.ASSERT(this._worker);
 		this._worker.postMessage({command: 'attackResult', result: success, state: this._controller.getState().serialize()})
 	}
 };

@@ -4,22 +4,35 @@
 	// SocketAIController: 	Implements Engine.ControllerInterface so AIWrapper can connect to it.
 	// 						Implelments Engine.PlayerInterface so client can use it
 	/*========================================================================================================================================*/
-	
+
 	var SocketAIController = function(socket, history, ai, playerId, trusted) {
-		this._aiWrapper = new AIWrapper(ai, this, playerId, trusted);
 		this._socket = socket;
+		this._ai = ai;
 		this._id = playerId;
 		this._history = history;
+		this._trusted = trusted;
 		this._started = false;
+		this._isMyTurn = false;
 		this._startTurnPending = false;
 		this._startTurnPendingStateId = -1;
 		this._attackPending = false;
+		this._aiWrapper = null;
+
+		this.initAI();
 
 		socket.on(Message.TYPE.START_TURN, this.start_turn.bind(this));
 		socket.on(Message.TYPE.ATTACK_RESULT, this.attack_result.bind(this));
 
 		Globals.ASSERT(Globals.implements(this, Engine.PlayerWrapper));
 		Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface));
+	};
+
+	SocketAIController.prototype.initAI = function() {
+		if (this._aiWrapper) {
+			this._aiWrapper.stop();
+			this._aiWrapper = null;
+		}
+		this._aiWrapper = new AIWrapper(this._ai, this, this._id, this._trusted);
 	};
 
 	//
@@ -38,13 +51,13 @@
 		var self = this;
 		if (msg.playerId == self._id && self._attackPending) {
 			self._history.getState(msg.stateId, function(state) {
-				self.attackDone(msg.success);
+				self.attackDone(msg.success, msg.stateId);
 			});
 		}
 	};
 
 	//
-	// Implementing the Engine::PlayerWrapper interface
+	// Implementing the Engine::PlayerWrapper interface. These are called by Client.
 	//
 
 	SocketAIController.prototype.getName = function(){return this._aiWrapper.getName();};
@@ -54,14 +67,15 @@
 			this._started = true;
 			this._aiWrapper.start();
 			if (this._startTurnPending) {
-				this.startTurn(this._startTurnPendingStateId);
 				this._startTurnPending = false;
+				this.startTurn(this._startTurnPendingStateId);
 				this._startTurnPendingStateId = -1;
 			}
 		}
 	};
 	SocketAIController.prototype.stop = function(){
 		this._started = false;
+		this._isMyTurn = false;
 
 		this._socket.removeListener(Message.TYPE.START_TURN, this.start_turn);
 		this._socket.removeListener(Message.TYPE.ATTACK_RESULT, this.attack_result);
@@ -76,7 +90,19 @@
 		var self = this;
 		if (self._started) {
 			self._history.getState(state_id, function(state) {
-				self._aiWrapper.startTurn(state);
+				if (self._isMyTurn) {
+					Globals.debug("Got startTurn when it was already our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+				}
+				self._isMyTurn = true;
+				try {
+					self._aiWrapper.startTurn(state);
+				} catch (err) {
+					// try to re-initialize AI
+					Globals.debug("AIWrapper.startTurn exception. Attempting to re-initialize", err, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+					self.initAI();
+					self._aiWrapper.start();
+					self._aiWrapper.startTurn(state);
+				}
 			});
 		} else {
 			self._startTurnPending = true;
@@ -84,20 +110,28 @@
 		}
 	};
 
-	SocketAIController.prototype.attackDone = function(success){
+	SocketAIController.prototype.attackDone = function(success, state_id){
 		if (this._attackPending) {
 			this._attackPending = false;
-			this._aiWrapper.attackDone(success);
+			try {
+				this._aiWrapper.attackDone(success);
+			} catch (err) {
+				Globals.debug("AIWrapper.attackDone exception. Attempting to re-initialize", err, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+				self.initAI();
+				self._aiWrapper.start();
+				self.startTurn(state_id);
+			}
 		}
 	};
 	SocketAIController.prototype.turnEnded = function() {
 		this._attackPending = false;
+		this._isMyTurn = false;
 		this._aiWrapper.turnEnded();
 	};
 	SocketAIController.prototype.loses = function(){this._aiWrapper.loses();};
-	
-	// Implementing the AIController interface
-	
+
+	// Implementing the AIController interface. These functions are called by AIWrapper
+
 	SocketAIController.prototype.map = function() {
 		Globals.ASSERT(Client._map);
 		return Client._map;
@@ -106,14 +140,23 @@
 	SocketAIController.prototype.getState = function() {
 		return Client._history.getLatest();
 	};
-	
+
 	SocketAIController.prototype.endTurn = function(playerId){
-		var msg = Message.endTurn(this._id);
-		this._socket.emit(Message.TYPE.END_TURN, msg);
+		if (this._isMyTurn) {
+			this._isMyTurn = false;
+			var msg = Message.endTurn(this._id);
+			this._socket.emit(Message.TYPE.END_TURN, msg);
+		} else {
+			Globals.debug("AI tried to end turn when it wasn't our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+		}
 	};
-	
+
 	// @callback: function(success){}
-	SocketAIController.prototype.attack = function(from, to, callback){
-		this._attackPending = true;
-		this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), this._id));
+	SocketAIController.prototype.attack = function(from, to, callback) {
+		if (this._isMyTurn) {
+			this._attackPending = true;
+			this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), this._id));
+		} else {
+			Globals.debug("AI tried to attack when it wasn't our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+		}
 	};
