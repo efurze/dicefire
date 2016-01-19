@@ -222,6 +222,13 @@ GameServer.prototype.connectWatcher = function(socket) {
 	var self = this;
 	var sock = new SocketWrapper(socket, self._gameId);
 	self._sockets[sock.id()] = sock;
+
+	// send the map
+	sock.emit(Message.TYPE.MAP, Message.map(self._gameId));
+	if (self._started) {
+		// push the latest gamestate to them
+		sock.emit(Message.TYPE.STATE, Message.state(self._engine.currentStateId(), self._gameId));
+	}
 };
 
 GameServer.prototype.connectPlayer = function(socket) {

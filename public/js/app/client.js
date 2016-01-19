@@ -22,6 +22,7 @@ $(function() {
 		_downloader: null,
 		_history: null,
 		_gameId: null,	
+		_watch: false,
 
 		_map: null,
 		_gameInfo: null,
@@ -36,8 +37,9 @@ $(function() {
 		_isMyTurn: false,
 		_mapController: null,
 
-		init: function (gameId, replay) {
+		init: function (gameId, watch) {
 			Client._gameId = gameId;
+			Client._watch = watch;
 			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 
 			// initialize the history controller
@@ -49,15 +51,26 @@ $(function() {
 			Client._downloader.getGameInfo(gameId, Client.gameInfoCB);
 
 			// connect socket
-			Client._socket = new SocketWrapper(io.connect(window.location.hostname + ":5001/" + gameId), gameId);
+			var socketPath = "";
+			if (watch) {
+				Globals.debug("Connecting as watcher", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+				socketPath = window.location.hostname + ":5001/watch/" + gameId;
+			} else {
+				socketPath = window.location.hostname + ":5001/" + gameId;
+			}
+
+			Client._socket = new SocketWrapper(io.connect(socketPath), gameId);
 			Client._socket.on('error', Client.socket_error);
 			Client._socket.on('disconnect', Client.disconnect);
 			Client._socket.on('connect', Client.connect);
 			Client._socket.on(Message.TYPE.MAP, Client.map_update);
 			Client._socket.on(Message.TYPE.STATE, Client.state);
-			Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
-			Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
-			Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
+
+			if (!watch) {
+				Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
+				Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
+				Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
+			}
 		},
 
 
