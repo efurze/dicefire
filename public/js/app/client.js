@@ -73,7 +73,7 @@ $(function() {
 			Client._socket.on(Message.TYPE.MAP, Client.map_update);
 			Client._socket.on(Message.TYPE.STATE, Client.state);
 
-			if (!replay) {
+			if (!watch) {
 				Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
 				Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
 				Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
