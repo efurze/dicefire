@@ -1,11 +1,18 @@
 <div style="margin-top: 20px">
 	<div style="margin-left:10px; margin-top:10px">
+		Number of matches: <input type="number" id="count" value="1" style="width:50px;height:30px;" ><br>
+	</div>
+	<div style="margin-left:10px; margin-top:10px">
 		<button id="start_btn" style="width:100px;height:30px;">Start</button>
 		<button id="stop_btn" style="width:100px;height:30px;">Stop</button>
 	</div>
 </div>
 <div id="results_div" style="margin-top: 20px">
-	<div style="display: inline">Run Counter:  </div><div id="counter" style="display:inline; margin-top:30px; margin-bottom:30px"> 0/0 </div>
+	<div id="counter" style="display:inline; margin-top:30px; margin-bottom:30px"> Current Game: 0/0 </div>
+	<br>
+	<div id="status" style="display:inline; margin-top:30px; margin-bottom:30px"></div>
+	<br>
+	<div id="score" style="display:inline; margin-top:30px; margin-bottom:30px"></div>
 </div>
 
 <script>

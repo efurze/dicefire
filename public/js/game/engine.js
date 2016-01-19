@@ -531,7 +531,7 @@ Engine.prototype.setState = function(gamestate) {
 
 // unittest accessors
 Engine.prototype.playerCount = function() {
-	return Player._array.length;
+	return this._players ? this._players.length : 0;
 };
 
 Engine.prototype.playerCountryCount = function(id) {

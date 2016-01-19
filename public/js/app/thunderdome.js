@@ -52,6 +52,18 @@ GameRunner.prototype.start = function(gameOver_cb) {
 GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
 	self._uploader.uploadState(self._gameId, stateId, gamestate.toString());
+
+
+	var html = "Move number: " + gamestate.stateId() + "<br><br>Scores:<br>";
+	var count = self._engine.playerCount();
+	for (var i=0; i < count; i++) {
+		var player = self._engine.getPlayer(i);
+		if (player) {
+			html += "Player " + i + ": " + player.countryCount() + "<br>";
+		}
+	}
+	$('#score').html(html);
+
 	if (gamestate.attack()) {
 		window.setTimeout(function() {
 			self._engine.finishAttack(gamestate.attack());
@@ -97,6 +109,10 @@ var RandomRunner = function(AIs, max) {
 	
 };
 
+RandomRunner.prototype.setMax = function(max) {
+	this._max = max;
+};
+
 RandomRunner.prototype.start = function() {
 	// construct a random list of players
 	var players = [];
@@ -113,6 +129,8 @@ RandomRunner.prototype.start = function() {
 	this._count++;
 	this._runner = new GameRunner(players);
 	console.log("game " + this._count + " starting");
+	$('#counter').html("Currently playing game " + this._count + " out of " + this._max);
+	$('#status').html("Current Game: " + JSON.stringify(players.map(function(p){return p.name;})));
 	this._runner.start(this.done.bind(this));
 };
 
@@ -125,8 +143,9 @@ RandomRunner.prototype.done = function() {
 	this._runner = null;
 	if (this._stop) {
 		console.log("Exiting Thunderdome");
+		$('#status').html("Done");
 	} else if (this._max > 0 && this._count >= this._max) {
-		console.log("Exiting Thunderdome");
+		$('#status').html("Done");
 	} else {
 		setTimeout(this.start.bind(this), 0);
 	}
@@ -165,7 +184,7 @@ $(function() {
 					$('#stop_btn').prop('disabled', true);
 					$('#start_btn').prop('disabled', false);
 					Thunderdome._AIs = data;
-					Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 10);
+					Thunderdome._runner = new RandomRunner(Thunderdome._AIs, 1);
 				}
 				
 			} else {
@@ -176,6 +195,8 @@ $(function() {
 		start: function() {
 			$('#stop_btn').prop('disabled', false);
 			$('#start_btn').prop('disabled', true);
+			var count = $('#count').attr('value');
+			Thunderdome._runner.setMax(parseInt(count));
 			Thunderdome._runner.start();			
 		},
 		
