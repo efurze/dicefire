@@ -77,7 +77,7 @@ var testAI = function(req, res) {
 	var aiPath = '/aicode/'+aiHash;
 	res.render("submit/test", {
 					ai_path: aiPath,
-					ai_name: 'ai'+aiHash,
+					ai_hash: aiHash,
 					scripts: [
 						{ path: "/js/app/ai_test.js"},
 						{ path: aiPath }
@@ -85,6 +85,21 @@ var testAI = function(req, res) {
 				}
 		)
 };
+
+var playAI = function(req, res) {
+	var aiHash = req.query['ai'];
+	var aiPath = '/aicode/'+aiHash;
+	res.render("submit/test", {
+					ai_path: aiPath,
+					ai_hash: aiHash,
+					scripts: [
+						{ path: "/js/app/ai_test.js"},
+						{ path: aiPath }
+					]
+				}
+		)
+};
+
 
 var submitForTest = function(req, res) {
 	doSubmit(req, res, true);
@@ -205,6 +220,7 @@ var getAIDetail = function(req, res) {
 			// append AI summary
 			var info = JSON.parse(result);
 			dataToRender.name = info.name;
+			dataToRender.aiHash = sha;
 			dataToRender.wins = info.wins ? info.wins : 0;
 			dataToRender.losses = info.losses ? info.losses : 0;
 			// get Game history
@@ -232,6 +248,7 @@ module.exports = {
 	submit: submit,
 	submitForTest: submitForTest,
 	testAI: testAI,
+	playAI: playAI,
 	getAIList: getAIList,
 	getAIListJSON: getAIListJSON,
 	getAIDetail: getAIDetail,

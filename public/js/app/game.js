@@ -12,40 +12,45 @@ $(function() {
 		_gameId: null,
 		_uploader: null,
 		_engine: null,
-		_aiName: null,
+		_aiHash: null,
+		_aiIdx: -1,
 		
 		
 		currentPlayer: function() { return Game._engine.currentPlayer(); },
 		
 		// @players = ['human', 'Aggressive', 'Plyer 1.0']
-		init: function (gameId, players, aiName) {
+		init: function (gameId, players, aiHash) {
 			Game._gameId = gameId;
+			Game._aiHash = aiHash;
 			Game._uploader = new Uploader();
 			Globals.initLogger(gameId, Game._uploader.uploadLogDump.bind(Game._uploader));
-			
-			if (aiName) {
-				Game._aiName = aiName;
-				Game.start([AI.Aggressive, AI.Aggressive]);
-			} else {
-				if (typeof players == 'string') {
-					players = players.split(',');
-				}
-				// map player names to AI classes
-				Game.start(players.map(function(name) {
-						if (name === AI.Human.getName()) {
-							return AI.Human;
-						}  
-						if (name === AI.Plyer.getName()) {
-							return AI.Plyer;
-						} 
-						if (name === AI.Greedy.getName()) {
-							return AI.Greedy;
-						} 
-						if (name === AI.Aggressive.getName()) {
-							return AI.Aggressive;
-						}
-					}));
+
+			if (typeof players == 'string') {
+				players = players.trim().split(',');
 			}
+
+			var aiClassName = 'ai' + aiHash;
+
+			// map player names to AI classes
+			Game.start(players.map(function(name, idx) {
+					name = name.trim();
+					if (name === AI.Human.getName()) {
+						return AI.Human;
+					}  
+					if (name === AI.Plyer.getName()) {
+						return AI.Plyer;
+					} 
+					if (name === AI.Greedy.getName()) {
+						return AI.Greedy;
+					} 
+					if (name === AI.Aggressive.getName()) {
+						return AI.Aggressive;
+					}
+					if (name === aiHash) {
+						Game._aiIdx = idx;
+						return eval(aiClassName);
+					}
+				}));
 		},
 		
 		start: function(playerCode) {
@@ -62,17 +67,14 @@ $(function() {
 			var pws = [];
 			var playerNames = [];
 			
-			if (Game._aiName) {
-				var ai = eval(Game._aiName);
-				pws.push(new AIWrapper(ai, Game._engine, 0, true));
-				playerNames.push(ai.getName());
-			}
 			
 			playerCode.forEach(function(player, idx) {
 				if (player.getName() == 'human') {
 					pws.push(Engine.PlayerInterface);
+				} else if (idx == Game._aiIdx) {
+					pws.push(new AIWrapper(Game._aiHash, Game._engine, pws.length, false, player.getName()));
 				} else {
-					pws.push(new AIWrapper(player, Game._engine, pws.length, false));
+					pws.push(new AIWrapper(player, Game._engine, pws.length, true));
 				}
 			});
 			

@@ -86,6 +86,7 @@ app.get('/submit', submissionController.submissionForm);          // AI Submissi
 app.post('/submission', submissionController.submit); 						// submit the AI
 app.post('/testsubmission', submissionController.submitForTest); 	// submit for test
 app.get('/aitest', submissionController.testAI);									// instructions for testing a submitted AI
+app.get('/playai', submissionController.playAI);
 app.get('/ais', submissionController.getAIList);                  // AI List
 app.get('/ai/:hash', submissionController.getAIDetail);
 

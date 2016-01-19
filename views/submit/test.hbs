@@ -12,7 +12,7 @@
 	<br>
 
 	<div id="button_div">
-		<button id="goButton" style="width:100px;height:30px;" onclick="onClick()">Go</button>
+		<button id="goButton" style="width:100px;height:30px;">Go</button>
 	</div>
 </div>
 
@@ -31,12 +31,12 @@
 
 <script>
 	$(function() {
-		AI_Test.init("{{ai_name}}");
+		Game.init("test", "Aggressive, Aggressive, {{ai_hash}}", "{{ai_hash}}");
+		//		AI_Test.init("{{ai_name}}");
+
 	});
 </script>
-<script>
-	function onClick() {
-		AI_Test.start();
-	};
-</script>
+
+
+
 

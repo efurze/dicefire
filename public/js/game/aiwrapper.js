@@ -61,11 +61,14 @@ AIWrapper.prototype.isHuman = function() {
 
 // from engine
 AIWrapper.prototype.start = function() {
+	Globals.debug("AIWrapper.start()", this._name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 	if (!this._trusted) {
 		if (this._aiHash) {
 			// grab a specialized worker
+			Globals.debug("Downloading new aiworker", "/aiworker/"+this._aiHash, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 			this._worker = new Worker("/aiworker/" + this._aiHash);
 		} else {
+			Globals.debug("Creating new botworker", Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 			this._worker = new Worker("/js/game/botworker.js");
 		}
 		
@@ -73,7 +76,7 @@ AIWrapper.prototype.start = function() {
 		this._worker.postMessage({
 								command: 'init', 
 								adjacencyList: this._controller.map().adjacencyList(), 
-								ai: this._name, 
+								ai: this._aiHash ? this._aiHash : this._name, 
 								playerId: this._id});
 	}
 };
