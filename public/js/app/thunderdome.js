@@ -99,7 +99,17 @@ GameRunner.prototype.makeTable = function (table, data) {
 GameRunner.prototype.gameDone = function(winner, id) {
 	var self = this;
 	console.log("Game finished, winnerId", id);
-	var results = new Gameinfo(self._players.map(function(p){return p.hash;}), id);
+
+	var times = [];
+	var count = self._engine.playerCount();
+	for (var i=0; i < count; i++) {
+		var player = self._engine.getPlayer(i);
+		if (player) {
+			times.push(player.timePerTurn());
+		}
+	}
+
+	var results = new Gameinfo(self._players.map(function(p){return p.hash;}), id, times);
 	
 	self._uploader.uploadGameInfo(self._gameId, results.toString(), "ARENA");
 	
@@ -227,7 +237,7 @@ $(function() {
 		start: function() {
 			$('#stop_btn').prop('disabled', false);
 			$('#start_btn').prop('disabled', true);
-			var count = $('#count').attr('value');
+			var count = $('#count').val();
 			Thunderdome._runner.setMax(parseInt(count));
 			Thunderdome._runner.start();			
 		},

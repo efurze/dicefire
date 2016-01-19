@@ -219,6 +219,7 @@ var getAIDetail = function(req, res) {
 			var info = JSON.parse(result);
 			dataToRender.name = info.name;
 			dataToRender.aiHash = sha;
+			dataToRender.avgTime = info.avgMoveTime ? info.avgMoveTime : 'N/A';
 			dataToRender.wins = info.wins ? info.wins : 0;
 			dataToRender.losses = info.losses ? info.losses : 0;
 			// get Game history

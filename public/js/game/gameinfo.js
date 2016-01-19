@@ -1,8 +1,11 @@
 "use strict"
 
-var Gameinfo = function(playerNameAry, winnerId) {
+var Gameinfo = function(playerNameAry, winnerId, avgTimes) {
 	if (typeof winnerId !== 'undefined') {
 		this.winner = winnerId;
+	}
+	if (typeof avgTimes !== 'undefined') {
+		this.avgTimes = avgTimes;
 	}
 	this.players = JSON.parse(JSON.stringify(playerNameAry));
 };
@@ -10,7 +13,8 @@ var Gameinfo = function(playerNameAry, winnerId) {
 Gameinfo.prototype.serialize = function() {
 	var ret = {
 		winner: this.winner,
-		players: this.players
+		players: this.players,
+		avgTimes: this.avgTimes
 	};
 	return ret;
 }
