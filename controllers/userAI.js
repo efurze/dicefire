@@ -142,7 +142,7 @@ var doSubmit = function(req, res, test) {
 			}
 		})
 		.then(function(result) {
-				logger.log("validate result", result, logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
+				logger.log("validate result", result, logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 				result = result.result;
 				if (result === 'true') { // NOTE: must be single quotes
 					storeAI(code, codeHash, name, test)
@@ -156,10 +156,10 @@ var doSubmit = function(req, res, test) {
 							res.status(500).render('ai/error', {error_message: err});
 						});
 				} else if (result.startsWith("Server Error")) {
-					logger.log("Server vaidate error", result, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+					logger.log("Server vaidate error", result, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 					return Promise.reject(result);
 				} else if (result === "TimeoutError") {
-					logger.log("validate timeout", logger.LEVEL.DEBUG, logger.CHANNEL.SUBMIT);
+					logger.log("validate timeout", logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 					return Promise.reject("Your code took too long to run. Do you have an infinite loop somewhere?");
 				} else {
 					return Promise.reject(result);
@@ -195,7 +195,7 @@ var getAIList = function(req, res) {
 			ais: parsedResults
 		});
 	}).catch(function(err) {
-		logger.log("Error retrieving AI list", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+		logger.log("Error retrieving AI list", err, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 		res.status(500).send("Error retrieving AI list: " + err);
 	});
 };
@@ -205,7 +205,7 @@ var getAIListJSON = function(req, res) {
 		var parsedResults = results.map(function(result){return JSON.parse(result);});
 		res.send(parsedResults);
 	}).catch(function(err) {
-		logger.log("Error retrieving AI list JSON", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+		logger.log("Error retrieving AI list JSON", err, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 		res.status(500).send("Error retrieving AI list: " + err);
 	});
 };
@@ -227,7 +227,7 @@ var getAIDetail = function(req, res) {
 			dataToRender.games = result;
 			res.render("ai/ai_detail", dataToRender);
 		}).catch(function(err) {
-			logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
+			logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 			res.status(500).send("Error retrieving AI detail: " + err);
 		});
 };

@@ -140,7 +140,7 @@ Globals.CHANNEL = {
 
 	"SERVER": 11,
 	"SERVER_SOCKET" : 12,
-	"SUBMIT": 13,
+	"USER_AI": 13,
 	"GAME": 14,
 	"ADMIN": 15,
 	"DEFAULT": 16,
@@ -152,19 +152,21 @@ Object.keys(Globals.CHANNEL).forEach(function(name, idx) {
 });
 
 // Loglevel for each channel. Numbers correspond to Globals.LEVEL
-Globals.channels = [
-	4, //"ENGINE",
-	0, //"MAP",
-	0, //"HEX",
-	0, //"COUNTRY",
-	0, //"PLAYER"
-	0, //"AI.PLYER"
-	0, //"RENDERER",
-	0, //"GREEDY",
-	4, //"CLIENT",
-	4, //"CLIENT_SOCKET"
-	4, //"AI_WRAPPER"
-];
+Globals.channels = [];
+Globals.channels.length = Object.keys(Globals.CHANNEL).length;
+
+Globals.channels[Globals.CHANNEL.ENGINE] 					= Globals.LEVEL.INFO;
+Globals.channels[Globals.CHANNEL.MAP] 						= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.HEX] 						= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.COUNTRY] 				= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.PLAYER] 					= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.PLYER] 					= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.RENDERER] 				= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.GREEDY] 					= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.CLIENT] 					= Globals.LEVEL.INFO;
+Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.INFO;
+Globals.channels[Globals.CHANNEL.AI_WRAPPER] 			= Globals.LEVEL.INFO;
+
 
 
 Globals.shuffleArray = function(inArray) {
