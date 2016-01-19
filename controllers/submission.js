@@ -79,7 +79,6 @@ var testAI = function(req, res) {
 					ai_path: aiPath,
 					ai_hash: aiHash,
 					scripts: [
-						{ path: "/js/app/ai_test.js"},
 						{ path: aiPath }
 					]
 				}
@@ -93,7 +92,6 @@ var playAI = function(req, res) {
 					ai_path: aiPath,
 					ai_hash: aiHash,
 					scripts: [
-						{ path: "/js/app/ai_test.js"},
 						{ path: aiPath }
 					]
 				}
