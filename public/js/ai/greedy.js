@@ -42,4 +42,6 @@
 		return new AI.Plyer(playerId, 1);
 	};
 
-	
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = AI.Greedy;
+}

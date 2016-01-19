@@ -77,7 +77,22 @@ var SocketHandler = function() {
 		
 		createGame: function(req, res) {
 			var gameId = req.query['gameId'];
-			var resultsData = req.body; // stringified GameInfo
+			var aiAry = req.body;
+			var aiNames = [];
+			Object.keys(aiAry).forEach(function(key) {
+				if (aiAry[key] == 'none') {
+					return;
+				}
+				aiNames.push(aiAry[key]);
+			});
+
+			if (aiNames.length < 2) {
+				res.status(200).send("You need at least 2 players");
+				return;	
+			}
+			
+			
+			var resultsData = new Gameinfo(aiNames).serialize();
 			// randomize the player order
 			resultsData.players = Globals.shuffleArray(resultsData.players);
 			logger.log("Create game", resultsData, logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
@@ -90,7 +105,7 @@ var SocketHandler = function() {
 						.catch(function(err) {
 							logger.log("Error adding game to redis", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 						});
-					res.status(200).send("{}");
+					res.redirect("/play?gameId="+gameId);
 				}).catch(function(err) {
 					logger.log("ERROR saving gameInfo to Redis:", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 					res.status(500).send(JSON.stringify({err: err}));

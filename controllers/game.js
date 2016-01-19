@@ -4,6 +4,25 @@ var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var uuid = require('node-uuid');
 
+var Plyer = require('../public/js/ai/plyer.js');
+var Greedy = require('../public/js/ai/greedy.js');
+var Aggressive = require('../public/js/ai/aggressive.js');
+var Human = require('../public/js/ai/human.js');
+
+var AIs = [Human, Plyer, Greedy, Aggressive];
+
+
+var makePlayerList = function(names, dflt) {
+	var options = "";
+	names.forEach(function(name, idx) {
+		if (name == dflt) {
+			options += "<option value='" + name + "' selected>" + name + "</option>";
+		} else {
+			options += "<option value='" + name + "'>" + name + "</option>";
+		}
+	});
+	return options;
+};
 
 module.exports = {
 	
@@ -12,17 +31,66 @@ module.exports = {
 	},
 	
 	solo: function(req, res) { 
-		res.render("index", {title: "Dicefire"});	    
+		var playerAry = req.body;
+		var playerNames = [];
+		Object.keys(playerAry).forEach(function(key) {
+			if (playerAry[key] == 'none') {
+				return;
+			}
+			playerNames.push(playerAry[key]);
+		});
+
+		if (playerNames.length < 2) {
+			res.status(200).send("You need at least 2 players");
+			return;	
+		}
+
+		res.render("index", {title: "Dicefire", players: playerNames});	    
 	},
 	
+	setupSolo: function(req, res) {
+		req.params['type'] = 'solo';
+		module.exports.setup(req, res);
+	},
+
 	setup: function(req, res) {
+		var type = req.params['type'];
+
+		var defaults = [
+			Human.getName(),
+			Aggressive.getName(),
+			Plyer.getName(),
+			Greedy.getName(),
+			"none",
+			"none",
+			"none",
+			"none"
+		];
+
+		var names = [];
+		AIs.forEach(function(ai) {
+			names.push(ai.getName());
+		});
+		names.push("none");
+		
+		var listHTML = "";
+		var numberOfPlayers = 8;
+		for (var id=0; id < numberOfPlayers; id++) {
+			listHTML += "<select class='player_selector' value='" + defaults [id] + "' name='player_" + id + "'>"
+				+				makePlayerList(names, defaults[id])
+				+		"</select>";
+		}
+
+		var gameId = uuid.v1();
+		var startUrl = "createGame?gameId="+gameId;
+		if (type == 'solo') {
+			startUrl = "solo";
+		}
+
 		res.render("setup", {
 			title: "Dicefice - New Game",
-			scripts: [
-				{ path: "/js/controllers/setupcontroller.js"},
-				{ path: "/node-uuid/uuid.js" },
-				{ path: "/js/app/creategame.js"}
-			]
+			list: listHTML,
+			url: startUrl
 		})
 	},
 

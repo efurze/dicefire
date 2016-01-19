@@ -497,4 +497,7 @@
 		return ((2*myContiguous) - myCountryCount + myDice);		
 	};
 	
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = AI.Plyer;
+}
 	

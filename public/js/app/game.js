@@ -17,28 +17,42 @@ $(function() {
 		
 		currentPlayer: function() { return Game._engine.currentPlayer(); },
 		
-		init: function (gameId, aiName) {
+		// @players = ['human', 'Aggressive', 'Plyer 1.0']
+		init: function (gameId, players, aiName) {
 			Game._gameId = gameId;
 			Game._uploader = new Uploader();
 			Globals.initLogger(gameId, Game._uploader.uploadLogDump.bind(Game._uploader));
-			
-			$('#setup').css('display', 'block');
-			$('#game').css('display', 'none');
 			
 			if (aiName) {
 				Game._aiName = aiName;
 				Game.start([AI.Aggressive, AI.Aggressive]);
 			} else {
-				$('#start_game').click(Setupcontroller.startGame);
-				Setupcontroller.init(Game.start);
+				if (typeof players == 'string') {
+					players = players.split(',');
+				}
+				// map player names to AI classes
+				Game.start(players.map(function(name) {
+						if (name === AI.Human.getName()) {
+							return AI.Human;
+						}  
+						if (name === AI.Plyer.getName()) {
+							return AI.Plyer;
+						} 
+						if (name === AI.Greedy.getName()) {
+							return AI.Greedy;
+						} 
+						if (name === AI.Aggressive.getName()) {
+							return AI.Aggressive;
+						}
+					}));
 			}
 		},
 		
 		start: function(playerCode) {
 			
-			$('#setup').css('display', 'none');
 			$('#game').css('display', 'block');
 			$('#game_controls').css('display', 'block');
+
 			if (Globals.uploadGame && Game._gameId) {
 				$('#view_link').css('display', 'block');
 			}

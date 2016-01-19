@@ -77,7 +77,8 @@ app.use(function(req, res, next) {
 
 // User routes
 app.get('/', gameController.index);					// Front Page
-app.get('/solo', gameController.solo);			// Individual Game
+app.get('/setupsolo', gameController.setupSolo);    // Ladder Game
+app.post('/solo', gameController.solo);			// Individual Game
 app.get('/setup', gameController.setup);		// Ladder Game
 app.get('/replay', gameController.replay);	
 
@@ -99,6 +100,7 @@ app.get('/aicode/:hash', adminController.getAICode);
 
 // client routes
 app.post('/createGame', gameServer.createGame);
+app.get('/createGame', gameServer.createGame);
 app.get('/play', gameController.client);
 app.post('/uploadMap', gameController.uploadMap);
 app.post('/uploadGameInfo', gameController.uploadGameInfo);
