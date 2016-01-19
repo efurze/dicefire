@@ -89,7 +89,7 @@ var testAI = function(req, res) {
 var playAI = function(req, res) {
 	var aiHash = req.query['ai'];
 	var aiPath = '/aicode/'+aiHash;
-	res.render("submit/test", {
+	res.render("submit/play", {
 					ai_path: aiPath,
 					ai_hash: aiHash,
 					scripts: [

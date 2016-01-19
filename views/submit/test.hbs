@@ -2,38 +2,26 @@
 		Your code has passed the basic checks - good job! Now it's time to test.
 	<br>
 	<br>
-	Your AI will run as Player 1 in a 3-player game. You can navigate to your AI code in your browser's developer tools. Go to the 'Sources' tab and look for the file 
+	Your AI will run as Player 1 in a 2-player game. You will be player 1. You can navigate to your AI code in your browser's developer tools. Go to the 'Sources' tab and look for the file 
 	<br>
 	<br>
 	{{ai_path}}.js
 	<br>
 	<br>
-	You can set breakpoints in that file. <b>Try it now!</b> Set a breakpoint in your 'startTurn' function <b>before</b> pressing the 'Go' button below, or the game will likely end before you can set a breakpoint.
+	You can set breakpoints in that file.
 	<br>
-
-	<div id="button_div">
-		<button id="goButton" style="width:100px;height:30px;">Go</button>
-	</div>
 </div>
 
 <div id="codepath" style="display: none">
 	Your code is in: {{ai_path}}
 </div>
 
-<div id="game" style="display: block">
-	<canvas id="c" width="980px" height="580px"></canvas>	
-	<div id="roll" class="row roll-row">
-		<div id="leftroll" class="col-sm-6"></div><div id="rightroll" class="col-sm-6 player-roll"></div>
-	</div>
-	<div id="players" class="row players-box"></div>
-</div>
+{{>game}}
 
 
 <script>
 	$(function() {
-		Game.init("test", "Aggressive, Aggressive, {{ai_hash}}", "{{ai_hash}}");
-		//		AI_Test.init("{{ai_name}}");
-
+		Game.init("testAI", "human, {{ai_hash}}", "{{ai_hash}}");
 	});
 </script>
 
