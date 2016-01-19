@@ -21,7 +21,7 @@ var RedisStore = require('connect-redis')(session);	// For storing sessions.
 // Controllers
 var userController = require('./controllers/user');
 var gameController = require('./controllers/game');
-var submissionController = require('./controllers/submission');
+var userAIController = require('./controllers/userAI');
 var adminController = require('./controllers/admin');
 
 // Game Server
@@ -76,19 +76,19 @@ app.use(function(req, res, next) {
 // Routes
 
 // User routes
-app.get('/', gameController.index);					// Front Page
+app.get('/', gameController.index);					        // Front Page
 app.get('/setupsolo', gameController.setupSolo);    // Ladder Game
-app.post('/solo', gameController.solo);			// Individual Game
-app.get('/setup', gameController.setup);		// Ladder Game
+app.post('/solo', gameController.solo);			        // Individual Game
+app.get('/setup', gameController.setup);		        // Ladder Game
 app.get('/replay', gameController.replay);	
 
-app.get('/submit', submissionController.submissionForm);          // AI Submission form
-app.post('/submission', submissionController.submit); 						// submit the AI
-app.post('/testsubmission', submissionController.submitForTest); 	// submit for test
-app.get('/aitest', submissionController.testAI);									// instructions for testing a submitted AI
-app.get('/playai', submissionController.playAI);
-app.get('/ais', submissionController.getAIList);                  // AI List
-app.get('/ai/:hash', submissionController.getAIDetail);
+app.get('/submit', userAIController.submissionForm);          // AI Submission form
+app.post('/submission', userAIController.submit); 						// submit the AI
+app.post('/testsubmission', userAIController.submitForTest); 	// submit for test
+app.get('/aitest', userAIController.testAI);									// instructions for testing a submitted AI
+app.get('/playai', userAIController.playAI);
+app.get('/ais', userAIController.getAIList);                  // AI List
+app.get('/ai/:hash', userAIController.getAIDetail);
 
 // admin tools
 app.get('/errorReports', adminController.getErrorReportList);
@@ -111,8 +111,8 @@ app.get('/getMap', gameController.getMap);
 app.get('/getState', gameController.getState); 
 app.get('/getStateCount', gameController.getStateCount);
 app.post('/uploadErrorReport', adminController.uploadErrorReport);
-app.get('/aisjson', submissionController.getAIListJSON);
-app.get('/aiworker/:hash', submissionController.getAIWorker);
+app.get('/aisjson', userAIController.getAIListJSON);
+app.get('/aiworker/:hash', userAIController.getAIWorker);
 
 
 // other

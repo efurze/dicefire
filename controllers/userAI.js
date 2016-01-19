@@ -67,7 +67,7 @@ var runInSandbox = function(fnString) {
 };
 
 var submissionForm = function(req, res) {
-	res.render("submit/submit", {
+	res.render("ai/submit", {
 		title: "AI Submission"
 	});
 };
@@ -75,7 +75,7 @@ var submissionForm = function(req, res) {
 var testAI = function(req, res) {
 	var aiHash = req.query['ai'];
 	var aiPath = '/aicode/'+aiHash;
-	res.render("submit/test", {
+	res.render("ai/test", {
 					ai_path: aiPath,
 					ai_hash: aiHash,
 					scripts: [
@@ -88,7 +88,7 @@ var testAI = function(req, res) {
 var playAI = function(req, res) {
 	var aiHash = req.query['ai'];
 	var aiPath = '/aicode/'+aiHash;
-	res.render("submit/play", {
+	res.render("ai/play", {
 					ai_path: aiPath,
 					ai_hash: aiHash,
 					scripts: [
@@ -150,10 +150,10 @@ var doSubmit = function(req, res, test) {
 							if (test) {
 								res.redirect('/aitest?ai='+codeHash+'&name='+name);
 							} else {
-								res.status(200).render('submit/received', {hash: codeHash});
+								res.status(200).render('ai/received', {hash: codeHash});
 							}
 						}).catch(function(err) {
-							res.status(500).render('submit/error', {error_message: err});
+							res.status(500).render('ai/error', {error_message: err});
 						});
 				} else if (result.startsWith("Server Error")) {
 					logger.log("Server vaidate error", result, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
@@ -190,7 +190,7 @@ var resetAI = function(hash) {
 var getAIList = function(req, res) {
 	rwClient.getAIList().then(function(results) {
 		var parsedResults = results.map(function(result){return JSON.parse(result);});
-		res.render("ai_list", {
+		res.render("ai/ai_list", {
 			title: "AIs",
 			ais: parsedResults
 		});
@@ -225,7 +225,7 @@ var getAIDetail = function(req, res) {
 			return rwClient.getAIGames(sha);
 		}).then(function(result) {
 			dataToRender.games = result;
-			res.render("ai_detail", dataToRender);
+			res.render("ai/ai_detail", dataToRender);
 		}).catch(function(err) {
 			logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.SUBMIT);
 			res.status(500).send("Error retrieving AI detail: " + err);
