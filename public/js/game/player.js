@@ -16,6 +16,8 @@ var Player = function(id, engine) {
 	this._timeBudget = -1;
 	this._timerId = -1;
 	this._inPenalty = false;
+	this._turnCount = 0;
+	this._totalTime = 0;
 };
 
 
@@ -41,10 +43,19 @@ Player.prototype.countries = function() {return this._countries;};
 Player.prototype.countryCount = function() {return this._countries.length;};
 Player.prototype.numContiguousCountries = function() { return this._numContiguousCountries; };
 
+Player.prototype.turnStarted = function() {  };
+Player.prototype.turnEnded = function() { 
+	this._turnCount ++;
+	this._totalTime -= this._timeBudget;
+};
+Player.prototype.timePerTurn = function() {
+	return this._turnCount ? Math.round(this._totalTime / this._turnCount) : 0;
+}
 
 Player.prototype.setTimeBudget = function(millis) {
 	var self = this;
-	self._timeBudget = millis
+	self._timeBudget = millis;
+	this._totalTime += millis;
 	self._inPenalty = false;
 	if (self._timerId >= 0) {
 		self._cancelTimer(self._timerId);
@@ -79,16 +90,21 @@ Player.prototype.stopClock = function() {
 Player.prototype.timeout = function() {
 	var self = this;
 	self._timerId = -1;
-	self._timeBudget = PENALTY_TIMEOUT;
-	self.startClock();
 
-	if (!self._inPenalty) {
-		Globals.debug("Player", self._id, "entering penalty", Globals.LEVEL.INFO, Globals.CHANNEL.PLAYER);
-		self._inPenalty = true;
+	if (Globals.timePenalties) {
+		self._timeBudget = PENALTY_TIMEOUT;
+		self._totalTime += PENALTY_TIMEOUT;
+		self.startClock();
+
+		if (!self._inPenalty) {
+			Globals.debug("Player", self._id, "entering penalty", Globals.LEVEL.INFO, Globals.CHANNEL.PLAYER);
+			self._inPenalty = true;
+		} else {
+			self.penalize();
+		}
 	} else {
 		self.penalize();
 	}
-
 };
 
 Player.prototype.penalize = function() {

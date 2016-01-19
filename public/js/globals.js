@@ -108,7 +108,8 @@ var Globals = {
 		timeout: 0,
 		play_sounds: 0,
 		suppress_ui: 0,
-		uploadGame: false
+		uploadGame: false,
+		timePenalties: false,
 	};
 
 Globals.LEVEL = {

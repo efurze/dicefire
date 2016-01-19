@@ -7,6 +7,7 @@
 
 var GameRunner = function(AIs) {
 	this._engine = new Engine();
+	this._engine.setEnforceTime(true);
 	this._players = AIs.map(function(p){return p;});
 	this._callback = null;
 	
@@ -49,6 +50,14 @@ GameRunner.prototype.start = function(gameOver_cb) {
 	}
 };
 
+GameRunner.prototype.stop = function() {
+	if (this._engine) {
+		this._engine.registerStateCallback(null);
+		delete this._engine;
+		this._engine = null;
+	}
+};
+
 GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 	var self = this;
 	self._uploader.uploadState(self._gameId, stateId, gamestate.toString());
@@ -59,7 +68,7 @@ GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 	for (var i=0; i < count; i++) {
 		var player = self._engine.getPlayer(i);
 		if (player) {
-			html += "Player " + i + ": " + player.countryCount() + "<br>";
+			html += "Player " + i + ": " + player.countryCount() + ", " + player.timePerTurn() + "ms <br>";
 		}
 	}
 	$('#score').html(html);
@@ -69,6 +78,22 @@ GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
 			self._engine.finishAttack(gamestate.attack());
 		}, 0);
 	}
+};
+
+GameRunner.prototype.makeTable = function (table, data) {
+    $.each(data, function(rowIndex, r) {
+        var row = $("<tr/>");
+        $.each(r, function(colIndex, c) { 
+			if (rowIndex == 0) {
+				row.append($("<th/>").text(c));
+			} else {
+				row.append($("<td id='" + (rowIndex) + (colIndex) + "'/>").text(c));
+			}
+            
+        });
+        table.append(row);
+    });
+	return table;
 };
 
 GameRunner.prototype.gameDone = function(winner, id) {
@@ -136,6 +161,13 @@ RandomRunner.prototype.start = function() {
 
 RandomRunner.prototype.stop = function() {
 	this._stop = true;
+	if (this._runner) {
+		this._runner.stop();
+		delete this._runner;
+		this._runner = null;
+
+		$('#status').html("Stopped");
+	}
 };
 
 RandomRunner.prototype.done = function() {
@@ -202,6 +234,7 @@ $(function() {
 		
 		stop: function() {
 			$('#stop_btn').prop('disabled', true);
+			$('#start_btn').prop('disabled', false);
 			Thunderdome._runner.stop();
 		},
 

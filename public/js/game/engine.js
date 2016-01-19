@@ -218,6 +218,7 @@ Engine.prototype.startTurn = function(playerId, callback) {
 			self._startClock(playerId);
 		}
 		self._AIs[self._currentPlayerId].startTurn(self.getState())
+		self._players[self._currentPlayerId].turnStarted();
 	}, 0);
 
 };
@@ -229,6 +230,7 @@ Engine.prototype.endTurn = function() {
 	var cur = self._currentPlayerId;
 	var player = self._players[self._currentPlayerId];
 	self.addDiceToPlayer(player, player._numContiguousCountries);
+	self._players[self._currentPlayerId].turnEnded();
 	
 	// go to the next player that hasn't lost
 	do {
@@ -417,30 +419,36 @@ Engine.prototype.penalizePlayer = function(id) {
 
 	if (id == self._currentPlayerId) {
 		if (!self._AIs[id].isHuman()) {
-			Globals.debug("Penalizing player", id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-			var player = self._players[id];
+			if (Globals.timePenalties) {
+				Globals.debug("Penalizing player", id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+				var player = self._players[id];
 
-			// remove stored dice first
-			if (player.storedDice()) {
-				player.removeStoredDie();
-			} else {
-				// get list of countries for this player that have at least 2 die
-				var countries = player.countries().map(function(countryId) {
-					return self._map.getCountry(countryId);
-				}).filter(function(country) {
-					return (country.numDice() > 1);
-				});
-
-				if (countries.length) {
-					// randomly pick a country
-					var idx = Math.floor(countries.length * Math.random());
-					Globals.debug("Removing die from country", countries[idx].id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);		
-					countries[idx].removeDie();
+				// remove stored dice first
+				if (player.storedDice()) {
+					player.removeStoredDie();
 				} else {
-					Globals.debug("Player has no more dice to remove", id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);	
-					self._AIs[id].turnEnded();
-					self.endTurn();	
+					// get list of countries for this player that have at least 2 die
+					var countries = player.countries().map(function(countryId) {
+						return self._map.getCountry(countryId);
+					}).filter(function(country) {
+						return (country.numDice() > 1);
+					});
+
+					if (countries.length) {
+						// randomly pick a country
+						var idx = Math.floor(countries.length * Math.random());
+						Globals.debug("Removing die from country", countries[idx].id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);		
+						countries[idx].removeDie();
+					} else {
+						Globals.debug("Player has no more dice to remove", id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);	
+						self._AIs[id].turnEnded();
+						self.endTurn();	
+					}
 				}
+			} else {
+				Globals.debug("Player over time limit - ending turn", id, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);	
+				self._AIs[id].turnEnded();
+				self.endTurn();	
 			}
 		}
 
