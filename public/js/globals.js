@@ -9,14 +9,15 @@ var GAME_ID = "";
 var redirectFn = null;
 
 var Globals = {
-			initLogger: function(game_id, logUploadFn) {
-				GAME_ID = game_id;
-				uploadFn = logUploadFn;
-			},
-			
-			setLogRedirect: function(fn) {
-				redirectFn = fn;
-			},
+
+		initLogger: function(game_id, logUploadFn) {
+			GAME_ID = game_id;
+			uploadFn = logUploadFn;
+		},
+		
+		setLogRedirect: function(fn) {
+			redirectFn = fn;
+		},
 	
 		// USAGE: debug("my msg", foo, bar, Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	    debug: function(title) {
@@ -60,7 +61,7 @@ var Globals = {
 								channel: channel,
 								level: level,
 								gameId: GAME_ID,
-								msg: msg.substring(0, 100)
+								msg: msg.substring(0, 150)
 							});
 				
 							if (logBuffer.length > BUFFER_LENGTH) {
@@ -111,10 +112,10 @@ var Globals = {
 	};
 
 Globals.LEVEL = {
-	"NONE" : 0,
+	"NONE" 	: 0,
 	"ERROR" : 1,
-	"WARN" : 2,
-	"INFO" : 3,
+	"WARN" 	: 2,
+	"INFO" 	: 3,
 	"DEBUG" : 4,
 	"TRACE" : 5 
 }
@@ -155,7 +156,7 @@ Object.keys(Globals.CHANNEL).forEach(function(name, idx) {
 Globals.channels = [];
 Globals.channels.length = Object.keys(Globals.CHANNEL).length;
 
-Globals.channels[Globals.CHANNEL.ENGINE] 					= Globals.LEVEL.INFO;
+Globals.channels[Globals.CHANNEL.ENGINE] 					= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.MAP] 						= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.HEX] 						= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.COUNTRY] 				= Globals.LEVEL.WARN;
@@ -163,9 +164,9 @@ Globals.channels[Globals.CHANNEL.PLAYER] 					= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.PLYER] 					= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.RENDERER] 				= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.GREEDY] 					= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.CLIENT] 					= Globals.LEVEL.INFO;
-Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.INFO;
-Globals.channels[Globals.CHANNEL.AI_WRAPPER] 			= Globals.LEVEL.INFO;
+Globals.channels[Globals.CHANNEL.CLIENT] 					= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.AI_WRAPPER] 			= Globals.LEVEL.WARN;
 
 
 

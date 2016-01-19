@@ -14,6 +14,10 @@ $(function() {
 		AIMap[ai.getName()] = ai;
 	});
 	
+	window.onerror = function(msg, url, lineNum) {
+		Globals.debug("Uncaught exception", msg, url, lineNum, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT, Client._gameId);
+	};
+
 	
 	window.Client = {
 		
@@ -42,6 +46,9 @@ $(function() {
 			Client._watch = watch;
 			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 
+			var uploader = new Uploader();
+			Globals.initLogger(gameId, uploader.uploadLogDump.bind(uploader));
+
 			// initialize the history controller
 			Client._history = new History(gameId);
 			Client._historyController = new HistoryController(Client._history, gameId);
@@ -66,7 +73,7 @@ $(function() {
 			Client._socket.on(Message.TYPE.MAP, Client.map_update);
 			Client._socket.on(Message.TYPE.STATE, Client.state);
 
-			if (!watch) {
+			if (!replay) {
 				Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
 				Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
 				Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
