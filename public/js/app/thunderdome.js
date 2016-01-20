@@ -149,16 +149,15 @@ RandomRunner.prototype.setMax = function(max) {
 };
 
 RandomRunner.prototype.start = function() {
+	
 	// construct a random list of players
 	var players = [];
 	var numPlayers = 1 + Math.ceil(Math.random() * 7);
-	while (players.length < numPlayers) {
-		var pool = this._players.map(function(p) {return p;});
-		while (pool.length && players.length < numPlayers) {
-			var idx = Math.floor(Math.random() * pool.length);
-			players.push(pool[idx]);
-			pool.splice(idx, 1);
-		}
+
+	var pool = Globals.shuffleArray(this._players);
+
+	while (pool.length && players.length < numPlayers) {
+		players.push(pool.shift());
 	}
 	
 	this._count++;
@@ -183,11 +182,12 @@ RandomRunner.prototype.stop = function() {
 RandomRunner.prototype.done = function() {
 	console.log("game over");
 	this._runner = null;
-	if (this._stop) {
+	if (this._stop || (this._max > 0 && this._count >= this._max)) {
 		console.log("Exiting Thunderdome");
 		$('#status').html("Done");
-	} else if (this._max > 0 && this._count >= this._max) {
-		$('#status').html("Done");
+		$('#stop_btn').prop('disabled', true);
+		$('#start_btn').prop('disabled', false);
+		this._count = 0;
 	} else {
 		setTimeout(this.start.bind(this), 0);
 	}
