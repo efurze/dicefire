@@ -145,7 +145,8 @@ Globals.CHANNEL = {
 	"USER_AI": 13,
 	"GAME": 14,
 	"ADMIN": 15,
-	"DEFAULT": 16,
+	"RATER": 16,
+	"DEFAULT": 17,
 };
 
 Globals.channelNames = [];
