@@ -190,12 +190,34 @@ var resetAI = function(hash) {
 var getAIList = function(req, res) {
 	rwClient.getAIList().then(function(results) {
 		var parsedResults = results.map(function(result){return JSON.parse(result);});
+
+		return Promise.each(parsedResults.map(function(ai, idx) {
+			console.log("ai:", ai);
+			return rwClient.getAI(ai.hash)
+					.then(function(aiDetail) {
+						aiDetail = JSON.parse(aiDetail);
+						aiDetail.hash = ai.hash;
+						return aiDetail;
+					});
+		}), function(item){return item;});
+
+	}).then(function(aiList) {
+		var summaries = [];
+		aiList.forEach(function(ai) {
+			summaries.push({
+				name: ai.name,
+				wins: ai.wins ? ai.wins : 0,
+				hash: ai.hash,
+				losses: ai.losses ? ai.losses : 0,
+				avgTime: ai.avgMoveTime ? ai.avgMoveTime : 'N/A'
+			});
+		});
 		res.render("ai/ai_list", {
 			title: "AIs",
-			ais: parsedResults
+			ais: summaries
 		});
 	}).catch(function(err) {
-		logger.log("Error retrieving AI list", err, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
+		logger.log("Error retrieving AI list", err.toString(), logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 		res.status(500).send("Error retrieving AI list: " + err);
 	});
 };
@@ -205,7 +227,7 @@ var getAIListJSON = function(req, res) {
 		var parsedResults = results.map(function(result){return JSON.parse(result);});
 		res.send(parsedResults);
 	}).catch(function(err) {
-		logger.log("Error retrieving AI list JSON", err, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
+		logger.log("Error retrieving AI list JSON", err.toString(), logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 		res.status(500).send("Error retrieving AI list: " + err);
 	});
 };
