@@ -10,9 +10,13 @@
 	</div>
 	<br>
 	Match History:
-	<ul>
+	<table style="width:100%; margin: auto;">
 		{{#each games}}
-			<li>{{this}}</a></li>
+			<tr>
+				<td>{{result}}</td>
+				<td>{{dateString}}</td>
+				<td>{{opponents}}</td>
+			</tr>
 		{{/each}}
-	</ul>
+	</table>
 </div>

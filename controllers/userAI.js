@@ -191,15 +191,14 @@ var getAIList = function(req, res) {
 	rwClient.getAIList().then(function(results) {
 		var parsedResults = results.map(function(result){return JSON.parse(result);});
 
-		return Promise.each(parsedResults.map(function(ai, idx) {
-			console.log("ai:", ai);
+		return Promise.all(parsedResults.map(function(ai, idx) {
 			return rwClient.getAI(ai.hash)
 					.then(function(aiDetail) {
 						aiDetail = JSON.parse(aiDetail);
 						aiDetail.hash = ai.hash;
 						return aiDetail;
 					});
-		}), function(item){return item;});
+		}));
 
 	}).then(function(aiList) {
 		var summaries = [];
@@ -244,10 +243,50 @@ var getAIDetail = function(req, res) {
 			dataToRender.avgTime = info.avgMoveTime ? info.avgMoveTime : 'N/A';
 			dataToRender.wins = info.wins ? info.wins : 0;
 			dataToRender.losses = info.losses ? info.losses : 0;
+
 			// get Game history
 			return rwClient.getAIGames(sha);
-		}).then(function(result) {
-			dataToRender.games = result;
+		}).then(function(games) { // result = [<gameId>]
+
+			return Promise.all(games.map(function(game) {
+				return rwClient.getGameInfo(game)
+					.then(function(gameInfo) { // gameInfo = <string>
+						return JSON.parse(gameInfo);
+					});
+				}));
+
+		}).then(function(gamesInfo) { // gamesInfo = array of serialized gameInfo's
+
+			 return Promise.all(gamesInfo.map(function(gameInfo) {
+
+				var otherPlayers = gameInfo.players.filter(function(pid){return pid!=sha;});
+
+				// for each gameInfo, we want the names of all the opponents
+
+				return Promise.all(otherPlayers.map(function(pid) {
+						return rwClient.getAI(pid);
+					})).then(function(aiDetails) {
+					//console.log(aiDetails);
+					// render the time
+					var d = new Date(parseInt(gameInfo.timestamp));
+					var dateString = (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
+					dateString += " " + d.toTimeString().split(' ')[0];
+
+					var aiNames = aiDetails.map(function(detail) {
+						detail = JSON.parse(detail);
+						return detail.name;
+					});
+
+					return {
+						result: gameInfo.players[gameInfo.winner] == sha ? "won" : "lost",
+						opponents: aiNames,
+						dateString: dateString,
+					};
+				});
+			}));
+			
+		}).then(function(matches) {
+			dataToRender.games = matches;
 			res.render("ai/ai_detail", dataToRender);
 		}).catch(function(err) {
 			logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
