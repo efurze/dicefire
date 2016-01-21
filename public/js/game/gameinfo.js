@@ -17,8 +17,10 @@ var Gameinfo = function(playerInfos, winnerId) {
 	}
 
 	self.players = [];
+	self.playerMap = {}; // playerId to array index
 	playerInfos.forEach(function(info, idx) {
 		self.players.push(JSON.parse(JSON.stringify(info)));
+		self.playerMap[info.id] = idx;
 	});
 };
 
@@ -41,14 +43,39 @@ Gameinfo.prototype.setTimestamp = function(time) {
 };
 
 Gameinfo.prototype.getTimestamp = function() {
-	return this.timestamp;
+	return this.timestamp; 
+};
+
+Gameinfo.prototype.setEloPreRating = function(playerId, rating) {
+	var idx = this.playerMap[playerId];
+	if (typeof idx == 'number' && this.players[idx]) {
+		this.players[idx].eloPreRating = rating;
+	}
+};
+
+Gameinfo.prototype.setEloPostRating = function(playerId, rating) {
+	var idx = this.playerMap[playerId];
+	if (typeof idx == 'number' && this.players[idx]) {
+		this.players[idx].eloPostRating = rating;
+	}
+};
+
+Gameinfo.prototype.getEloPostRating = function(playerId) {
+	var idx = this.playerMap[playerId];
+	if (typeof idx == 'number' && this.players[idx]) {
+		return this.players[idx].eloPostRating;
+	}
+};
+
+Gameinfo.prototype.hasBeenRated = function() {
+	return (this.players[0] && this.players[0].eloPostRating);
 };
 
 Gameinfo.prototype.serialize = function() {
 	var ret = {
 		winner: this.winner,
 		players: JSON.parse(JSON.stringify(this.players)),
-		timestamp: this.timestamp ? this.timestamp : 0
+		timestamp: this.timestamp ? this.timestamp : 0,
 	};
 	return ret;
 };
