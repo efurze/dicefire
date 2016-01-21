@@ -91,14 +91,15 @@ var SocketHandler = function() {
 				return;	
 			}
 			
-			
-			var resultsData = new Gameinfo(aiNames).serialize();
 			// randomize the player order
-			resultsData.players = Globals.shuffleArray(resultsData.players);
+			aiNames = Globals.shuffleArray(aiNames);
+			
+			var resultsData = new Gameinfo(aiNames.map(function(name) { return {id: name}; }));
+			
 			logger.log("Create game", resultsData, logger.LEVEL.INFO, logger.CHANNEL.SERVER, gameId);
 			// add a timestamp
-			resultsData.timestamp = Date.now();
-			rwClient.saveGameInfo(gameId, JSON.stringify(resultsData))
+			resultsData.setTimestamp(Date.now());
+			rwClient.saveGameInfo(gameId, resultsData)
 				.then(function(reply) {
 					setupGame(gameId);
 					rwClient.addActiveGame(gameId, games[gameId].createTime())
@@ -155,20 +156,20 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 	
 	// get the game info
 	rwClient.getGameInfo(gameId)
-		.then(function(data) {
+		.then(function(gameInfo) {
 			try {
-				if (!data) {
+				if (!gameInfo) {
 					logger.log("No game file found", logger.LEVEL.WARN, logger.CHANNEL.SERVER, gameId);
 				} else {
-					logger.log("Got game info: " + data, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
-					self._gameInfo = JSON.parse(data);
+					logger.log("Got game info: " + gameInfo, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
+					self._gameInfo = gameInfo;
 				
 					self._engine = new Engine();
 					self._engine.setKeepHistory(false);
 				
 					//initialize the AIs
 					var players = [];
-					self._gameInfo['players'].forEach(function(playerName, id) {
+					self._gameInfo.players().forEach(function(playerName, id) {
 						if (playerName === "human") {
 							self._expectedHumans ++;
 							var pw = new PlayerWrapper(id, self._engine);
@@ -375,8 +376,8 @@ GameServer.prototype.startGame = function() {
 GameServer.prototype.gameOver = function(winner, id) {
 	var self = this;
 	logger.log('gameOver', winner, id, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
-	var results = new Gameinfo(self._players.map(function(p){return p.getName();}), id);
-	rwClient.recordGame(self._gameId, results.serialize(), "LADDER")
+	var results = new Gameinfo(self._players.map(function(p) { return {id: p.getName()}; }), id);
+	rwClient.recordGame(self._gameId, results, "LADDER")
 		.then(function() {
 			SocketHandler.removeGame(self._gameId);
 		})

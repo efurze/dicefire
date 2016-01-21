@@ -109,7 +109,7 @@ GameRunner.prototype.gameDone = function(winner, id) {
 		}
 	}
 
-	var results = new Gameinfo(self._players.map(function(p){return p.hash;}), id, times);
+	var results = new Gameinfo(self._players.map(function(p, idx){return {id: p.hash, avgTime: times[idx]};}), id);
 	
 	self._uploader.uploadGameInfo(self._gameId, results.toString(), "ARENA");
 	

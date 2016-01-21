@@ -7,6 +7,7 @@ var SHA1 = new Hashes.SHA1();
 var fs = require('fs');
 var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
 var rwClient = require('../lib/redisWrapper.js');
+var Gameinfo = require('../public/js/game/gameinfo');
 var logger = require('../lib/logger.js');
 
 /*
@@ -249,17 +250,18 @@ var getAIDetail = function(req, res) {
 		}).then(function(games) { // result = [<gameId>]
 
 			return Promise.all(games.map(function(game) {
-				return rwClient.getGameInfo(game)
-					.then(function(gameInfo) { // gameInfo = <string>
-						return JSON.parse(gameInfo);
-					});
-				}));
+				return rwClient.getGameInfo(game);
+			}));
 
-		}).then(function(gamesInfo) { // gamesInfo = array of serialized gameInfo's
+		}).then(function(gamesInfo) { // gamesInfo = array of Gameinfos
 
-			 return Promise.all(gamesInfo.map(function(gameInfo) {
+			return Promise.all(gamesInfo.map(function(gameInfo) {
 
-				var otherPlayers = gameInfo.players.filter(function(pid){return pid!=sha;});
+				if (!gameInfo) {
+					return;
+				}
+
+				var otherPlayers = gameInfo.players().filter(function(pid){return pid!=sha;});
 
 				// for each gameInfo, we want the names of all the opponents
 
@@ -268,7 +270,7 @@ var getAIDetail = function(req, res) {
 					})).then(function(aiDetails) {
 					//console.log(aiDetails);
 					// render the time
-					var d = new Date(parseInt(gameInfo.timestamp));
+					var d = new Date(parseInt(gameInfo.getTimestamp()));
 					var dateString = (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
 					dateString += " " + d.toTimeString().split(' ')[0];
 
@@ -278,7 +280,7 @@ var getAIDetail = function(req, res) {
 					});
 
 					return {
-						result: gameInfo.players[gameInfo.winner] == sha ? "won" : "lost",
+						result: gameInfo.players()[gameInfo.winner()] == sha ? "won" : "lost",
 						opponents: aiNames,
 						dateString: dateString,
 					};
@@ -289,8 +291,8 @@ var getAIDetail = function(req, res) {
 			dataToRender.games = matches;
 			res.render("ai/ai_detail", dataToRender);
 		}).catch(function(err) {
-			logger.log("Error retrieving AI detail", err, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
-			res.status(500).send("Error retrieving AI detail: " + err);
+			logger.log("Error retrieving AI detail", err.toString(), logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
+			res.status(500).send("Error retrieving AI detail: " + err.toString());
 		});
 };
 

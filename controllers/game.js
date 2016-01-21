@@ -4,6 +4,7 @@ var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var uuid = require('node-uuid');
 
+var Gameinfo = require('../public/js/game/gameinfo');
 var Plyer = require('../public/js/ai/plyer.js');
 var Greedy = require('../public/js/ai/greedy.js');
 var Aggressive = require('../public/js/ai/aggressive.js');
@@ -151,12 +152,14 @@ module.exports = {
 		var results = req.body;
 		logger.log("UploadGameInfo", "ratingCode:", ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 		
-		rwClient.recordGame(gameId, results, ratingCode)
+		var gameInfo = Gameinfo.deserialize(results);
+
+		rwClient.recordGame(gameId, gameInfo, ratingCode)
 		 	.then(function() {
 				res.status(200).send("{}");
 			}).catch(function(err) {
 				if (err) {
-					logger.log("ERROR saving gameInfo", err, logger.LEVEL.ERROR, logger.CHANNEL.GAME, gameId);
+					logger.log("ERROR saving gameInfo", err.toString(), logger.LEVEL.ERROR, logger.CHANNEL.GAME, gameId);
 					res.status(500).send(err);
 				}
 			});

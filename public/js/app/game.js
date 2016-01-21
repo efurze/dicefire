@@ -89,7 +89,7 @@ $(function() {
 			
 			if (Globals.uploadGame && Game._gameId) {
 				// upload game info to server
-				var info = new Gameinfo(playerNames);
+				var info = new Gameinfo(playerNames.map(function(name){return {id: name};}));
 				Game._uploader.uploadGameInfo(Game._gameId, info.toString());
 			
 				// upload map data to server
