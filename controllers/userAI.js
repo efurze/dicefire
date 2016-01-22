@@ -213,6 +213,15 @@ var getAIList = function(req, res) {
 				avgTime: ai.avgMoveTime ? ai.avgMoveTime : 'N/A'
 			});
 		});
+		summaries.sort(function(a,b) {
+			if (a.eloRating < b.eloRating) {
+				return 1;
+			} else if (a.eloRating > b.eloRating) {
+				return -1;
+			} else {
+				return 0;
+			}
+		})
 		res.render("ai/ai_list", {
 			title: "AIs",
 			ais: summaries
