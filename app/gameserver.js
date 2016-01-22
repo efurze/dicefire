@@ -251,7 +251,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 	var id = self.reconnect(sock);
 	
 	if (id < 0) {
-		for (var i=0; i < self._gameInfo.getPlayers.length; i++) {
+		for (var i=0; i < self._gameInfo.getPlayers().length; i++) {
 			if (self._players[i].isHuman() && !self._players[i].hasSocket()) {
 				logger.log('Assigning socket ' + sock.id() + ' to player ' + i, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 				self._currentHumans ++; 
