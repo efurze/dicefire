@@ -206,6 +206,7 @@ var getAIList = function(req, res) {
 		aiList.forEach(function(ai) {
 			summaries.push({
 				name: ai.name,
+				eloRating: ai.eloRating,
 				wins: ai.wins ? ai.wins : 0,
 				hash: ai.hash,
 				losses: ai.losses ? ai.losses : 0,
@@ -240,6 +241,7 @@ var getAIDetail = function(req, res) {
 			// append AI summary
 			var info = JSON.parse(result);
 			dataToRender.name = info.name;
+			dataToRender.eloRating = info.eloRating;
 			dataToRender.aiHash = sha;
 			dataToRender.avgTime = info.avgMoveTime ? info.avgMoveTime : 'N/A';
 			dataToRender.wins = info.wins ? info.wins : 0;
@@ -261,7 +263,7 @@ var getAIDetail = function(req, res) {
 					return;
 				}
 
-				var otherPlayers = gameInfo.players().filter(function(pid){return pid!=sha;});
+				var otherPlayers = gameInfo.getPlayers().filter(function(pid){return pid!=sha;});
 
 				// for each gameInfo, we want the names of all the opponents
 
@@ -280,7 +282,8 @@ var getAIDetail = function(req, res) {
 					});
 
 					return {
-						result: gameInfo.players()[gameInfo.winner()] == sha ? "won" : "lost",
+						eloGameRating: gameInfo.getEloPostRating(sha),
+						result: gameInfo.getPlayers()[gameInfo.getWinner()] == sha ? "won" : "lost",
 						opponents: aiNames,
 						dateString: dateString,
 					};

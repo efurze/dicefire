@@ -82,7 +82,9 @@ Gameinfo.prototype.serialize = function() {
 
 Gameinfo.deserialize = function(obj) {
 	if (obj && obj.players) {
-		return new Gameinfo(obj.players, obj.winner);
+		var gi = new Gameinfo(obj.players, obj.winner);
+		gi.timestamp = obj.timestamp ? obj.timestamp : 0;
+		return gi;
 	} else {
 		return null;
 	}

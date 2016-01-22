@@ -169,7 +169,7 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 				
 					//initialize the AIs
 					var players = [];
-					self._gameInfo.players().forEach(function(playerName, id) {
+					self._gameInfo.getPlayers().forEach(function(playerName, id) {
 						if (playerName === "human") {
 							self._expectedHumans ++;
 							var pw = new PlayerWrapper(id, self._engine);
@@ -251,7 +251,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 	var id = self.reconnect(sock);
 	
 	if (id < 0) {
-		for (var i=0; i < self._gameInfo.players.length; i++) {
+		for (var i=0; i < self._gameInfo.getPlayers.length; i++) {
 			if (self._players[i].isHuman() && !self._players[i].hasSocket()) {
 				logger.log('Assigning socket ' + sock.id() + ' to player ' + i, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 				self._currentHumans ++; 

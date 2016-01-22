@@ -86,10 +86,10 @@ $(function() {
 				Globals.debug("Initializing renderer", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				$('#game').css('display', 'block');
 				Client._rendererInitialized = true;
-				Renderer.init(Client._gameInfo.players.length,
+				Renderer.init(Client._gameInfo.getPlayers().length,
 							Client._canvas,
 							Client._map,
-							Client._gameInfo.players);
+							Client._gameInfo.getPlayers());
 				Client.processNextState();
 			}
 		},
@@ -317,7 +317,7 @@ $(function() {
 			if (success) {
 				if (!Client._gameInfo) {
 					Globals.debug("Got gameInfo from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-					Client._gameInfo = JSON.parse(data);
+					Client._gameInfo = Gameinfo.fromString(data);
 
 					if (Client._map) {
 						Client.initRenderer();

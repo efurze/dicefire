@@ -3,6 +3,8 @@
 	<br>
 	Record: {{wins}} - {{losses}}
 	<br>
+	Rating: {{eloRating}}
+	<br>
 	Avg time spent per move: {{avgTime}} ms
 	<br>
 	<div id="play_div">
@@ -13,8 +15,9 @@
 	<table style="width:100%; margin: auto;">
 		{{#each games}}
 			<tr>
-				<td>{{result}}</td>
 				<td>{{dateString}}</td>
+				<td>{{eloGameRating}}</td>
+				<td>{{result}}</td>
 				<td>{{opponents}}</td>
 			</tr>
 		{{/each}}

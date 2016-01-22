@@ -3,12 +3,14 @@
 	<table style="width:50%">
 			<tr>
 				<th>Name</th>
+				<th>Rating</th>
 				<th>Record</th>
 				<th>Time per Move</th>
 			</tr>
 		{{#each ais}}
 			<tr>
 				<td><a href="/ai/{{hash}}">{{name}}</a></td> 
+				<td>{{eloRating}}</td>
 				<td>{{wins}}-{{losses}}</td>
 				<td>{{avgTime}} ms</td>
 			</tr>
