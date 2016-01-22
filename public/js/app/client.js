@@ -317,7 +317,7 @@ $(function() {
 			if (success) {
 				if (!Client._gameInfo) {
 					Globals.debug("Got gameInfo from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-					Client._gameInfo = Gameinfo.fromString(data);
+					Client._gameInfo = Gameinfo.deserialize(data);
 
 					if (Client._map) {
 						Client.initRenderer();
