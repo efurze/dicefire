@@ -1,5 +1,30 @@
 //'use strict'
 $(function(){	
+
+
+	var rotWorldMatrix;
+
+	// Rotate an object around an arbitrary axis in world space       
+	function rotateAroundWorldAxis(object, axis, radians) {
+	    rotWorldMatrix = new THREE.Matrix4();
+	    rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+	    rotWorldMatrix.multiply(object.matrix);        // pre-multiply
+	    object.matrix = rotWorldMatrix;
+	    object.rotation.setFromRotationMatrix(object.matrix);
+	};
+
+	function rotateAroundXAxis(object, radians) {
+		rotateAroundWorldAxis(object, new THREE.Vector3(1,0,0), radians);
+	};
+
+	function rotateAroundYAxis(object, radians) {
+		rotateAroundWorldAxis(object, new THREE.Vector3(0,1,0), radians);
+	};
+
+	function rotateAroundZAxis(object, radians) {
+		rotateAroundWorldAxis(object, new THREE.Vector3(0,0,1), radians);
+	};
+
 	window.GLrenderer = {
 		
 		X: 0, Y:1, Z: 2,
@@ -21,6 +46,8 @@ $(function(){
 		],
 		_angleY: 0,
 		_angleX: 0,
+		_angleZ: -Math.PI/2,
+		_radius: 75,
 		_mouseDown: false,
 		_lastMouseX: -1,
 		_lastMouseY: -1,
@@ -42,8 +69,11 @@ $(function(){
 				var canvas = $('#c')[0];
 				this._scene = new THREE.Scene();
 				this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 0.1, 1000 );
-				this._camera.position.z = 50;
-				this._camera.position.y = -50;
+				this._camera.up = new THREE.Vector3(0,0,1);
+				this._camera.position.z = 35;
+
+				this._camera.position.y = this._radius * Math.sin(this._angleZ);
+				this._camera.position.x = this._radius * Math.cos(this._angleZ);
 				this._camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 				var ambientLight = new THREE.AmbientLight( 0x000000 );
@@ -70,29 +100,62 @@ $(function(){
 				$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
 				$(this._renderer.domElement).on('mouseup', GLrenderer.mouseUp.bind(this));
 				$(this._renderer.domElement).on('mousemove', GLrenderer.mouseMove.bind(this));
+				$(document).keydown(GLrenderer.keyDown.bind(this));
 
-
-
-
-
-				var renderstuff = function() {
-					requestAnimationFrame(renderstuff);
-
-//					cylinder.rotation.x = self._angleX;
-					self._camera.position.y = -50 - (self._angleY * 0.1);
-					self._camera.position.x = (self._angleX * 0.1);
-//					cylinder.rotation.x += 0.1;
-//					cylinder.rotation.y += 0.1;
-//					cylinder.position.y += 0.01;
-					self._renderer.render(self._scene, self._camera);
-
-				}
-
-				renderstuff();
-
+				this.update();
 			}
 		},
+
+		update: function() {
+			requestAnimationFrame(this.renderEngineCallback.bind(this));
+		},
+
+		renderEngineCallback: function() {
+			var self = this;
+			self._renderer.render(self._scene, self._camera);
+		},
 		
+		keyDown: function(event) {
+			// 37 = left
+			// 38 = up
+			// 39 = right
+			// 40 = down
+			// 87 = w
+			// 83 = s
+			// 65 = a
+			// 68 = d
+			//console.log(event.which);
+			var self = this;
+			switch (event.which) {
+				case 37: // left
+					self._angleZ -= .1;
+					//self._camera.position.x -= 5;
+					break;
+				case 38: // up
+					//self._camera.position.y += 5;
+					self._radius -= 10;
+					self._radius = Math.max(self._radius, 0);
+					break;
+				case 39: // right
+					self._angleZ += .1;
+					//self._camera.position.x += 5;
+					break;
+				case 40: // down
+					//self._camera.position.y -= 5;
+					self._radius += 10;
+					break;
+			}
+
+			self._camera.position.y = self._radius * Math.sin(self._angleZ);
+			self._camera.position.x = self._radius * Math.cos(self._angleZ);		
+			self._camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+			if (self._lastState) {
+					self.render(self._lastState);
+			}
+			self.update();
+		},
+
 		mouseMove: function(event) {
 			if (this._mouseDown) {
 				if (this._lastMouseX < 0 || this._lastMouseY < 0) {
@@ -103,8 +166,9 @@ $(function(){
 				
 				var dx = this._lastMouseX - event.offsetX;
 				var dy = this._lastMouseY - event.offsetY;
-				this._angleX += dx;
-				this._angleY += dy;
+				//this._angleX += dx;
+				this._angleZ += dx/1000;
+				//this._angleY += dy;
 				console.log("LSKDJFS");
 
 				/*
@@ -235,7 +299,7 @@ $(function(){
 	            color = hex._color;
 	        }
 			
-			var geometry = new THREE.CylinderGeometry( 0.9, 0.9, country.numDice() * 4, 6);
+			var geometry = new THREE.CylinderGeometry( 0.9, 0.9, /*country.numDice() * 4*/1, 6);
 			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
 			var cylinder = new THREE.Mesh(geometry, material);
 			cylinder.rotation.x = Math.PI / 2;
