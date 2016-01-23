@@ -25,7 +25,7 @@ var stateHash = {
 		if (isFighting) {
 			hash += 1;
 		}
-		if (countryId == Renderer2d._mouseOverCountry) {
+		if (countryId == Renderer2d._highlightedCountry) {
 			hash += 2;
 		}
 		if (countryId == Renderer2d._selectedCountry) {
@@ -46,8 +46,9 @@ var Renderer2d = {
 		_context: null,
 		_initialized: false,
 		_isAnimatingAttack: false,
-		_mouseOverCountry: -1,
+		_highlightedCountry: -1,
 		_selectedCountry: -1,
+		_mouseOverCountry: -1,
 		_names: [],
 		_map: null,
 		_playerColors: [
@@ -60,37 +61,63 @@ var Renderer2d = {
 			"brown",
 			"tan"
 		],
+		_listener: null,
 		
-		init: function(playerCount, canvas, map, playerNames) {
+		init: function(playerCount, canvas, map, playerNames, listener) {
 			if (!Globals.suppress_ui) {
+				Globals.ASSERT(Globals.implements(listener, Renderer.iface));
 				this._canvas = canvas;
 				if (!canvas) {
 					return;
 				}
 				this._context = this._canvas.getContext('2d');
 				this.clearAll();
-	            this._context.lineJoin = "straight";
+				this._context.lineJoin = "straight";
 				this._map = map;
 				this._names = playerNames || [];
-				
+				this._listener = listener;
+
 				this._setupRollDivs();
 				this._setupPlayerDivs(playerCount);
+
+				$(canvas).mousemove(this.mouseMove.bind(this));
+    		$(canvas).mouseleave(this.mouseLeave.bind(this));
+				
 				this._initialized = true;
 			}			
 		},
-		
+
 		clearAll: function() {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
-			}
-			
+			}							
 			Globals.debug("clearAll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 			this._context.clearRect(0,0,2000,2000);
 			stateHash.reset();
 		},
+
+		mouseMove: function(event) {
+			if (this._listener) {
+				var hex = this._map.fromMousePos(event.offsetX, event.offsetY);
+				var countryId = hex ? hex.countryId() : -1;
+				if (countryId != this._mouseOverCountry) {
+					this._mouseOverCountry = countryId;
+					this._listener.mouseOverCountry(countryId);
+				}
+			}
+		},
+
+		mouseLeave: function(event) {
+			if (this._listener) {
+				if (this._mouseOverCountry != -1) {
+					this._mouseOverCountry = -1;
+					this._listener.mouseOverCountry(-1);	
+				}
+			}
+		},
 		
 		setMouseOverCountry: function(id) {
-			Renderer2d._mouseOverCountry = id;
+			Renderer2d._highlightedCountry = id;
 		},
 		
 		setSelectedCountry: function(id) {
@@ -505,7 +532,7 @@ var Renderer2d = {
 			var self = this;
 			if (isFighting) {
 				return "black";
-			} else if (countryId == self._mouseOverCountry) {
+			} else if (countryId == self._highlightedCountry) {
 		        if (countryId == self._selectedCountry) {
 		            return "gray";
 		        } else {

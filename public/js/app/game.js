@@ -88,7 +88,7 @@ $(function() {
 			playerCode.forEach(function(pc) {
 				playerNames.push(pc.getName());
 			});
-			Renderer.init2d(playerNames.length, Game._canvas, Game._engine.map(), playerNames);
+			
 			
 			
 			if (Globals.uploadGame && Game._gameId) {
@@ -103,6 +103,7 @@ $(function() {
 			Game._engine.registerStateCallback(Game.engineUpdate);
 			Game._controller = new Gamecontroller(Game._engine);
 			Game._mapController = new Mapcontroller(0, Game._canvas, Game._engine.map(), Game.mapConInterface);
+			Renderer.init2d(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game._mapController);
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));

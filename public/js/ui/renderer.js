@@ -2,20 +2,19 @@ $(function(){
 
 	window.Renderer = {
 
+		iface: {
+			mouseOverCountry: function(id){}
+		},
+
 		_renderer: null,
 
-		init2d: function(playerCount, canvas, map, playerNames) {
+		init2d: function(playerCount, canvas, map, playerNames, iface) {
 			this._renderer = Renderer2d;
-			this._renderer.init(playerCount, canvas, map, playerNames);
+			this._renderer.init(playerCount, canvas, map, playerNames, iface);
 		},
 
 		init3d: function() {},
 
-
-
-		clearAll: function() {
-			this._renderer.clearAll();
-		},
 		
 		setMouseOverCountry: function(id) {
 			this._renderer.setMouseOverCountry(id);

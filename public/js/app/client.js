@@ -84,12 +84,14 @@ $(function() {
 		initRenderer: function() {
 			if (!Client._rendererInitialized) {
 				Globals.debug("Initializing renderer", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+				Globals.ASSERT(Client._mapController);
 				$('#game').css('display', 'block');
 				Client._rendererInitialized = true;
 				Renderer.init2d(Client._gameInfo.getPlayers().length,
 							Client._canvas,
 							Client._map,
-							Client._gameInfo.getPlayers());
+							Client._gameInfo.getPlayers(),
+							Client._mapController);
 				Client.processNextState();
 			}
 		},
@@ -296,13 +298,13 @@ $(function() {
 						Client._players[id].start();
 					});
 
-					if (Client._gameInfo) {
-						Client.initRenderer();
-					}
-
 					if (Client._playerId >= 0 && !Client._mapController) {
 						// create map controller
 						Client._mapController = new Mapcontroller(Client._playerId, Client._canvas, Client._map, Client.MapControllerInterface);
+					}
+
+					if (Client._gameInfo) {
+						Client.initRenderer();
 					}
 
 				} else {
