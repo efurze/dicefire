@@ -51,15 +51,21 @@ $(function(){
 		_mouseDown: false,
 		_lastMouseX: -1,
 		_lastMouseY: -1,
-		_lastState: null,
 		_lastRenderTime: -1,
 		_mapGraph: [],  // array of Hexagon
 		_diceGraph: [], // array of Cube
 		_cylinders: {},
+		_canvasHeight: 0,
+		_canvasWidth: 0,
+		mouseVector: null,
+		raycaster: null,
 		
 		init: function(playerCount, canvas, map, playerNames) {
 			var self = this;
 			if (!Globals.suppress_ui) {
+
+				this.mouseVector = new THREE.Vector2();
+				this.raycaster = new THREE.Raycaster();
 
 				$('#canvas_div').css('display', 'block');
 				this._map = map;
@@ -99,9 +105,13 @@ $(function(){
 				$('#canvas_div').append(this._renderer.domElement);
 				$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
 				$(this._renderer.domElement).on('mouseup', GLrenderer.mouseUp.bind(this));
-				$('#canvas_div').on('mousemove', GLrenderer.mouseMove.bind(this));
-				$('#canvas_div').on('mouseleave', GLrenderer.mouseLeave.bind(this));
+				$(this._renderer.domElement).on('mousemove', GLrenderer.mouseMove.bind(this));
+				$(this._renderer.domElement).on('mouseleave', GLrenderer.mouseLeave.bind(this));
 				$(document).keydown(GLrenderer.keyDown.bind(this));
+
+				var canvas = $(this._renderer.domElement);
+				this._canvasWidth = canvas.width();
+				this._canvasHeight = canvas.height();
 
 				this.update();
 			}
@@ -162,8 +172,8 @@ $(function(){
 			//self._camera.position.x = self._radius * Math.cos(self._angleZ);		
 			//self._camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-			if (self._lastState) {
-					self.render(self._lastState);
+			if (self._lastRenderedState) {
+					self.render(self._lastRenderedState);
 			}
 			self.update();
 		},
@@ -173,6 +183,39 @@ $(function(){
 			this._lastMouseY = -1;
 		},
 
+
+		mouseMove: function(event) {
+			var self = this;
+			
+			self.mouseVector.x = 2 * (event.offsetX / self._canvasWidth) - 1;
+			self.mouseVector.y = 1 - 2 * ( event.offsetY / self._canvasHeight );
+
+			var hexes = [];
+			Object.keys(self._cylinders).forEach(function(id) {
+				hexes.push(self._cylinders[id]);
+			});
+
+			self.raycaster.setFromCamera(self.mouseVector, self._camera);
+			var intersects = self.raycaster.intersectObjects(hexes);
+
+			var cylinder = intersects[0];
+			if (cylinder) {
+				var hex = self._map.getHex(cylinder.object.userData.hexId);
+				if (hex) {
+					var countryId = hex.countryId();
+					if (self._mouseOverCountry != countryId) {
+						var old = self._mouseOverCountry;
+						self._mouseOverCountry = countryId;
+						self._drawCountry(old, self._lastRenderedState);
+						self._drawCountry(countryId, self._lastRenderedState);
+					}
+				}
+			}
+
+			self.render(self._lastRenderedState);
+			self.update();
+		},
+		/*
 		mouseMove: function(event) {
 			//if (this._mouseDown) {
 				if (this._lastMouseX < 0 || this._lastMouseY < 0) {
@@ -189,30 +232,30 @@ $(function(){
 				//this._camera.rotateOnAxis(new THREE.Vector3(1,0,0), dy/400);
 
 
-				/*
+				
 				//this._angleX += dx;
-				this._angleZ += dx/1000;
+				//this._angleZ += dx/1000;
 				//this._angleY += dy;
-				console.log("LSKDJFS");
+				//console.log("LSKDJFS");
+				//
+				//this._lastMouseX = event.offsetX;
+				//this._lastMouseY = event.offsetY;
+				//
+				//this._angleY += dx/300;
+				//this._angleX -= dy/300;
 				
-				this._lastMouseX = event.offsetX;
-				this._lastMouseY = event.offsetY;
-				
-				this._angleY += dx/300;
-				this._angleX -= dy/300;
-				*/
 
 				this._lastMouseX = event.offsetX;
 				this._lastMouseY = event.offsetY;
 
-				if (this._lastState) {
-					this.render(this._lastState);
+				if (this._lastRenderedState) {
+					this.render(this._lastRenderedState);
 				}
 
 				this.update();
 			//}
 		},
-		
+		*/
 		mouseDown: function() {
 			this._mouseDown = true;
 		},
@@ -229,7 +272,8 @@ $(function(){
 			}
 			Globals.debug("render()", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
-			if (/*state == this._lastRenderedState &&*/ Date.now() - this._lastRenderTime < 20000000000) { //200) {
+			if (state == this._lastRenderedState 
+				&& Date.now() - this._lastRenderTime < 200) {
 				return;
 			} 
 			
@@ -238,7 +282,7 @@ $(function(){
 			}
 			
 			this._renderMap();
-			this._lastState = state;
+			this._lastRenderedState = state;
 			this._lastRenderTime = Date.now();
 		},
 		
@@ -335,6 +379,7 @@ $(function(){
 			cylinder.rotation.y = Math.PI / 6;
 			cylinder.position.x = ( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
 			cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
+			cylinder.userData['hexId'] = hex.id();
 			this._scene.add(cylinder);
 	    self._cylinders[hex.id()] = cylinder;
 
