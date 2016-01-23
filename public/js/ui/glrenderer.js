@@ -47,6 +47,7 @@ $(function(){
 		_angleY: 0,
 		_angleX: 0,
 		_angleZ: -Math.PI/2,
+		_elevation: 35,
 		_radius: 75,
 		_mouseDown: false,
 		_lastMouseX: -1,
@@ -76,7 +77,7 @@ $(function(){
 				this._scene = new THREE.Scene();
 				this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 0.1, 1000 );
 				this._camera.up = new THREE.Vector3(0,0,1);
-				this._camera.position.z = 35;
+				this._camera.position.z = this._elevation;
 
 				this._camera.position.y = this._radius * Math.sin(this._angleZ);
 				this._camera.position.x = this._radius * Math.cos(this._angleZ);
@@ -127,50 +128,43 @@ $(function(){
 		},
 		
 		keyDown: function(event) {
-			// 37 = left
-			// 38 = up
-			// 39 = right
-			// 40 = down
-			// 87 = w
-			// 83 = s
-			// 65 = a
-			// 68 = d
-			//console.log(event.which);
+			
 			var self = this;
+
 			switch (event.which) {
 				case 37: // left
 				case 65: // a
-					//self._angleZ -= .1;
+					self._angleZ -= .1;
 					//self._camera.position.x -= 5;
-					self._camera.translateOnAxis(new THREE.Vector3(1,0,0), -5);
+					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), -5);
 					break;
 				case 38: // up
 				case 87: // w
+					self._elevation += 5;
 					//self._camera.position.y += 5;
-
-					self._camera.translateOnAxis(new THREE.Vector3(0,0,1), -5);
-
+					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), -5);
 					//self._radius -= 10;
 					//self._radius = Math.max(self._radius, 0);
 					break;
 				case 39: // right
 				case 68: // d
-					//self._angleZ += .1;
+					self._angleZ += .1;
 					//self._camera.position.x += 5;
-					self._camera.translateOnAxis(new THREE.Vector3(1,0,0), 5);
+					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), 5);
 					break;
 				case 40: // down
 				case 83: // s
+					self._elevation -= 5;
 					//self._camera.position.y -= 5;
-					self._camera.translateOnAxis(new THREE.Vector3(0,0,1), 5);
+					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), 5);
 					//self._radius += 10;
 					break;
 			}
 
-			self._camera.position.z = 35;
-			//self._camera.position.y = self._radius * Math.sin(self._angleZ);
-			//self._camera.position.x = self._radius * Math.cos(self._angleZ);		
-			//self._camera.lookAt(new THREE.Vector3(0, 0, 0));
+			self._camera.position.z = self._elevation;
+			self._camera.position.y = self._radius * Math.sin(self._angleZ);
+			self._camera.position.x = self._radius * Math.cos(self._angleZ);		
+			self._camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 			if (self._lastRenderedState) {
 					self.render(self._lastRenderedState);
@@ -206,8 +200,8 @@ $(function(){
 					if (self._mouseOverCountry != countryId) {
 						var old = self._mouseOverCountry;
 						self._mouseOverCountry = countryId;
-						self._drawCountry(old, self._lastRenderedState);
-						self._drawCountry(countryId, self._lastRenderedState);
+						self._colorCountry(old, self._lastRenderedState, false);
+						self._colorCountry(countryId, self._lastRenderedState, false);
 					}
 				}
 			}
@@ -215,47 +209,7 @@ $(function(){
 			self.render(self._lastRenderedState);
 			self.update();
 		},
-		/*
-		mouseMove: function(event) {
-			//if (this._mouseDown) {
-				if (this._lastMouseX < 0 || this._lastMouseY < 0) {
-					this._lastMouseX = event.offsetX;
-					this._lastMouseY = event.offsetY;
-					return;
-				}
-				
-				var dx = this._lastMouseX - event.offsetX;
-				var dy = this._lastMouseY - event.offsetY;
 
-				rotateAroundZAxis(this._camera, dx/400);
-				//this._camera.rotateOnAxis(new THREE.Vector3(0,1,0), dx/400);
-				//this._camera.rotateOnAxis(new THREE.Vector3(1,0,0), dy/400);
-
-
-				
-				//this._angleX += dx;
-				//this._angleZ += dx/1000;
-				//this._angleY += dy;
-				//console.log("LSKDJFS");
-				//
-				//this._lastMouseX = event.offsetX;
-				//this._lastMouseY = event.offsetY;
-				//
-				//this._angleY += dx/300;
-				//this._angleX -= dy/300;
-				
-
-				this._lastMouseX = event.offsetX;
-				this._lastMouseY = event.offsetY;
-
-				if (this._lastRenderedState) {
-					this.render(this._lastRenderedState);
-				}
-
-				this.update();
-			//}
-		},
-		*/
 		mouseDown: function() {
 			this._mouseDown = true;
 		},
@@ -316,11 +270,10 @@ $(function(){
 			var self = this;
 			isFighting = isFighting || false;
 			
-	        self._map.countryHexes(countryId).forEach(function(hexId) {
-	            self._drawHex(self._map.getHex(hexId), state, isFighting);
-	        });
+      self._map.countryHexes(countryId).forEach(function(hexId) {
+          self._drawHex(self._map.getHex(hexId), state, isFighting);
+      });
 	
-
 			self._drawDice(countryId, state);
 	        //self._renderNumberBox(countryId, state);
 
@@ -336,29 +289,16 @@ $(function(){
 
 		_renderMap: function() {
 			var self = this;
-
-
 			self._mapGraph.forEach(function(hex) {
-
 				// By convention the first vertex is the center.
 				var vertices = hex.points();
-
-		
-
 				var color = hex.color();
 				var hexColors = [];
 				for (var i = 0; i < vertices.length; i++) {
 					hexColors = hexColors.concat(color);
 				}
-
-//				console.log(vertices);
-//				console.log(hexColors);
-
-
 			});
-			
 			//self._renderDice();
-			
 		},
 		
 		_drawHex: function(hex, state, isFighting) {
@@ -368,9 +308,9 @@ $(function(){
 			var start = hex.upperLeft();
 			
 			var color = country ? GLrenderer._countryDrawColor(countryId, state.countryOwner(countryId), isFighting) : "white";
-	        if (hex._color) {
-	            color = hex._color;
-	        }
+        if (hex._color) {
+            color = hex._color;
+      }
 			
 			var geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
 			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
@@ -388,6 +328,19 @@ $(function(){
 			self._mapGraph.push(h);
 		},
 		
+		_colorCountry: function(countryId, state, isFighting) {
+			var self = this;
+			isFighting = isFighting || false;
+			var country = self._map.getCountry(countryId);	
+			var color = country ? GLrenderer._countryDrawColor(countryId, state.countryOwner(countryId), isFighting) : "white";
+
+			self._map.countryHexes(countryId).forEach(function(hexId) {
+          var cylinder = self._cylinders[hexId];
+          //self._scene.remove(cylinder);
+          cylinder.material.color = new THREE.Color(color);
+          //self._scene.add(cylinder);
+      });
+		},
 		
 		_drawDice: function (countryId, state) {
 			if (Globals.suppress_ui || !this._initialized) {
