@@ -86,7 +86,7 @@ $(function() {
 				Globals.debug("Initializing renderer", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				$('#game').css('display', 'block');
 				Client._rendererInitialized = true;
-				Renderer.init(Client._gameInfo.getPlayers().length,
+				Renderer.init2d(Client._gameInfo.getPlayers().length,
 							Client._canvas,
 							Client._map,
 							Client._gameInfo.getPlayers());

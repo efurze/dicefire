@@ -88,7 +88,7 @@ $(function() {
 			playerCode.forEach(function(pc) {
 				playerNames.push(pc.getName());
 			});
-			Renderer.init(playerNames.length, Game._canvas, Game._engine.map(), playerNames);
+			Renderer.init2d(playerNames.length, Game._canvas, Game._engine.map(), playerNames);
 			
 			
 			if (Globals.uploadGame && Game._gameId) {
