@@ -1,30 +1,6 @@
 //'use strict'
 $(function(){	
 
-
-	var rotWorldMatrix;
-
-	// Rotate an object around an arbitrary axis in world space       
-	function rotateAroundWorldAxis(object, axis, radians) {
-	    rotWorldMatrix = new THREE.Matrix4();
-	    rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
-	    rotWorldMatrix.multiply(object.matrix);        // pre-multiply
-	    object.matrix = rotWorldMatrix;
-	    object.rotation.setFromRotationMatrix(object.matrix);
-	};
-
-	function rotateAroundXAxis(object, radians) {
-		rotateAroundWorldAxis(object, new THREE.Vector3(1,0,0), radians);
-	};
-
-	function rotateAroundYAxis(object, radians) {
-		rotateAroundWorldAxis(object, new THREE.Vector3(0,1,0), radians);
-	};
-
-	function rotateAroundZAxis(object, radians) {
-		rotateAroundWorldAxis(object, new THREE.Vector3(0,0,1), radians);
-	};
-
 	window.GLrenderer = {
 		
 		X: 0, Y:1, Z: 2,
@@ -91,9 +67,10 @@ $(function(){
 				lights[1] = new THREE.PointLight( 0xffffff, 1, 0 );
 				lights[2] = new THREE.PointLight( 0xffffff, 1, 0 );
 				
-				lights[0].position.set( 0, 200, 0 );
-				lights[1].position.set( 100, 200, 100 );
-				lights[2].position.set( -100, -200, -100 );
+				lights[0].position.set( 0, 200, 200 );
+				lights[0].position.set( 0, -200, 200 );
+				lights[1].position.set( 200, 0, 200 );
+				lights[2].position.set( -200, 0, 200 );
 
 				this._scene.add( lights[0] );
 				this._scene.add( lights[1] );
