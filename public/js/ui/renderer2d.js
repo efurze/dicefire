@@ -2,43 +2,7 @@
 
 
 
-var stateHash = {
-	
-	_players: {},
-	_countries: {},
-	
-	reset: function() {
-		this._players = {};
-		this._countries = {};
-	},
-	
-	hasPlayerChanged: function(playerId, hash) {
-		if (this._players[playerId] === hash) {
-			return false;
-		} else {
-			this._players[playerId] = hash;
-			return true;
-		}
-	},
-	
-	hasCountryChanged: function(countryId, isFighting, hash) {
-		if (isFighting) {
-			hash += 1;
-		}
-		if (countryId == Renderer2d._highlightedCountry) {
-			hash += 2;
-		}
-		if (countryId == Renderer2d._selectedCountry) {
-			hash += 4;
-		}
-		if (this._countries[countryId] === hash) {
-			return false;
-		} else {
-			this._countries[countryId] = hash;
-			return true;
-		}
-	}
-};
+
 
 var Renderer2d = {
 		
@@ -93,7 +57,7 @@ var Renderer2d = {
 			}							
 			Globals.debug("clearAll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 			this._context.clearRect(0,0,2000,2000);
-			stateHash.reset();
+			this.stateHash.reset();
 		},
 
 		mouseMove: function(event) {
@@ -274,7 +238,7 @@ var Renderer2d = {
 	        	return;
 			}
 			
-			if (!stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
+			if (!this.stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
 				return;
 			}
 			
@@ -611,5 +575,43 @@ var Renderer2d = {
                 "<div id='righttotal' class='roll-total'>35</div>"                    
             );
 
-        }
+        },
+
+        stateHash: {
+	
+			_players: {},
+			_countries: {},
+			
+			reset: function() {
+				this._players = {};
+				this._countries = {};
+			},
+			
+			hasPlayerChanged: function(playerId, hash) {
+				if (this._players[playerId] === hash) {
+					return false;
+				} else {
+					this._players[playerId] = hash;
+					return true;
+				}
+			},
+			
+			hasCountryChanged: function(countryId, isFighting, hash) {
+				if (isFighting) {
+					hash += 1;
+				}
+				if (countryId == Renderer2d._highlightedCountry) {
+					hash += 2;
+				}
+				if (countryId == Renderer2d._selectedCountry) {
+					hash += 4;
+				}
+				if (this._countries[countryId] === hash) {
+					return false;
+				} else {
+					this._countries[countryId] = hash;
+					return true;
+				}
+			}
+		}
 	};

@@ -1,43 +1,6 @@
 //'use strict'
 
 
-var stateHash = {
-	
-	_players: {},
-	_countries: {},
-	
-	reset: function() {
-		this._players = {};
-		this._countries = {};
-	},
-	
-	hasPlayerChanged: function(playerId, hash) {
-		if (this._players[playerId] === hash) {
-			return false;
-		} else {
-			this._players[playerId] = hash;
-			return true;
-		}
-	},
-	
-	hasCountryChanged: function(countryId, isFighting, hash) {
-		if (isFighting) {
-			hash += 1;
-		}
-		if (countryId == GLrenderer._highlightedCountry) {
-			hash += 2;
-		}
-		if (countryId == GLrenderer._selectedCountry) {
-			hash += 4;
-		}
-		if (this._countries[countryId] === hash) {
-			return false;
-		} else {
-			this._countries[countryId] = hash;
-			return true;
-		}
-	}
-};
 
 var GLrenderer = {
 		
@@ -258,7 +221,7 @@ var GLrenderer = {
 			var self = this;
 			isFighting = isFighting || false;
 			
-			if (!stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
+			if (!self.stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
 				return;
 			}
 			
@@ -520,6 +483,44 @@ var GLrenderer = {
 			self._renderer.render(self._scene, self._camera);
 			console.timeEnd("RenderTime");
 		},
+
+		stateHash: {
+	
+			_players: {},
+			_countries: {},
+			
+			reset: function() {
+				this._players = {};
+				this._countries = {};
+			},
+			
+			hasPlayerChanged: function(playerId, hash) {
+				if (this._players[playerId] === hash) {
+					return false;
+				} else {
+					this._players[playerId] = hash;
+					return true;
+				}
+			},
+			
+			hasCountryChanged: function(countryId, isFighting, hash) {
+				if (isFighting) {
+					hash += 1;
+				}
+				if (countryId == GLrenderer._highlightedCountry) {
+					hash += 2;
+				}
+				if (countryId == GLrenderer._selectedCountry) {
+					hash += 4;
+				}
+				if (this._countries[countryId] === hash) {
+					return false;
+				} else {
+					this._countries[countryId] = hash;
+					return true;
+				}
+			}
+		}
 
 	};
 	
