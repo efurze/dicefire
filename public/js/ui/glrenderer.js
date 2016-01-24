@@ -318,10 +318,7 @@ var GLrenderer = {
 			var country = self._map.getCountry(countryId);	
 			var start = hex.upperLeft();
 			
-			var color = country ? GLrenderer._countryDrawColor(countryId, state.countryOwner(countryId), isFighting) : "white";
-        if (hex._color) {
-            color = hex._color;
-      }
+			var color = self._playerColors[state.countryOwner(countryId)];
 			
 			var geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
 			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
@@ -332,25 +329,11 @@ var GLrenderer = {
 			cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
 			cylinder.userData['hexId'] = hex.id();
 			this._scene.add(cylinder);
-	    self._cylinders[hex.id()] = cylinder;
+			self._cylinders[hex.id()] = cylinder;
 
 			var h = new Hexagon(start, color);
 			h.setEdges(hex.countryEdgeDirections(), isFighting ? "red" : "black");
 			self._mapGraph.push(h);
-		},
-		
-		_colorCountry: function(countryId, state, isFighting) {
-			var self = this;
-			isFighting = isFighting || false;
-			var country = self._map.getCountry(countryId);	
-			var color = country ? GLrenderer._countryDrawColor(countryId, state.countryOwner(countryId), isFighting) : "white";
-
-			self._map.countryHexes(countryId).forEach(function(hexId) {
-          var cylinder = self._cylinders[hexId];
-          //self._scene.remove(cylinder);
-          cylinder.material.color = new THREE.Color(color);
-          //self._scene.add(cylinder);
-      });
 		},
 		
 		_drawDice: function (countryId, state) {
@@ -452,9 +435,38 @@ var GLrenderer = {
 			}
 			
 		},
+
+		_colorCountry: function(countryId, state, isFighting) {
+			var self = this;
+			isFighting = isFighting || false;
+			var country = self._map.getCountry(countryId);	
+			var color = new THREE.Color(self._playerColors[country.ownerId()]);
+			var hsl = color.getHSL();
+
+			if (isFighting) {
+				color = new THREE.Color("rgb(50, 50, 50)");
+			} else if (countryId == self._highlightedCountry) {
+				if (countryId == self._selectedCountry) {
+					color = new THREE.Color("rgb(75, 75, 75)");
+				} else {
+					color = new THREE.Color("rgb(100, 100, 100)");
+				}
+			} else {
+				if (countryId == self._selectedCountry) {
+					color = new THREE.Color("rgb(50, 50, 50)");
+				} 
+			}
+
+
+			self._map.countryHexes(countryId).forEach(function(hexId) {
+				var cylinder = self._cylinders[hexId];
+				cylinder.material.color = color;
+			});
+		},
 		
 		_countryDrawColor: function(countryId, ownerId, isFighting) {
 			var self = this;
+			var baseColor = self._playerColors[ownerId];
 			if (isFighting) {
 				return "black";//[0.0, 0.0, 0.0, 1.0];
 			} else if (countryId == self._highlightedCountry) {
