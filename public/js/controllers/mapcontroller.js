@@ -37,6 +37,7 @@ $(function(){
 		Globals.debug("SetMouseOverCountry", country, Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		this._mouseOverCountry = country;
 		Renderer.setMouseOverCountry(country ? country.id() : -1);
+		this._iface.update();
 	};
 	Mapcontroller.prototype.selectedCountry = function() { 
 		return this._selectedCountry; 
@@ -45,6 +46,7 @@ $(function(){
 		Globals.debug("setSelectedCountry", country, Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		this._selectedCountry = country;
 		Renderer.setSelectedCountry(country ? country.id() : -1);
+		this._iface.update();
 	};
 	
 	Mapcontroller.prototype.isCountryClickable = function(country) {

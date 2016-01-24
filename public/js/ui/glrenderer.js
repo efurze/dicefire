@@ -1,4 +1,44 @@
 //'use strict'
+
+
+var stateHash = {
+	
+	_players: {},
+	_countries: {},
+	
+	reset: function() {
+		this._players = {};
+		this._countries = {};
+	},
+	
+	hasPlayerChanged: function(playerId, hash) {
+		if (this._players[playerId] === hash) {
+			return false;
+		} else {
+			this._players[playerId] = hash;
+			return true;
+		}
+	},
+	
+	hasCountryChanged: function(countryId, isFighting, hash) {
+		if (isFighting) {
+			hash += 1;
+		}
+		if (countryId == GLrenderer._highlightedCountry) {
+			hash += 2;
+		}
+		if (countryId == GLrenderer._selectedCountry) {
+			hash += 4;
+		}
+		if (this._countries[countryId] === hash) {
+			return false;
+		} else {
+			this._countries[countryId] = hash;
+			return true;
+		}
+	}
+};
+
 var GLrenderer = {
 		
 		X: 0, Y:1, Z: 2,
@@ -28,7 +68,6 @@ var GLrenderer = {
 		_lastMouseX: -1,
 		_lastMouseY: -1,
 		_lastRenderTime: -1,
-		_mapGraph: [],  // array of Hexagon
 		_diceGraph: [], // array of Cube
 		_cylinders: {},
 		_canvasHeight: 0,
@@ -36,6 +75,7 @@ var GLrenderer = {
 		mouseVector: null,
 		raycaster: null,
 		_listener: null,
+		_dirty: false,
 		
 		init: function(playerCount, canvas, map, playerNames, listener) {
 			var self = this;
@@ -91,164 +131,110 @@ var GLrenderer = {
 				var canvas = $(this._renderer.domElement);
 				this._canvasWidth = canvas.width();
 				this._canvasHeight = canvas.height();
-
-				this.update();
+				this._renderLoop();
 			}
 		},
 
 		setMouseOverCountry: function(id) {
 			var old = this._highlightedCountry
 			this._highlightedCountry = id;
-
-			if (old != -1) {
-				this._colorCountry(old, this._lastRenderedState, false);
-			}
-			if (id != -1) {
-				this._colorCountry(id, this._lastRenderedState, false);
-			}
-
-			this.render(this._lastRenderedState);
-			this.update();
 		},
 		
 		setSelectedCountry: function(id) {
 			var old = this._selectedCountry;
 			this._selectedCountry = id;
-			
-			if (old != -1) {
-				this._colorCountry(old, this._lastRenderedState, false);
-			}
-			if (id != -1) {
-				this._colorCountry(id, this._lastRenderedState, false);
-			}
-
-			this.render(this._lastRenderedState);
-			this.update();
 		},
 
-		update: function() {
-			requestAnimationFrame(this.renderEngineCallback.bind(this));
-		},
-
-		renderEngineCallback: function() {
-			var self = this;
-			self._renderer.render(self._scene, self._camera);
-		},
-		
-		keyDown: function(event) {
-			
-			var self = this;
-
-			switch (event.which) {
-				case 37: // left
-				case 65: // a
-					self._angleZ -= .1;
-					//self._camera.position.x -= 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), -5);
-					break;
-				case 38: // up
-				case 87: // w
-					self._elevation += 5;
-					//self._camera.position.y += 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), -5);
-					//self._radius -= 10;
-					//self._radius = Math.max(self._radius, 0);
-					break;
-				case 39: // right
-				case 68: // d
-					self._angleZ += .1;
-					//self._camera.position.x += 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), 5);
-					break;
-				case 40: // down
-				case 83: // s
-					self._elevation -= 5;
-					//self._camera.position.y -= 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), 5);
-					//self._radius += 10;
-					break;
-			}
-
-			self._camera.position.z = self._elevation;
-			self._camera.position.y = self._radius * Math.sin(self._angleZ);
-			self._camera.position.x = self._radius * Math.cos(self._angleZ);		
-			self._camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-			if (self._lastRenderedState) {
-					self.render(self._lastRenderedState);
-			}
-			self.update();
-		},
-
-		mouseLeave: function(event) {
-			this._lastMouseX = -1;
-			this._lastMouseY = -1;
-			if (this._listener && this._mouseOverCountry != -1) {
-				this._mouseOverCountry = -1;
-				this._listener.mouseOverCountry(-1);
-			}
-		},
-
-
-		mouseMove: function(event) {
-			var self = this;
-			
-			self.mouseVector.x = 2 * (event.offsetX / self._canvasWidth) - 1;
-			self.mouseVector.y = 1 - 2 * ( event.offsetY / self._canvasHeight );
-
-			var hexes = [];
-			Object.keys(self._cylinders).forEach(function(id) {
-				hexes.push(self._cylinders[id]);
-			});
-
-			self.raycaster.setFromCamera(self.mouseVector, self._camera);
-			var intersects = self.raycaster.intersectObjects(hexes);
-
-			var cylinder = intersects[0];
-			var countryId = -1;
-			if (cylinder) {
-				var hex = self._map.getHex(cylinder.object.userData.hexId);
-				if (hex) {
-					countryId = hex.countryId();
-				}
-			}
-
-			if (self._mouseOverCountry != countryId) {
-				self._mouseOverCountry = countryId;
-				if (self._listener) {
-					self._listener.mouseOverCountry(countryId);
-				}
-			}
-		},
-
-		mouseDown: function() {
-			this._mouseDown = true;
-		},
-		
-		mouseUp: function() {
-			this._mouseDown = false;
-			this._lastMouseX = -1;
-			this._lastMouseY = -1;
-		},
 		
 		render: function(state, attackCallback) {
-			if (Globals.suppress_ui || !this._initialized) {
+			if (this._isAnimatingAttack) {
+				Globals.debug("attack animating, render aborted", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 				return;
 			}
 			Globals.debug("render()", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
-			if (state == this._lastRenderedState 
-				&& Date.now() - this._lastRenderTime < 200) {
-				return;
-			} 
 			
-			if (state != this._lastRenderedState) {
-				this._drawMap(state);
+			this._drawMap(state);
+			
+			if (state.attack()) {
+				this._renderAttack(state, attackCallback);
 			}
-			
-			this._renderMap();
+
 			this._lastRenderedState = state;
 			this._lastRenderTime = Date.now();
+			this.update();
+		},
+
+		/*
+			@callback: function done(){}
+		*/
+		_renderAttack: function(state, callback) {
+		
+			if (Globals.suppress_ui || !this._initialized || !state || this._isAnimatingAttack) {
+				return;
+			}
+
+			Globals.debug("renderAttack", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+			
+			var self = this;
+			var fromCountry = state.attack().fromCountryId;
+			var fromPlayerId = state.countryOwner(fromCountry);
+			
+			var toCountry = state.attack().toCountryId;
+			
+			var fromNumDice = state.attack().fromRollArray.length;
+			var toNumDice = state.attack().toRollArray.length;
+			
+			var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; }, 0);
+	    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; }, 0);
+			
+	
+			// roll attacker
+			Globals.debug("render attacker", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+			self._drawCountry(fromCountry, state, true);
+			self.update();
+	        
+			if (Globals.play_sounds && callback) {
+	            $.playSound('/sounds/2_dice_throw_on_table');
+	        }
+
+	        self._isAnimatingAttack = true;
+
+			var timeout = callback ? Globals.timeout : 0;
+	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
+	
+			function renderAttackRoll(state) {
+				Globals.debug("render defender", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+				self._drawCountry(toCountry, state, true);
+				self.update();
+	            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
+			}
+			
+			function renderDefendRoll(state) {
+				Globals.debug("render defense roll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+	            window.setTimeout(function(){renderVerdict(state);}, timeout);
+			}
+			
+			function renderVerdict(state) {
+				Globals.debug("render verdict", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+	        	if (fromRoll > toRoll) {
+					// attacker wins
+	                if (Globals.play_sounds && callback) {
+	                    $.playSound('/sounds/clink_sound');
+	                }
+	        	} else {
+					// defender wins
+	                if (Globals.play_sounds && callback) {                
+	                    $.playSound('/sounds/wood_hit_brick_1');               
+	                }
+	            }
+
+	            self._isAnimatingAttack = false;
+				if (callback) {
+					callback(state.attack());
+				}
+			}
+		
 		},
 		
 		
@@ -256,11 +242,10 @@ var GLrenderer = {
 			if (Globals.suppress_ui || !this._initialized) {
 				return;
 			}
-			Globals.debug("renderMap", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+			Globals.debug("drawMap", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
 			
 			var self = this;
-			self._mapGraph = [];
 			self._diceGraph = [];
 			state.countryIds().forEach(function(countryId) {
 				self._drawCountry(countryId, state)
@@ -271,46 +256,24 @@ var GLrenderer = {
 			if (Globals.suppress_ui || !this._initialized) {
 	        	return;
 			}
-			
-			//if (!stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
-			//	return;
-			//}
-			
-			Globals.debug("drawCountry " + countryId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-			
+
 			var self = this;
 			isFighting = isFighting || false;
 			
-      self._map.countryHexes(countryId).forEach(function(hexId) {
-          self._drawHex(self._map.getHex(hexId), state, isFighting);
-      });
+			if (!stateHash.hasCountryChanged(countryId, isFighting, state.countryHash(countryId))) {
+				return;
+			}
+			
+			Globals.debug("drawCountry " + countryId, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+			
+			self._map.countryHexes(countryId).forEach(function(hexId) {
+				self._drawHex(self._map.getHex(hexId), state, isFighting);
+			});
 	
-			self._drawDice(countryId, state);
-	        //self._renderNumberBox(countryId, state);
+			//self._drawDice(countryId, state);
 
-			// number boxes can overlap between adjacent countries. Redraw
-			// them for all our neighbors
-			//self._map.adjacentCountries(countryId).forEach(function(neighborId) {
-			//	self._renderNumberBox(neighborId, state);
-			//});
 		},
 		
-
-
-
-		_renderMap: function() {
-			var self = this;
-			self._mapGraph.forEach(function(hex) {
-				// By convention the first vertex is the center.
-				var vertices = hex.points();
-				var color = hex.color();
-				var hexColors = [];
-				for (var i = 0; i < vertices.length; i++) {
-					hexColors = hexColors.concat(color);
-				}
-			});
-			//self._renderDice();
-		},
 		
 		_drawHex: function(hex, state, isFighting) {
 			var self = this;					
@@ -318,22 +281,48 @@ var GLrenderer = {
 			var country = self._map.getCountry(countryId);	
 			var start = hex.upperLeft();
 			
-			var color = self._playerColors[state.countryOwner(countryId)];
 			
-			var geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
-			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
-			var cylinder = new THREE.Mesh(geometry, material);
-			cylinder.rotation.x = Math.PI / 2;
-			cylinder.rotation.y = Math.PI / 6;
-			cylinder.position.x = ( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
-			cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
-			cylinder.userData['hexId'] = hex.id();
-			this._scene.add(cylinder);
-			self._cylinders[hex.id()] = cylinder;
+			
+			if (!self._cylinders[hex.id()]) {
+				var color = self._playerColors[state.countryOwner(countryId)];
+				var geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
+				var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
+				var cylinder = new THREE.Mesh(geometry, material);
+				cylinder.rotation.x = Math.PI / 2;
+				cylinder.rotation.y = Math.PI / 6;
+				cylinder.position.x = ( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
+				cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
+				cylinder.userData['hexId'] = hex.id();
+				this._scene.add(cylinder);
+				self._cylinders[hex.id()] = cylinder;
+			} else {
+				self._cylinders[hex.id()].material.color = self._getCountryColor(countryId, state, isFighting);
+			}
 
-			var h = new Hexagon(start, color);
-			h.setEdges(hex.countryEdgeDirections(), isFighting ? "red" : "black");
-			self._mapGraph.push(h);
+			
+		},
+
+		_getCountryColor: function(countryId, state, isFighting) {
+			var self = this;
+			isFighting = isFighting || false;
+			var country = self._map.getCountry(countryId);	
+			var color = new THREE.Color(self._playerColors[country.ownerId()]);
+
+			if (isFighting) {
+				color = new THREE.Color("rgb(50, 50, 50)");
+			} else if (countryId == self._highlightedCountry) {
+				if (countryId == self._selectedCountry) {
+					color = new THREE.Color("rgb(75, 75, 75)");
+				} else {
+					color = new THREE.Color("rgb(100, 100, 100)");
+				}
+			} else {
+				if (countryId == self._selectedCountry) {
+					color = new THREE.Color("rgb(50, 50, 50)");
+				} 
+			}
+
+			return color;
 		},
 		
 		_drawDice: function (countryId, state) {
@@ -420,174 +409,125 @@ var GLrenderer = {
 			
 		},
 		
-		_renderNumberBox: function (countryId, state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
+
+		mouseLeave: function(event) {
+			this._lastMouseX = -1;
+			this._lastMouseY = -1;
+			if (this._listener && this._mouseOverCountry != -1) {
+				this._mouseOverCountry = -1;
+				this._listener.mouseOverCountry(-1);
 			}
-			
-			var self = this;
-			var ctr = self._map.countryCenter(countryId);
-			
-			// Draw the number box.
-	        var boxSize = 10;
-			if (Globals.showCountryIds) {
-				boxSize = 12;
-			}
-			
 		},
 
-		_colorCountry: function(countryId, state, isFighting) {
+
+		mouseMove: function(event) {
 			var self = this;
-			isFighting = isFighting || false;
-			var country = self._map.getCountry(countryId);	
-			var color = new THREE.Color(self._playerColors[country.ownerId()]);
-			var hsl = color.getHSL();
+			
+			self.mouseVector.x = 2 * (event.offsetX / self._canvasWidth) - 1;
+			self.mouseVector.y = 1 - 2 * ( event.offsetY / self._canvasHeight );
 
-			if (isFighting) {
-				color = new THREE.Color("rgb(50, 50, 50)");
-			} else if (countryId == self._highlightedCountry) {
-				if (countryId == self._selectedCountry) {
-					color = new THREE.Color("rgb(75, 75, 75)");
-				} else {
-					color = new THREE.Color("rgb(100, 100, 100)");
-				}
-			} else {
-				if (countryId == self._selectedCountry) {
-					color = new THREE.Color("rgb(50, 50, 50)");
-				} 
-			}
-
-
-			self._map.countryHexes(countryId).forEach(function(hexId) {
-				var cylinder = self._cylinders[hexId];
-				cylinder.material.color = color;
+			var hexes = [];
+			Object.keys(self._cylinders).forEach(function(id) {
+				hexes.push(self._cylinders[id]);
 			});
-		},
-		
-		_countryDrawColor: function(countryId, ownerId, isFighting) {
-			var self = this;
-			var baseColor = self._playerColors[ownerId];
-			if (isFighting) {
-				return "black";//[0.0, 0.0, 0.0, 1.0];
-			} else if (countryId == self._highlightedCountry) {
-				if (countryId == self._selectedCountry) {
-					return "gray";//[0.5, 0.5, 0.5, 1.0];
-				} else {
-					return "white";//return [0.7, 0.7, 0.7, 1.0];
-				}
-			} else {
-				if (countryId == self._selectedCountry) {
-					return "black";//return [0.0, 0.0, 0.0, 1.0];
-				} else {
-					return self._playerColors[ownerId];
+
+			self.raycaster.setFromCamera(self.mouseVector, self._camera);
+			var intersects = self.raycaster.intersectObjects(hexes);
+
+			var cylinder = intersects[0];
+			var countryId = -1;
+			if (cylinder) {
+				var hex = self._map.getHex(cylinder.object.userData.hexId);
+				if (hex) {
+					countryId = hex.countryId();
 				}
 			}
-		}
+
+			if (self._mouseOverCountry != countryId) {
+				self._mouseOverCountry = countryId;
+				if (self._listener) {
+					self._listener.mouseOverCountry(countryId);
+				}
+			}
+		},
+
+		mouseDown: function() {
+			this._mouseDown = true;
+		},
 		
+		mouseUp: function() {
+			this._mouseDown = false;
+			this._lastMouseX = -1;
+			this._lastMouseY = -1;
+		},
+		
+		keyDown: function(event) {
+			
+			var self = this;
 
-	};
-	
-	
-	
-	
-	var Hexagon = function(upperLeft, color) {
-		this._color = color;
-		this._points = [];
-		this._edges = [];
-		this._edgeColor = "black";
+			switch (event.which) {
+				case 37: // left
+				case 65: // a
+					self._angleZ -= .1;
+					//self._camera.position.x -= 5;
+					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), -5);
+					break;
+				case 38: // up
+				case 87: // w
+					self._elevation += 5;
+					//self._camera.position.y += 5;
+					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), -5);
+					//self._radius -= 10;
+					//self._radius = Math.max(self._radius, 0);
+					break;
+				case 39: // right
+				case 68: // d
+					self._angleZ += .1;
+					//self._camera.position.x += 5;
+					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), 5);
+					break;
+				case 40: // down
+				case 83: // s
+					self._elevation -= 5;
+					//self._camera.position.y -= 5;
+					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), 5);
+					//self._radius += 10;
+					break;
+			}
 
-        // Compute the center
-	    this._center = upperLeft;
-	    this._center[0] += Math.floor(Hex.EDGE_LENGTH / 2);
-	    this._center[1] += Math.floor(Hex.HEIGHT / 2);
+			self._camera.position.z = self._elevation;
+			self._camera.position.y = self._radius * Math.sin(self._angleZ);
+			self._camera.position.x = self._radius * Math.cos(self._angleZ);		
+			self._camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-	    // Make the points array
-		this._points = [
-			this._center[0],																				this._center[1],												0,
-			upperLeft[0] - Hex.FUDGE, 															upperLeft[1] - Hex.FUDGE, 							0,
-			upperLeft[0] + Hex.EDGE_LENGTH + Hex.FUDGE, 						upperLeft[1] - Hex.FUDGE, 							0,
-			upperLeft[0] + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, 	upperLeft[1] + Hex.HEIGHT / 2, 					0,
-			upperLeft[0] + Hex.EDGE_LENGTH + Hex.FUDGE, 						upperLeft[1] + Hex.HEIGHT + Hex.FUDGE, 	0,
-			upperLeft[0] - Hex.EDGE_LENGTH / 2, 										upperLeft[1] + Hex.HEIGHT / 2, 					0,
-			upperLeft[0] - Hex.FUDGE, 															upperLeft[1] - Hex.FUDGE, 							0
-		];
+			if (self._lastRenderedState) {
+					self.render(self._lastRenderedState);
+			}
+		},
 
-		for (var i = 0; i < 7; i++) {
-			this._points[i * 3] /= 100;
-			this._points[i * 3] -= Math.floor(this._points[i * 3]);
-			this._points[i * 3 + 1] /= 100;
-			this._points[i * 3 + 1] -= Math.floor(this._points[i * 3 + 1]);
+		update: function() {
+			Globals.debug("update()", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			this._dirty = true;	
+		},
+
+		renderEngineCallback: function() {
+			//Globals.debug("renderEngineCallback", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+			var self = this;	
+			console.time("RenderTime");
+			self._renderer.render(self._scene, self._camera);
+			console.timeEnd("RenderTime");
+		},
+
+		_renderLoop: function() {
+			var self = this;
+			if (self._dirty) {
+				self._dirty = false;
+				requestAnimationFrame(self.renderEngineCallback.bind(self));
+			}
+			window.setTimeout(function() {
+				self._renderLoop();
+			}, 20);
 		}
 	};
-
-	Hexagon.prototype.color = function() {
-		return this._color;
-	};
-
-	Hexagon.prototype.points = function() {
-		return this._points;
-	};
-
-	Hexagon.prototype.setEdges = function(edges, color) {
-		this._edges = edges;
-		this._edgeColor = color;
-	};
-
-	Hexagon.prototype.getEdges = function() {
-		return this._edges;
-	};
-
-	Hexagon.prototype.edgeColor = function() {
-		return this._edgeColor;
-	};
-
-
-	Hexagon.prototype.center = function() {
-		return this._center;
-	};
-
-
-
-	var Cube = function(ctr, color) {
-		this._color = color;
-		this._center = ctr;
-
-		var r = Cube.EDGE_LENGTH / 2;
-
-		this._bottomFace = [
-			[ctr[0] - r, ctr[1] - r, 0], // upper left
-			[ctr[0] + r, ctr[1] - r, 0], // upper right
-			[ctr[0] + r, ctr[1] + r, 0],
-			[ctr[0] - r, ctr[1] + r, 0],
-		];
-
-		this._topFace = [
-			[ctr[0] - r, ctr[1] - r, Cube.EDGE_LENGTH], // upper left (northwest)
-			[ctr[0] + r, ctr[1] - r, Cube.EDGE_LENGTH], // upper right (northeast)
-			[ctr[0] + r, ctr[1] + r, Cube.EDGE_LENGTH], // lower right (southeast)
-			[ctr[0] - r, ctr[1] + r, Cube.EDGE_LENGTH], // lower left (southwest)
-		];
-
-	};
-
-	Cube.EDGE_LENGTH = Hex.EDGE_LENGTH * 1.5;
-	Cube.EDGE_COLOR = "black";
-	// North == -y direction
-	// East == +x direction
-	Cube.FACE = {'NORTH':0, 'EAST':1, 'SOUTH':2, 'WEST':3};
-	Cube.CORNER = {'NORTHWEST': 0, 'NORTHEAST':1, 'SOUTHEAST':2, 'SOUTHWEST':3};
-
-	Cube.prototype.bottomFace = function() {
-		return JSON.parse(JSON.stringify(this._bottomFace));
-	};
-
-	Cube.prototype.topFace = function() {
-		return JSON.parse(JSON.stringify(this._topFace));
-	};
-
-	Cube.prototype.color = function() {
-		return this._color;
-	};
-
-
+	
 
