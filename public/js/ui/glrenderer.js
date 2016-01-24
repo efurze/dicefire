@@ -244,27 +244,27 @@ var GLrenderer = {
 			
 			
 			
-			if (self._cylinders[hex.id()]) {
-				self._scene.remove(self._cylinders[hex.id()]);
-			} 
-
-			var color = self._playerColors[state.countryOwner(countryId)];
-			var geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
-			var material = new THREE.MeshPhongMaterial({color: self._playerColors[state.countryOwner(countryId)], 
-														specular: 0x111111, 
-														shininess: 30, 
-														shading: THREE.FlatShading});
-			var cylinder = new THREE.Mesh(geometry, material);
-			cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
-			cylinder.rotation.x = Math.PI / 2;
-			cylinder.rotation.y = Math.PI / 6;
-			cylinder.position.x = ( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
-			cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
-			cylinder.userData['hexId'] = hex.id();
-			self._scene.add(cylinder);
-			self._cylinders[hex.id()] = cylinder;
-
-			
+			if (!self._cylinders[hex.id()]) {
+				var color = self._playerColors[state.countryOwner(countryId)];
+				var geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
+				var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
+				var cylinder = new THREE.Mesh(geometry, material);
+				cylinder.rotation.x = Math.PI / 2;
+				cylinder.rotation.y = Math.PI / 6;
+				cylinder.position.x = ( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
+				cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
+				cylinder.userData['hexId'] = hex.id();
+				self._scene.add(cylinder);
+				self._cylinders[hex.id()] = cylinder;
+			} else {
+				var cylinder = self._cylinders[hex.id()];
+				self._scene.remove(cylinder);
+				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
+				cylinder.geometry.dispose();
+				cylinder.geometry = null;
+				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
+				self._scene.add(cylinder);
+			}
 		},
 
 		_getCountryColor: function(countryId, state, isFighting) {
