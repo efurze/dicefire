@@ -25,6 +25,7 @@ var GLrenderer = {
 		_angleY: 0,
 		_angleX: 0,
 		_angleZ: -Math.PI/2,
+		_theta: Math.PI/4,
 		_elevation: 35,
 		_radius: 75,
 		_mouseDown: false,
@@ -56,10 +57,12 @@ var GLrenderer = {
 				this._scene = new THREE.Scene();
 				this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 0.1, 1000 );
 				this._camera.up = new THREE.Vector3(0,0,1);
-				this._camera.position.z = this._elevation;
 
-				this._camera.position.y = this._radius * Math.sin(this._angleZ);
-				this._camera.position.x = this._radius * Math.cos(this._angleZ);
+				var xyProjection = self._radius * Math.cos(self._theta);
+				self._camera.position.z = self._radius * Math.sin(self._theta);
+				self._camera.position.y = xyProjection * Math.sin(self._angleZ);
+				self._camera.position.x = xyProjection * Math.cos(self._angleZ);
+
 				this._camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 				var ambientLight = new THREE.AmbientLight( 0x000000 );
@@ -439,11 +442,9 @@ var GLrenderer = {
 					break;
 				case 38: // up
 				case 87: // w
-					self._elevation += 5;
-					//self._camera.position.y += 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), -5);
-					//self._radius -= 10;
-					//self._radius = Math.max(self._radius, 0);
+					//self._elevation += 5;
+					self._theta += .1;
+					self._theta = Math.min(self._theta, Math.PI/2);
 					break;
 				case 39: // right
 				case 68: // d
@@ -453,16 +454,24 @@ var GLrenderer = {
 					break;
 				case 40: // down
 				case 83: // s
-					self._elevation -= 5;
-					//self._camera.position.y -= 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(0,0,1), 5);
-					//self._radius += 10;
+					//self._elevation -= 5;
+					self._theta -= .1;
+					self._theta = Math.max(self._theta, 0);
+					break;
+				case 81: // q
+					self._radius -= 5;
+					self._radius = Math.max(self._radius, 0);
+					break;
+				case 90: // z
+					self._radius += 5;
 					break;
 			}
 
-			self._camera.position.z = self._elevation;
-			self._camera.position.y = self._radius * Math.sin(self._angleZ);
-			self._camera.position.x = self._radius * Math.cos(self._angleZ);		
+			var xyProjection = self._radius * Math.cos(self._theta);
+			self._camera.position.z = self._radius * Math.sin(self._theta);
+			self._camera.position.y = xyProjection * Math.sin(self._angleZ);
+			self._camera.position.x = xyProjection * Math.cos(self._angleZ);
+
 			self._camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 			if (self._lastRenderedState) {
