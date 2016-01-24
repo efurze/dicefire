@@ -34,7 +34,7 @@ $(function(){
 		
 	Mapcontroller.prototype.getMouseOverCountry = function() { return this._mouseOverCountry; };
 	Mapcontroller.prototype.setMouseOverCountry = function(country) {
-		console.log("SetMouseOverCountry", country);
+		Globals.debug("SetMouseOverCountry", country, Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		this._mouseOverCountry = country;
 		Renderer.setMouseOverCountry(country ? country.id() : -1);
 	};
@@ -42,7 +42,7 @@ $(function(){
 		return this._selectedCountry; 
 	};
 	Mapcontroller.prototype.setSelectedCountry = function(country) {
-		console.log("selectCountry", country);
+		Globals.debug("setSelectedCountry", country, Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		this._selectedCountry = country;
 		Renderer.setSelectedCountry(country ? country.id() : -1);
 	};
@@ -64,10 +64,10 @@ $(function(){
 			return true;
 		} else {
 			if (country.ownerId() != this._iface.currentPlayerId()) {
-				console.log("NOT this players' country");
+				Globals.debug("NOT this players' country", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 			}
 			if (country.numDice() <= 1) {
-				console.log("NOT enough dice to attack");
+				Globals.debug("NOT enough dice to attack", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 			}
 		}
 		
@@ -76,11 +76,11 @@ $(function(){
 			return true;
 		} else {
 			if (country.ownerId() == this._iface.currentPlayerId()) {
-				console.log("IS this players' country");
+				Globals.debug("IS this players' country", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 			}
 		}
 		
-		console.log(country.id(), "NOT clickable");
+		Globals.debug(country.id(), "NOT clickable", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		return false;
 	};
 	
@@ -116,7 +116,7 @@ $(function(){
 		var currentPlayerId = self._iface.currentPlayerId(); 
 		if ( self._playerId != currentPlayerId) {
 			// current player isn't human
-			console.log("current player isn't human");
+			Globals.debug("current player isn't human", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 			if (self.selectedCountry()) {
 				var prevCountry = self.selectedCountry();
 				self.setSelectedCountry(null);
@@ -141,7 +141,7 @@ $(function(){
 				}
 			} else {
 				// Attacks.
-				console.log("attack");
+				Globals.debug("attack issued", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 				var sel = self.selectedCountry();
 				self.setSelectedCountry(null);
 				self._iface.attack(sel, country, function() {
@@ -151,7 +151,7 @@ $(function(){
 				});
 			}
 		} else {
-			console.log(country ? country.id() : 'null', "Country not clickable");
+			Globals.debug(country ? country.id() : 'null', "Country not clickable", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		}
 		           
 	};

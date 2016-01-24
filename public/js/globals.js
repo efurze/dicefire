@@ -139,14 +139,15 @@ Globals.CHANNEL = {
 	"CLIENT" : 8,
 	"CLIENT_SOCKET" : 9,
 	"AI_WRAPPER" : 10,
+	"MAP_CONTROLLER" : 11,
 
-	"SERVER": 11,
-	"SERVER_SOCKET" : 12,
-	"USER_AI": 13,
-	"GAME": 14,
-	"ADMIN": 15,
-	"RATER": 16,
-	"DEFAULT": 17,
+	"SERVER": 12,
+	"SERVER_SOCKET" : 13,
+	"USER_AI": 14,
+	"GAME": 15,
+	"ADMIN": 16,
+	"RATER": 17,
+	"DEFAULT": 18,
 };
 
 Globals.channelNames = [];
@@ -158,17 +159,18 @@ Object.keys(Globals.CHANNEL).forEach(function(name, idx) {
 Globals.channels = [];
 Globals.channels.length = Object.keys(Globals.CHANNEL).length;
 
-Globals.channels[Globals.CHANNEL.ENGINE] 					= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.MAP] 						= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.HEX] 						= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.COUNTRY] 				= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.PLAYER] 					= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.PLYER] 					= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.RENDERER] 				= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.GREEDY] 					= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.CLIENT] 					= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.ENGINE] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.MAP] 				= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.HEX] 				= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.COUNTRY] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.PLAYER] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.PLYER] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.RENDERER] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.GREEDY] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.AI_WRAPPER] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.WARN;
 
 
 
