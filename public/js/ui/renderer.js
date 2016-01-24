@@ -13,7 +13,10 @@ $(function(){
 			this._renderer.init(playerCount, canvas, map, playerNames, iface);
 		},
 
-		init3d: function() {},
+		init3d: function(playerCount, canvas, map, playerNames, iface) {
+			this._renderer = GLrenderer;
+			this._renderer.init(playerCount, canvas, map, playerNames, iface);
+		},
 
 		
 		setMouseOverCountry: function(id) {
