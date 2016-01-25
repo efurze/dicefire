@@ -139,6 +139,7 @@ $(function(){
 				Globals.debug("attack issued", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 				var sel = self.selectedCountry();
 				self.setSelectedCountry(null);
+				self.setMouseOverCountry(null);
 				self._iface.attack(sel, country, function() {
 				self.setSelectedCountry(null);
 				$('#end_turn').prop('disabled', false);

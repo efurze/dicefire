@@ -9,7 +9,7 @@ var Renderer2d = {
 		_canvas: null,
 		_context: null,
 		_initialized: false,
-		_isAnimatingAttack: false,
+		_isRendering: false,
 		_highlightedCountry: -1,
 		_selectedCountry: -1,
 		_mouseOverCountry: -1,
@@ -25,6 +25,7 @@ var Renderer2d = {
 			"brown",
 			"tan"
 		],
+		_lastRenderedState: null,
 		_listener: null,
 		
 		init: function(playerCount, canvas, map, playerNames, listener) {
@@ -81,24 +82,39 @@ var Renderer2d = {
 		},
 		
 		setMouseOverCountry: function(id) {
-			Renderer2d._highlightedCountry = id;
+			if (!this._isRendering) {
+				Renderer2d._highlightedCountry = id;
+				this.render(this._lastRenderedState, null);
+			}
 		},
 		
 		setSelectedCountry: function(id) {
-			Renderer2d._selectedCountry = id;
+			if (!this._isRendering) {
+				Renderer2d._selectedCountry = id;
+				this.render(this._lastRenderedState, null);
+			}
 		},
 		
-		render: function(state, attackCallback) {
-			if (Globals.suppress_ui || !this._initialized || this._isAnimatingAttack) {
+		render: function(state, callback) {
+			var self = this;
+			if (self._isRendering) {
+				Globals.debug("previous state rendering, render aborted", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
+				callback();
 				return;
 			}
 			Globals.debug("render()", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
 			
-			this._renderMap(state);
-			this._renderPlayers(state);
+			self._renderMap(state);
+			self._renderPlayers(state);
+			self._lastRenderedState = state;
+
 			if (state.attack()) {
-				this._renderAttack(state, attackCallback);
+				self._renderAttack(state, callback);
+			} else {
+				if (callback) {
+					callback(state, state.stateId());
+				}
 			}
 		},
 		
@@ -139,7 +155,7 @@ var Renderer2d = {
 	            $.playSound('/sounds/2_dice_throw_on_table');
 	        }
 
-	        self._isAnimatingAttack = true;
+	        self._isRendering = true;
 
 			var timeout = callback ? Globals.timeout : 0;
 	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
@@ -173,9 +189,9 @@ var Renderer2d = {
 	                }
 	            }
 
-	            self._isAnimatingAttack = false;
+	            self._isRendering = false;
 				if (callback) {
-					callback(state.attack());
+					callback(state, state.stateId());
 				}
 			}
 		
