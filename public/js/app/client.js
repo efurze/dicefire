@@ -135,12 +135,15 @@ $(function() {
 		// from renderer
 		stateRendered: function(state, id) {
 			// render done
+			Globals.debug("state", id, "rendered", Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			Client._rendering = false;
 			Client._currentViewState = state.stateId();
-			Client._historyController.setViewState(Client._currentViewState);
-			
-			if (!Client.upToDate()) {
-				Client.processNextState();
+
+			if (!Client._historyController.viewingHistory()) {
+				Client._historyController.setViewState(Client._currentViewState);
+				if (!Client.upToDate()) {
+					Client.processNextState();
+				}
 			}
 		},
 
@@ -153,9 +156,15 @@ $(function() {
 
 
 		endTurnClicked: function() {
+			Globals.debug("End Turn clicked", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+
 			if (Client._isMyTurn && Client.upToDate()) {
 				Client._isMyTurn = false;
 				Client._socket.emit(Message.TYPE.END_TURN, Message.endTurn(Client._playerId));
+			} else if (!Client._isMyTurn) {
+				Globals.debug("End Turn clicked when it's not my turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);				
+			} else if (!Client.upToDate()) {
+				Globals.debug("End Turn clicked when client isn't up to date", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 			}
 		},
 

@@ -134,7 +134,7 @@ var GLrenderer = {
 			if (self._isRendering) {
 				Globals.debug("previous state rendering, render aborted", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 				if (callback) {
-					callback();
+					//callback();
 				}
 				return;
 			}
@@ -549,9 +549,9 @@ var GLrenderer = {
 		renderEngineCallback: function() {
 			//Globals.debug("renderEngineCallback", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			var self = this;	
-			console.time("RenderTime");
+			//console.time("RenderTime");
 			self._renderer.render(self._scene, self._camera);
-			console.timeEnd("RenderTime");
+			//console.timeEnd("RenderTime");
 		},
 
 		stateHash: {

@@ -105,9 +105,11 @@ $(function() {
 		
 		// from renderer
 		stateRendered: function(gamestate, stateId) {
-			Game._currentState = gamestate;
-			if (Game._controller) {
-				Game._controller.update(gamestate);
+			if (!Game._controller.viewingHistory()) {
+				Game._currentState = gamestate;
+				if (Game._controller) {
+					Game._controller.update(gamestate);
+				}
 			}
 		},
 		
