@@ -2,7 +2,7 @@
 
 
 /*
-	@engineInterface = {
+	@mapControllerInterface = {
 			currentPlayerId(),
 			attack(fromId, toId, callback(result_bool)),
 			isThisPlayer(playerId),
@@ -11,7 +11,6 @@
 */
 var Mapcontroller = function(playerId, canvas, map, mapControllerInterface) {
 	Globals.ASSERT(Globals.implements(mapControllerInterface, Mapcontroller.mapControllerInterface));
-	Globals.ASSERT(Globals.implements(this, Renderer.iface));
 
 	this._playerId = playerId;
 	this._canvas = canvas;

@@ -14,6 +14,7 @@ $(function() {
 		_controller: null,
 		_mapController: null,
 		_gameId: null,
+		_currentState: null,
 		_uploader: null,
 		_engine: null,
 		_aiHash: null,
@@ -62,10 +63,6 @@ $(function() {
 			$('#game').css('display', 'block');
 			$('#game_controls').css('display', 'block');
 
-			if (Globals.uploadGame && Game._gameId) {
-				$('#view_link').css('display', 'block');
-			}
-			
 			Game._engine = new Engine(false);
 			// create the PlayerWrappers
 			var pws = [];
@@ -90,20 +87,10 @@ $(function() {
 			});
 			
 			
-			
-			if (Globals.uploadGame && Game._gameId) {
-				// upload game info to server
-				var info = new Gameinfo(playerNames.map(function(name){return {id: name};}));
-				Game._uploader.uploadGameInfo(Game._gameId, info.toString());
-			
-				// upload map data to server
-				Game._uploader.uploadMap(Game._gameId, Game._engine.serializeMap());
-			}
-			
-			Game._engine.registerStateCallback(Game.engineUpdate);
+			Game._engine.registerStateCallback(Renderer.stateUpdate.bind(Renderer));
 			Game._controller = new Gamecontroller(Game._engine);
 			Game._mapController = new Mapcontroller(0, Game._canvas, Game._engine.map(), Game.mapConInterface);
-			Renderer.init3d(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game._mapController);
+			Renderer.init3d(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game);
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
@@ -116,29 +103,26 @@ $(function() {
 			Game.redraw();
 		},
 		
-
-		engineUpdate: function(gamestate, stateId) {
-			gamestate = gamestate || Game._engine.getState();
-			if (Globals.uploadGame && Game._gameId) {
-				// upload the state info
-				Game._uploader.uploadState(Game._gameId, stateId, gamestate.toString());
+		// from renderer
+		stateRendered: function(gamestate, stateId) {
+			Game._currentState = gamestate;
+			if (Game._controller) {
+				Game._controller.update(gamestate);
 			}
-			Game.redraw(gamestate);
 		},
 		
-		redraw: function(gamestate) {
-			gamestate = gamestate || Game._engine.getState();
-			if (gamestate) {
-				Renderer.render(gamestate, Game._engine.finishAttack.bind(Game._engine));
-			}
-			if (Game._controller) {
-				Game._controller.update();
-			}
+		// from renderer
+		mouseOverCountry: function(id) {
+			Game._mapController.mouseOverCountry(id);
+		},
+
+		redraw: function() {
+			Renderer.redraw();
 		},
 		
 		mapConInterface: {
 			currentPlayerId: function() {
-				return Game._engine.currentPlayerId();
+				return Game._currentState ? Game._currentState.currentPlayerId() : -1;
 			},
 
 			update: function() {

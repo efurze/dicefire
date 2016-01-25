@@ -109,100 +109,117 @@ var GLrenderer = {
 			this._selectedCountry = id;
 		},
 
-		
-		render: function(state, attackCallback) {
-			if (this._isAnimatingAttack) {
-				Globals.debug("attack animating, render aborted", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
-				return;
-			}
-			Globals.debug("render()", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
-			Globals.ASSERT(state instanceof Gamestate);
-			
-			this._drawMap(state);
-			
-			if (state.attack()) {
-				this._renderAttack(state, attackCallback);
-			}
-
-			this._lastRenderedState = state;
-			this._lastRenderTime = Date.now();
+		redraw: function() {
 			this.update();
 		},
 
+		render: function(state, callback) {
+			var self = this;
+			if (self._isRendering) {
+				Globals.debug("previous state rendering, render aborted", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+				Globals.ASSERT(false);
+				callback();
+				return;
+			}
+			self._isRendering = true;
+			Globals.debug("render()", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+			Globals.ASSERT(state instanceof Gamestate);
+			
+			if (state.attack()) {
+				this._renderAttack(state)
+					.then(function() {
+						self.update();
+						self._lastRenderedState = state;
+						self._lastRenderTime = Date.now();
+						self._isRendering = false;
+						if (callback) {
+							callback(state, state.stateId());
+						}
+					});
+			} else {
+				this._drawMap(state, callback)
+					.then(function() {
+						self.update();
+						self._lastRenderedState = state;
+						self._lastRenderTime = Date.now();
+						self._isRendering = false;
+						if (callback) {
+							callback(state, state.stateId());
+						}
+					});
+			}
+		},
+
 		/*
-			@callback: function done(){}
+			@callback: function stateRendered(state, id){}
 		*/
-		_renderAttack: function(state, callback) {
+		_renderAttack: function(state) {
 		
 			if (Globals.suppress_ui || !this._initialized || !state || this._isAnimatingAttack) {
 				return;
 			}
 
-			Globals.debug("renderAttack", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			
 			var self = this;
-			var fromCountry = state.attack().fromCountryId;
-			var fromPlayerId = state.countryOwner(fromCountry);
-			
-			var toCountry = state.attack().toCountryId;
-			
-			var fromNumDice = state.attack().fromRollArray.length;
-			var toNumDice = state.attack().toRollArray.length;
-			
-			var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; }, 0);
-	    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; }, 0);
-			
-	
-			// roll attacker
-			Globals.debug("render attacker", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			self._drawCountry(fromCountry, state, true);
-			self.update();
-	        
-			if (Globals.play_sounds && callback) {
-	            $.playSound('/sounds/2_dice_throw_on_table');
-	        }
 
-	        self._isAnimatingAttack = true;
-
-			var timeout = callback ? Globals.timeout : 0;
-	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
-	
-			function renderAttackRoll(state) {
-				Globals.debug("render defender", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-				self._drawCountry(toCountry, state, true);
-				self.update();
-	            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
-			}
+			return new Promise(function(resolve) {
+				Globals.debug("renderAttack", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 			
-			function renderDefendRoll(state) {
-				Globals.debug("render defense roll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-	            window.setTimeout(function(){renderVerdict(state);}, timeout);
-			}
-			
-			function renderVerdict(state) {
-				Globals.debug("render verdict", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-	        	if (fromRoll > toRoll) {
-					// attacker wins
-	                if (Globals.play_sounds && callback) {
-	                    $.playSound('/sounds/clink_sound');
-	                }
-	        	} else {
-					// defender wins
-	                if (Globals.play_sounds && callback) {                
-	                    $.playSound('/sounds/wood_hit_brick_1');               
-	                }
-	            }
-
-	            self._animateCountry(fromCountry, state, 1, function() {
-					self._isAnimatingAttack = false;
-					if (callback) {
-						callback(state.attack());
-					}
-	            });
-
-
-			}
+				var fromCountry = state.attack().fromCountryId;
+				var fromPlayerId = state.countryOwner(fromCountry);
+				
+				var toCountry = state.attack().toCountryId;
+				
+				var fromNumDice = state.attack().fromRollArray.length;
+				var toNumDice = state.attack().toRollArray.length;
+				
+				var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; }, 0);
+		    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; }, 0);
+				
 		
+				// roll attacker
+				Globals.debug("render attacker", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+				self._drawCountry(fromCountry, state, true);
+				self.update();
+		        
+				if (Globals.play_sounds) {
+		            $.playSound('/sounds/2_dice_throw_on_table');
+		        }
+
+		        self._isAnimatingAttack = true;
+
+				var timeout =  Globals.timeout;
+		        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
+		
+				function renderAttackRoll(state) {
+					Globals.debug("render defender", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+					self._drawCountry(toCountry, state, true);
+					self.update();
+		            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
+				}
+				
+				function renderDefendRoll(state) {
+					Globals.debug("render defense roll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+		            window.setTimeout(function(){renderVerdict(state);}, timeout);
+				}
+				
+				function renderVerdict(state) {
+					Globals.debug("render verdict", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+		        	if (fromRoll > toRoll) {
+						// attacker wins
+		                if (Globals.play_sounds) {
+		                    $.playSound('/sounds/clink_sound');
+		                }
+		        	} else {
+						// defender wins
+		                if (Globals.play_sounds) {                
+		                    $.playSound('/sounds/wood_hit_brick_1');               
+		                }
+		            }
+
+		            self._isAnimatingAttack = false;
+					resolve();
+				}
+			});
 		},
 		
 		
@@ -214,9 +231,43 @@ var GLrenderer = {
 			Globals.ASSERT(state instanceof Gamestate);
 			
 			var self = this;
-			self._diceGraph = [];
-			state.countryIds().forEach(function(countryId) {
-				self._drawCountry(countryId, state)
+			return Promise.all(state.countryIds().map(function(countryId) {
+				return self._animateCountry(countryId, state);
+			}));
+		},
+
+		_animateCountry: function(countryId, state) {
+			var self = this;
+
+			var toDice = state.countryDice(countryId);
+			var fromDice = self._lastRenderedState ? self._lastRenderedState.countryDice(countryId) : 0;
+
+			Globals.debug("animateCountry", countryId, "from", fromDice, "to", toDice, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+
+			if (fromDice == toDice) {
+				return self._drawCountry(countryId, state, false);
+			}
+
+			var STEP = (fromDice < toDice) ? 0.5 : -0.5;
+			state.setCountryDice(countryId, fromDice);
+
+			return new Promise(function(resolve) {
+
+				var animateCountryCB = function() {
+
+					if (state.countryDice(countryId) != toDice) {
+						state.setCountryDice(countryId, state.countryDice(countryId) + STEP);
+						self._drawCountry(countryId, state, false);
+						self.update();
+						requestAnimationFrame(animateCountryCB);
+					} else {
+						state.setCountryDice(countryId, toDice);
+						self._drawCountry(countryId, state, false);
+						resolve();
+					}
+				};
+
+				requestAnimationFrame(animateCountryCB);
 			});
 		},
 		
@@ -235,51 +286,20 @@ var GLrenderer = {
 			Globals.debug("drawCountry " + countryId, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 			
 			self._map.countryHexes(countryId).forEach(function(hexId) {
-				self._drawHex(self._map.getHex(hexId), isFighting);
+				self._drawHex(self._map.getHex(hexId), state, isFighting);
 			});
-	
-			//self._drawDice(countryId, state);
 
 		},
 
-
-		_animateCountry: function(countryId, state, toDice, callback) {
-			var self = this;
-			var country = self._map.getCountry(countryId);
-			var fromDice = country.numDice();
-
-			var animateCountryCB = function() {
-
-				if (country._numDice > toDice) {
-					country._numDice -= 0.5;
-					state.setCountryDice(countryId, state.countryDice(countryId) - 0.5);
-					self._drawCountry(countryId, state, false);
-					self.update();
-					window.setTimeout(animateCountryCB, 50);
-				} else {
-					country._numDice = fromDice;
-					state.setCountryDice(countryId, fromDice);
-					callback();
-				}
-			};
-
-			window.setTimeout(animateCountryCB, 50);
-		},
-
 		
-		
-		
-		_drawHex: function(hex, isFighting) {
+		_drawHex: function(hex, state, isFighting) {
 			var self = this;					
 			var countryId = hex.countryId();
-			var country = self._map.getCountry(countryId);	
 			var start = hex.upperLeft();
 			
-			
-			
 			if (!self._cylinders[hex.id()]) {
-				var color = self._playerColors[country.ownerId()];
-				var geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
+				var color = self._playerColors[state.countryOwner(countryId)];
+				var geometry = new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId) * 4, 6);
 				var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
 				var cylinder = new THREE.Mesh(geometry, material);
 				cylinder.rotation.x = Math.PI / 2;
@@ -292,19 +312,18 @@ var GLrenderer = {
 			} else {
 				var cylinder = self._cylinders[hex.id()];
 				self._scene.remove(cylinder);
-				cylinder.material.color = self._getCountryColor(countryId, isFighting);
+				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
 				cylinder.geometry.dispose();
 				cylinder.geometry = null;
-				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, country.numDice() * 4, 6);
+				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId) * 4, 6);
 				self._scene.add(cylinder);
 			}
 		},
 
-		_getCountryColor: function(countryId, isFighting) {
+		_getCountryColor: function(countryId, state, isFighting) {
 			var self = this;
 			isFighting = isFighting || false;
-			var country = self._map.getCountry(countryId);	
-			var color = new THREE.Color(self._playerColors[country.ownerId()]);
+			var color = new THREE.Color(self._playerColors[state.countryOwner(countryId)]);
 
 			if (isFighting) {
 				color = new THREE.Color("rgb(50, 50, 50)");
@@ -504,9 +523,7 @@ var GLrenderer = {
 
 			self._camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-			if (self._lastRenderedState) {
-					self.render(self._lastRenderedState);
-			}
+			self.update();
 		},
 
 		update: function() {

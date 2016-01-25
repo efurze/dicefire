@@ -4,34 +4,32 @@ var Gamecontroller = function (engine) {
 	this._historyIndex = 0;
 	this._historyLength = 0;
 	this._engine = engine;
+	this._lastState = null;
 };
 
 $(function(){
 
-Gamecontroller.prototype.update = function() {
+Gamecontroller.prototype.update = function(state) {
 	if (Globals.suppress_ui) {
 		return;
 	}
 	
 	var self = this;
+
+	self._lastState = state;
+
 	
-	if (self._historyLength < self._engine.historyLength()) {
-		// history has changed since we last updated. If it's human's turn, assume that it 
-		// means that a user-generated attack occured. That means we're not viewing history anymore
-		self._historyIndex = self._engine.historyLength() - 1;
-	}
-	
-	self._historyLength = self._engine.historyLength();
+	self._historyLength = self._lastState.stateId() + 1;
 	
 	$('#back_btn').prop('disabled', true);
 	$('#forward_btn').prop('disabled', true);
 	
 	
-	if (self._engine.isHuman(self._engine.currentPlayerId())) {	
+	if (self._engine.isHuman(self._lastState.currentPlayerId())) {	
 		if (self.viewingHistory()) {
 			// don't let player end their turn while they're looking at history
 			$('#end_turn').prop('disabled', true);
-		} else if (self._engine.isAttacking()) {
+		} else if (self._lastState.attack()) {
 			// can't end turn during an attack
 			$('#end_turn').prop('disabled', true);
 		} else {
@@ -55,7 +53,9 @@ Gamecontroller.prototype.update = function() {
 
 Gamecontroller.prototype.endTurn = function() {
 	var self = this;
-	self._historyIndex = self._engine.historyLength() - 1;
+	Globals.ASSERT(self._lastState.stateId() == self._engine.getState().stateId());
+
+	self._historyIndex = self._lastState.stateId();
 	self._engine.endTurn();
 };
 
@@ -88,7 +88,11 @@ Gamecontroller.prototype.renderHistory = function (state) {
 
 Gamecontroller.prototype.viewingHistory = function () {
 	var self = this;
-	return self._historyIndex < (self._engine.historyLength()-1);
+	if (self._lastState) {
+		return self._historyIndex < self._lastState.stateId();
+	} else {
+		return false;
+	}
 };
 
 });

@@ -131,7 +131,7 @@ Gamestate.prototype.setCountryOwner = function(countryId, owner) {
 
 Gamestate.prototype.countryDice = function(countryId) { return this._countries[countryId].numDice;};
 Gamestate.prototype.setCountryDice = function(countryId, count) {
-	Globals.ASSERT(count > 0 && count <= 8);
+	//Globals.ASSERT(count > 0 && count <= 8);
 	this._countries[countryId].numDice = count;
 };
 
