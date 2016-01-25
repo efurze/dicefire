@@ -17,16 +17,17 @@ Gamecontroller.prototype.update = function(state) {
 
 	var self = this;
 
-	self._lastState = state;
-
-	self._historyLength = self._lastState.stateId() + 1;
-	if (!self.viewingHistory()) {
-		self._historyIndex = self._lastState.stateId()
+	if (state) {
+		if (!self.viewingHistory()) {
+			self._historyIndex = state.stateId()
+		}
+		self._lastState = state;
+		self._historyLength = self._lastState.stateId() + 1;
 	}
+	
 	
 	$('#back_btn').prop('disabled', true);
 	$('#forward_btn').prop('disabled', true);
-	$('#history').html((self._historyIndex+1)  + ' / ' + self._historyLength);
 	
 	if (self._playerId == self._lastState.currentPlayerId()) {	
 
@@ -39,6 +40,8 @@ Gamecontroller.prototype.update = function(state) {
 		} else {
 			$('#end_turn').prop('disabled', false);
 		} 
+
+		$('#history').html((self._historyIndex+1)  + ' / ' + self._historyLength);
 		
 		if (self.viewingHistory()) {
 			$('#forward_btn').prop('disabled', false);
@@ -86,7 +89,7 @@ Gamecontroller.prototype.historyForward = function (event) {
 
 Gamecontroller.prototype.renderHistory = function (state) {
 	var self = this;
-	Renderer.render(state);
+	Renderer.renderHistory(state);
 };
 
 Gamecontroller.prototype.viewingHistory = function () {

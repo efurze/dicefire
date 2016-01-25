@@ -32,6 +32,10 @@ $(function(){
 			this._history.push(state);
 			this._renderNext();
 		},
+
+		renderHistory: function(state) {
+			this._renderer.render(state, null);
+		},
 		
 		setMouseOverCountry: function(id) {
 			this._renderer.setMouseOverCountry(id);
