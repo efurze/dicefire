@@ -131,7 +131,7 @@ var GLrenderer = {
 
 		render: function(state, callback) {
 			var self = this;
-			if (self._isRendering) {
+			if (!state || self._isRendering) {
 				Globals.debug("previous state rendering, render aborted", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 				if (callback) {
 					//callback();
@@ -139,7 +139,7 @@ var GLrenderer = {
 				return;
 			}
 			self._isRendering = true;
-			Globals.debug("render()", Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+			Globals.debug("render()", state.stateId(), Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 			Globals.ASSERT(state instanceof Gamestate);
 			
 			if (state.attack()) {
@@ -253,13 +253,15 @@ var GLrenderer = {
 			var self = this;
 
 			var toDice = state.countryDice(countryId);
-			var fromDice = self._lastRenderedState ? self._lastRenderedState.countryDice(countryId) : 0;
+			var fromDice = self._lastRenderedState ? self._lastRenderedState.countryDice(countryId) : toDice;
 
 			Globals.debug("animateCountry", countryId, "from", fromDice, "to", toDice, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 
 			if (fromDice == toDice) {
 				return self._drawCountry(countryId, state, false);
 			}
+
+			Globals.debug("animating", toDice, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 
 			var STEP = (fromDice < toDice) ? 0.5 : -0.5;
 			state.setCountryDice(countryId, fromDice);

@@ -365,6 +365,15 @@ GameServer.prototype.startGame = function() {
 			}	
 		}
 	});
+
+	// send state 0 to everyone
+	var state = self._engine.getState();
+	if (state) {
+		var stateData = JSON.stringify(state.serialize());
+		rwClient.saveState(self._gameId, state.stateId(), stateData)
+		logger.log("<= state", 0, logger.LEVEL.INFO, logger.CHANNEL.SERVER_SOCKET, self._gameId);
+		self._ns.emit(Message.TYPE.STATE, Message.state(0, self._gameId));
+	}
 		
 	var current = self._engine.currentPlayerId();
 	logger.log('Game started, currentPlayer=', current, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);

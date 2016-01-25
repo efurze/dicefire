@@ -133,6 +133,8 @@ Engine.prototype.setup = function(initialMap, initialState) {
 	self._AIs.forEach(function(ai) {
 		ai.start();
 	});
+
+	self.pushHistory();
 	
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
