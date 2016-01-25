@@ -133,7 +133,9 @@ var GLrenderer = {
 			var self = this;
 			if (self._isRendering) {
 				Globals.debug("previous state rendering, render aborted", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-				callback();
+				if (callback) {
+					callback();
+				}
 				return;
 			}
 			self._isRendering = true;

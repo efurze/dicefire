@@ -64,7 +64,7 @@ HistoryController.prototype.historyForward = function (event) {
 
 HistoryController.prototype.renderHistory = function (state) {
 	var self = this;
-	Renderer.render(state);
+	Renderer.renderHistory(state);
 };
 
 HistoryController.prototype.viewingHistory = function () {

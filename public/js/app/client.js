@@ -87,11 +87,11 @@ $(function() {
 				Globals.ASSERT(Client._mapController);
 				$('#game').css('display', 'block');
 				Client._rendererInitialized = true;
-				Renderer.init2d(Client._gameInfo.getPlayers().length,
+				Renderer.init3d(Client._gameInfo.getPlayers().length,
 							Client._canvas,
 							Client._map,
 							Client._gameInfo.getPlayers(),
-							Client._mapController);
+							Client);
 				Client.processNextState();
 			}
 		},
@@ -125,30 +125,35 @@ $(function() {
 			}
 
 			if (!Client._rendering) {
-				Client._currentViewState = state.stateId();
-				Client._historyController.setViewState(Client._currentViewState);
-
-				if (state.attack()) {
-					Client._rendering = true;
-				}
+				Client._rendering = true;
 
 				Globals.debug("render state", state.stateId(), Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
-				Renderer.render(state, function() {
-					// render done
-					Client._rendering = false;
-					if (!Client.upToDate()) {
-						Client.processNextState();
-					}
-				});
-
-				if (!state.attack()) {
-					Client.processNextState();
-				}
+				Renderer.stateUpdate(state, state.stateId()); // will call back to stateRendered()
 			}
 		},
 
+		// from renderer
+		stateRendered: function(state, id) {
+			// render done
+			Client._rendering = false;
+			Client._currentViewState = state.stateId();
+			Client._historyController.setViewState(Client._currentViewState);
+			
+			if (!Client.upToDate()) {
+				Client.processNextState();
+			}
+		},
+
+		// from renderer
+		mouseOverCountry: function(id) {
+			if (Client._mapController) {
+				Client._mapController.mouseOverCountry(id);
+			}
+		},
+
+
 		endTurnClicked: function() {
-			if (Client._isMyTurn) {
+			if (Client._isMyTurn && Client.upToDate()) {
 				Client._isMyTurn = false;
 				Client._socket.emit(Message.TYPE.END_TURN, Message.endTurn(Client._playerId));
 			}
@@ -163,15 +168,6 @@ $(function() {
 
 			currentPlayerId: function() { return Client._history.getState(Client._currentViewState).currentPlayerId();},
 
-			update: function() {
-				if (!Client._rendering) {
-					var state = Client._history.getState(Client._currentViewState);
-					var curr = state.currentPlayerId();
-					if (Client._players[curr] && Client._players[curr].isHuman()) {
-						Client.render(state);
-					}
-				}
-			},
 			
 			attack: function(from, to, callback){
 				if (Client._isMyTurn) {
