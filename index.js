@@ -40,6 +40,7 @@ app.use('/bootstrap', express.static(path.join(__dirname, '/node_modules/bootstr
 app.use('/bootstrap-social', express.static(path.join(__dirname, '/node_modules/bootstrap-social')));
 app.use('/font-awesome', express.static(path.join(__dirname, '/node_modules/font-awesome')));
 app.use('/bluebird', express.static(path.join(__dirname, '/node_modules/bluebird/js/browser')));
+app.use('/three', express.static(path.join(__dirname, '/node_modules/three')));
 
 app.use(cookieParser());
 app.use(bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies

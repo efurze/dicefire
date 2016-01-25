@@ -339,6 +339,8 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	
 		self.pushHistory(attack);
 
+		self.finishAttack(attack);
+		/*
 		if (typeof module !== 'undefined' && module.exports) {
 			self.finishAttack(attack);
 		} else {
@@ -347,6 +349,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 				console.log("Watchdog timeout! Did you forget to call Engine.finishAttack?");
 			}, 5000);
 		}
+		*/
 	}
 };
 

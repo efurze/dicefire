@@ -155,7 +155,7 @@ var GLrenderer = {
 		*/
 		_renderAttack: function(state) {
 		
-			if (Globals.suppress_ui || !this._initialized || !state || this._isAnimatingAttack) {
+			if (Globals.suppress_ui || !this._initialized || !state) {
 				return;
 			}
 
@@ -185,8 +185,6 @@ var GLrenderer = {
 		            $.playSound('/sounds/2_dice_throw_on_table');
 		        }
 
-		        self._isAnimatingAttack = true;
-
 				var timeout =  Globals.timeout;
 		        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
 		
@@ -215,8 +213,6 @@ var GLrenderer = {
 		                    $.playSound('/sounds/wood_hit_brick_1');               
 		                }
 		            }
-
-		            self._isAnimatingAttack = false;
 					resolve();
 				}
 			});
