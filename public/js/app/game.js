@@ -88,7 +88,7 @@ $(function() {
 			
 			
 			Game._engine.registerStateCallback(Renderer.stateUpdate.bind(Renderer));
-			Game._controller = new Gamecontroller(Game._engine);
+			Game._controller = new Gamecontroller(0, Game._engine);
 			Game._mapController = new Mapcontroller(0, Game._canvas, Game._engine.map(), Game.mapConInterface);
 			Renderer.init3d(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game);
 			
@@ -125,12 +125,6 @@ $(function() {
 				return Game._currentState ? Game._currentState.currentPlayerId() : -1;
 			},
 
-			update: function() {
-				if (!Game._controller.viewingHistory()) {
-					Game.redraw();
-				}
-			},
-			
 			attack: function(from, to, callback) {
 				Game._engine.attack(from, to, callback);
 			},

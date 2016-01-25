@@ -1,6 +1,7 @@
 "use strict"
 
-var Gamecontroller = function (engine) {
+var Gamecontroller = function (playerId, engine) {
+	this._playerId = playerId;
 	this._historyIndex = 0;
 	this._historyLength = 0;
 	this._engine = engine;
@@ -13,19 +14,22 @@ Gamecontroller.prototype.update = function(state) {
 	if (Globals.suppress_ui) {
 		return;
 	}
-	
+
 	var self = this;
 
 	self._lastState = state;
 
-	
 	self._historyLength = self._lastState.stateId() + 1;
+	if (!self.viewingHistory()) {
+		self._historyIndex = self._lastState.stateId()
+	}
 	
 	$('#back_btn').prop('disabled', true);
 	$('#forward_btn').prop('disabled', true);
+	$('#history').html((self._historyIndex+1)  + ' / ' + self._historyLength);
 	
-	
-	if (self._engine.isHuman(self._lastState.currentPlayerId())) {	
+	if (self._playerId == self._lastState.currentPlayerId()) {	
+
 		if (self.viewingHistory()) {
 			// don't let player end their turn while they're looking at history
 			$('#end_turn').prop('disabled', true);
@@ -35,8 +39,6 @@ Gamecontroller.prototype.update = function(state) {
 		} else {
 			$('#end_turn').prop('disabled', false);
 		} 
-		
-		$('#history').html((self._historyIndex+1)  + ' / ' + self._historyLength);
 		
 		if (self.viewingHistory()) {
 			$('#forward_btn').prop('disabled', false);
@@ -49,6 +51,7 @@ Gamecontroller.prototype.update = function(state) {
 	} else {
 		$('#end_turn').prop('disabled', true);
 	}
+
 };
 
 Gamecontroller.prototype.endTurn = function() {

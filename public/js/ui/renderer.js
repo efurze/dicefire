@@ -41,10 +41,6 @@ $(function(){
 			this._renderer.setSelectedCountry(id);
 		},
 
-		redraw: function() {
-
-		},
-
 		_render: function(state, callback) {
 			this._renderer.render(state, callback);
 		},

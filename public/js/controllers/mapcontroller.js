@@ -23,7 +23,6 @@ var Mapcontroller = function(playerId, canvas, map, mapControllerInterface) {
 
 Mapcontroller.mapControllerInterface = {
 	currentPlayerId: function(){},
-	update: function(){},
 	attack: function(fromId, toId, callback){},
 	clickable: function(){}
 }
@@ -36,7 +35,6 @@ $(function(){
 		Globals.debug("SetMouseOverCountry", country ? country.id() : -1, Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		this._mouseOverCountry = country;
 		Renderer.setMouseOverCountry(country ? country.id() : -1);
-		this._iface.update();
 	};
 	Mapcontroller.prototype.selectedCountry = function() { 
 		return this._selectedCountry; 
@@ -45,7 +43,6 @@ $(function(){
 		Globals.debug("setSelectedCountry", country ? country.id() : -1, Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		this._selectedCountry = country;
 		Renderer.setSelectedCountry(country ? country.id() : -1);
-		this._iface.update();
 	};
 	
 	Mapcontroller.prototype.isCountryClickable = function(country) {
@@ -97,14 +94,14 @@ $(function(){
 			if (this.getMouseOverCountry() !== country) {
 				this.setMouseOverCountry(country);
 				this._canvas.style.cursor = 'pointer';
-				this._iface.update();
+				//this._iface.update();
 			}
 		} else {
       		if (this.getMouseOverCountry()) {
           		this.setMouseOverCountry(null);
       		}
 			this._canvas.style.cursor = 'default';
-			this._iface.update();
+			//this._iface.update();
 		}
 	};
 
@@ -121,7 +118,6 @@ $(function(){
 			if (self.selectedCountry()) {
 				var prevCountry = self.selectedCountry();
 				self.setSelectedCountry(null);
-				self._iface.update();
 			}
 			return;
 		}
@@ -134,11 +130,9 @@ $(function(){
 				// Select and deselect of countries owned by this user.                  
 				if (self.selectedCountry() == country) {
 						self.setSelectedCountry(null);
-						self._iface.update();
 				} else {
 					var oldCountry = self.selectedCountry();
 					self.setSelectedCountry(country);
-					self._iface.update();
 				}
 			} else {
 				// Attacks.
@@ -148,7 +142,6 @@ $(function(){
 				self._iface.attack(sel, country, function() {
 				self.setSelectedCountry(null);
 				$('#end_turn').prop('disabled', false);
-				self._iface.update();
 				});
 			}
 		} else {

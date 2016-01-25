@@ -73,10 +73,9 @@ var GLrenderer = {
 				lights[1] = new THREE.PointLight( 0xffffff, 1, 0 );
 				lights[2] = new THREE.PointLight( 0xffffff, 1, 0 );
 				
-				lights[0].position.set( 0, 200, 200 );
-				lights[0].position.set( 0, -200, 200 );
-				lights[1].position.set( 200, 0, 200 );
-				lights[2].position.set( -200, 0, 200 );
+				lights[0].position.set( 0, 200, 0 );
+				lights[1].position.set( 100, 200, 100 );
+				lights[2].position.set( -100, -200, -100 );
 
 				this._scene.add( lights[0] );
 				this._scene.add( lights[1] );
@@ -100,17 +99,34 @@ var GLrenderer = {
 		},
 
 		setMouseOverCountry: function(id) {
-			var old = this._highlightedCountry
-			this._highlightedCountry = id;
+			if (!this._isRendering) {
+				Globals.debug("setMouseOverCountry", id, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+				var old = this._highlightedCountry
+				this._highlightedCountry = id;
+				if (old != -1) {
+					this._drawCountry(old, this._lastRenderedState, false);
+				}
+				if (id != -1) {
+					this._drawCountry(id, this._lastRenderedState, false);
+				}
+				this.update();
+			}
 		},
 		
 		setSelectedCountry: function(id) {
-			var old = this._selectedCountry;
-			this._selectedCountry = id;
-		},
+			if (!this._isRendering) {
+				Globals.debug("setSelectedCountry", id, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
+				var old = this._selectedCountry;
+				this._selectedCountry = id;
 
-		redraw: function() {
-			this.update();
+				if (old != -1) {
+					this._drawCountry(old, this._lastRenderedState, false);
+				}
+				if (id != -1) {
+					this._drawCountry(id, this._lastRenderedState, false);
+				}
+				this.update();
+			}
 		},
 
 		render: function(state, callback) {
@@ -227,9 +243,9 @@ var GLrenderer = {
 			Globals.ASSERT(state instanceof Gamestate);
 			
 			var self = this;
-			return Promise.all(state.countryIds().map(function(countryId) {
+			return Promise.mapSeries(state.countryIds(), function(countryId) {
 				return self._animateCountry(countryId, state);
-			}));
+			});
 		},
 
 		_animateCountry: function(countryId, state) {
@@ -459,6 +475,7 @@ var GLrenderer = {
 			if (self._mouseOverCountry != countryId) {
 				self._mouseOverCountry = countryId;
 				if (self._listener) {
+					Globals.debug("detected mouse over country", countryId, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 					self._listener.mouseOverCountry(countryId);
 				}
 			}
