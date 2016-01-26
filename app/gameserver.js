@@ -161,7 +161,7 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 	self._currentHumans = 0;
 	self._started = false;
 	self._createTime = Date.now();
-	self._watchdogTimerId = -1;
+	self._lingerTimer = null;
 	
 	// get the game info
 	rwClient.getGameInfo(gameId)
@@ -213,6 +213,8 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 						}).catch(function(err) {
 							logger.log("ERROR saving map data to Redis:", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 						});
+
+					self.startLingerTimer();
 				}
 			} catch (err) {
 				logger.log("Exception initializing game engine", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
@@ -240,6 +242,7 @@ GameServer.prototype.connectWatcher = function(socket) {
 	}
 };
 
+
 // Called when a client connects as an active Player
 GameServer.prototype.connectPlayer = function(socket) {
 	logger.log("Connected player socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 
@@ -251,10 +254,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 	sock.on('error', this.socketError.bind(this));
 	sock.on('disconnect', this.disconnect.bind(this));
 	
-	if (self._watchdogTimerId >= 0) {
-		clearTimeout(self._watchdogTimerId);
-	}
-	self._watchdogTimerId = -1;
+	self.stopLingerTimer();
 	
 	// find a slot for this player
 
@@ -348,17 +348,14 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 		
 		if (self._connectionCount == 0) {
 			logger.log('No active connections, starting linger timer', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
-			self._watchdogTimerId = setTimeout(function() {
-				logger.log('Timeout expired, cleaning up game', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
-				GameManager.removeGame(self._gameId);
-				self._watchdogTimerId = -1;
-			}, GAME_LINGER_TIMEOUT);
+			self.startLingerTimer();
 		}
 	} else {
 		// a watcher left
 		logger.log('Watcher socket ' + socketWrapper.id() + ' disconnected.', logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
 	}
 };
+
 
 GameServer.prototype.startGame = function() {
 	var self = this;
@@ -461,6 +458,24 @@ GameServer.prototype.close = function() {
 	}
 };
 
+
+GameServer.prototype.startLingerTimer = function() {
+	var self = this;
+	self._lingerTimer = setTimeout(function() {
+			logger.log('Timeout expired, cleaning up game', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
+			GameManager.removeGame(self._gameId);
+			self._lingerTimer = null;
+		}, GAME_LINGER_TIMEOUT);
+};
+
+GameServer.prototype.stopLingerTimer = function() {
+	var self = this;
+	if (self._lingerTimer) {
+		logger.log('Stopping linger timer', logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
+		clearTimeout(self._lingerTimer);
+	}
+	self._lingerTimer = null;
+};
 
 // from socket
 GameServer.prototype.socketError = function(socketWrapper, err) {
