@@ -84,7 +84,10 @@ $(function() {
 		initRenderer: function() {
 			if (!Client._rendererInitialized) {
 				Globals.debug("Initializing renderer", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-				Globals.ASSERT(Client._mapController);
+				if (!Client._watch) {
+					// don't needs a map controller if we're only watching
+					Globals.ASSERT(Client._mapController);
+				}
 				$('#game').css('display', 'block');
 				Client._rendererInitialized = true;
 				Renderer.init3d(Client._gameInfo.getPlayers().length,
