@@ -16,7 +16,6 @@ var Engine = function(trusted) {
 	this._AIs = null;
 	this._currentPlayerId = 0;
 	this._gameOver = false;
-	this._attackInProgress = false;
 	this._history = [];
 	this._players = [];
 	this._gameCallback = null; 	// called when game is over
@@ -26,7 +25,6 @@ var Engine = function(trusted) {
 	this._stateCount = 0;
 	this._initialized = false;
 	this._map = null;
-	this._watchdogTimerID = -1;
 	this._enforceTimeLimits = false;
 
 	Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface))
@@ -57,7 +55,6 @@ Engine.prototype.map = function() { return this._map; };
 Engine.prototype.getPlayer = function(id) { return this._players[id]; };
 Engine.prototype.currentPlayer = function() { return this._players[this._currentPlayerId]; };
 Engine.prototype.currentPlayerId = function() { return this._currentPlayerId; };
-Engine.prototype.isAttacking = function() {return this._attackInProgress;};
 Engine.prototype.isInitialized = function() {return this._initialized;};
 Engine.prototype.setKeepHistory = function(keep) { this._keepHistory = keep;};	
 Engine.prototype.setEnforceTime = function(enforce) { this._enforceTimeLimits = enforce;};	
@@ -88,7 +85,6 @@ Engine.prototype.init = function(players, callback) {
 	self._stateCount = 0;
 	self.setCurrentPlayer(0);
 	self._gameOver = false;
-	self._attackInProgress = false;
 	self._gameCallback = callback;
 	self._stateCallback = null;
 	if (self._AIs){
@@ -275,7 +271,6 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 	
 	self._stopClock(self._currentPlayerId);
 
-	self._attackInProgress = true;
 	self._attackCallback = callback;
 	
 	// make sure the 2 countries are next to each other
@@ -335,84 +330,44 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 			toRollArray: toRollArray
 		}
 	
-		// IMPORTANT: the way this now works is that Engine expects the application wrapper (ie, Game) to call
-		// finishAttack() when the attack rendering is done. The pushHistory() here informs Game, via
-		// the stateCallback that an attack needs to be rendered
-	
 		self.pushHistory(attack);
+	
+		// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
+		// goes down to 1 die.
+		fromCountry.setNumDice(1);
 
-		self.finishAttack(attack);
-		/*
-		if (typeof module !== 'undefined' && module.exports) {
-			self.finishAttack(attack);
+		if (fromRoll > toRoll) {
+			Globals.debug("Attacker wins", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
+			var oldOwner = self._players[toCountry.ownerId()];
+			toCountry.setNumDice(fromNumDice - 1);
+			fromPlayer.addCountry(toCountry);
+			oldOwner.loseCountry(toCountry);
+			oldOwner.updateStatus(self._map);
+			fromPlayer.updateStatus(self._map);
+			
+			Globals.debug("Losing player has " + oldOwner.countryCount() + " countries left", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+			
+			if (oldOwner.hasLost()) {
+				Globals.debug("Player " + oldOwner.id() + " has lost and can no longer play", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+			}
+			
+
+			if (fromPlayer.countryCount() == self._map.countryCount()) {
+				self.gameOver(fromPlayer);
+				return;
+			}
 		} else {
-			Globals.ASSERT(self._watchdogTimerID < 0);
-			self._watchdogTimerID = self._timeout(function() {
-				console.log("Watchdog timeout! Did you forget to call Engine.finishAttack?");
-			}, 5000);
-		}
-		*/
-	}
-};
-
-Engine.prototype.finishAttack = function(attack) {
-	var self = this;
-	
-	if (self._watchdogTimerID >= 0) {
-		if (typeof module !== 'undefined' && module.exports) {
-			clearTimeout(self._watchdogTimerID);
-		} else {
-			window.clearTimeout(self._watchdogTimerID);
-		}
-	}
-	self._watchdogTimerID = -1;
-	
-	self._attackInProgress = false;
-	
-	var fromCountry = self._map.getCountry(attack.fromCountryId);
-	var toCountry = self._map.getCountry(attack.toCountryId);
-	var fromRoll = attack.fromRollArray.reduce(function(total, die) { return total + die; });
-	var toRoll = attack.toRollArray.reduce(function(total, die) { return total + die; });
-	var fromNumDice = fromCountry.numDice();
-	var toNumDice = toCountry.numDice();
-	var fromPlayer = self._players[fromCountry.ownerId()];
-	var toPlayer = self._players[toCountry.ownerId()];
-
-	// Note that ties go to the toCountry. And, no matter what happens, the fromCountry
-	// goes down to 1 die.
-	fromCountry.setNumDice(1);
-
-	if (fromRoll > toRoll) {
-		Globals.debug("Attacker wins", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-		var oldOwner = self._players[toCountry.ownerId()];
-		toCountry.setNumDice(fromNumDice - 1);
-		fromPlayer.addCountry(toCountry);
-		oldOwner.loseCountry(toCountry);
-		oldOwner.updateStatus(self._map);
-		fromPlayer.updateStatus(self._map);
-		
-		Globals.debug("Losing player has " + oldOwner.countryCount() + " countries left", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-		
-		if (oldOwner.hasLost()) {
-			Globals.debug("Player " + oldOwner.id() + " has lost and can no longer play", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+			Globals.debug("Attacker loses", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
 		}
 		
-
-		if (fromPlayer.countryCount() == self._map.countryCount()) {
-			self.gameOver(fromPlayer);
-			return;
+		// attack is done, save to history
+		self.pushHistory();
+		self._startClock(self._currentPlayerId);
+		if (self._attackCallback) {
+			var temp = self._attackCallback;
+			self._attackCallback = null;
+			temp(fromRoll > toRoll, self.currentStateId());
 		}
-	} else {
-		Globals.debug("Attacker loses", Globals.LEVEL.DEBUG, Globals.CHANNEL.ENGINE);
-	}
-	
-	// attack is done, save to history
-	self.pushHistory();
-	self._startClock(self._currentPlayerId);
-	if (self._attackCallback) {
-		var temp = self._attackCallback;
-		self._attackCallback = null;
-		temp(fromRoll > toRoll, self.currentStateId());
 	}
 };
 
