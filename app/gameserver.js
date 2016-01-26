@@ -16,12 +16,17 @@ var PlayerWrapper = require('./playerSocketWrapper');
 // redirect the Engine logs to the server-side logger
 Globals.setLogRedirect(logger.log.bind(logger));
 
-var SocketHandler = function() {
+/*
+	GameManager - Constructs a new GameServer every time the createGame/ route is hit. Also listens for incoming 
+	websocket connections
+*/
+var GameManager = function() {
 
 	var sio = require('socket.io');
 	var io = null;
 	var games = {};
 	
+	// called both on game creation and game restoration. Constructs new GameServer.
 	var setupGame = function(gameId, restoreState, map) {
 		logger.log("Listening for game", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 		var socketNamespace = io.of("/" + gameId);
@@ -29,6 +34,8 @@ var SocketHandler = function() {
 		games[gameId] = new GameServer(gameId, socketNamespace, watchNamespace, restoreState, map);
 	};
 	
+
+	// runs on server restart. Restores any in-progess games that were interrupted by restart
 	var init = function() {
 		rwClient.getActiveGames()
 			.then(function(gameIds) { // String array of gameIds
@@ -62,6 +69,7 @@ var SocketHandler = function() {
 			});
 	};
 	
+	// restore current games
 	init();
 	
 	return {
@@ -128,7 +136,8 @@ var SocketHandler = function() {
 
 
 /*========================================================================================================================================*/
-// GameServer - one of these for each active game
+// GameServer - one of these for each active game. Requires that the GameInfo for the given gameId is already stored in Redis.
+// This class constructs an Engine for each game and manages the client socket connections to it. Also manages all 'watcher' connections.
 /*========================================================================================================================================*/
 
 var Engine = require('../public/js/game/engine.js');
@@ -217,6 +226,7 @@ GameServer.prototype.createTime = function() {
 	return this._createTime;
 };
 
+// Called when a client connects as a 'watcher' (ie, not a player)
 GameServer.prototype.connectWatcher = function(socket) {
 	logger.log("Connected watcher socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 
 									logger.LEVEL.INFO, logger.CHANNEL.SERVER, this._gameId);
@@ -232,6 +242,7 @@ GameServer.prototype.connectWatcher = function(socket) {
 	}
 };
 
+// Called when a client connects as an active Player
 GameServer.prototype.connectPlayer = function(socket) {
 	logger.log("Connected player socket id " + socket.id + " at " + socket.handshake.address + " to game " + this._gameId, 
 									logger.LEVEL.INFO, logger.CHANNEL.SERVER, this._gameId);
@@ -248,9 +259,12 @@ GameServer.prototype.connectPlayer = function(socket) {
 	self._watchdogTimerId = -1;
 	
 	// find a slot for this player
+
+	// See if we've already seen this IP, if so reconnect this socket to the same player
 	var id = self.reconnect(sock);
 	
 	if (id < 0) {
+		// couldn't reconnect. Find a human slot to assign 
 		for (var i=0; i < self._gameInfo.getPlayers().length; i++) {
 			if (self._players[i].isHuman() && !self._players[i].hasSocket()) {
 				logger.log('Assigning socket ' + sock.id() + ' to player ' + i, logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
@@ -339,7 +353,7 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 			logger.log('No active connections, starting linger timer', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 			self._watchdogTimerId = setTimeout(function() {
 				logger.log('Timeout expired, cleaning up game', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
-				SocketHandler.removeGame(self._gameId);
+				GameManager.removeGame(self._gameId);
 				self._watchdogTimerId = -1;
 			}, GAME_LINGER_TIMEOUT);
 		}
@@ -388,11 +402,11 @@ GameServer.prototype.gameOver = function(winner, id) {
 	var results = new Gameinfo(self._players.map(function(p) { return {id: p.getName()}; }), id);
 	rwClient.recordGame(self._gameId, results, "LADDER")
 		.then(function() {
-			SocketHandler.removeGame(self._gameId);
+			GameManager.removeGame(self._gameId);
 		})
 		.catch(function(err) {
 			logger.log('Error saving gameInfo', err, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
-			SocketHandler.removeGame(self._gameId);
+			GameManager.removeGame(self._gameId);
 		});
 };
 
@@ -486,4 +500,4 @@ GameServer.prototype.engineUpdate = function(gamestate, stateId) {
 
 /*========================================================================================================================================*/
 
-module.exports = SocketHandler;
+module.exports = GameManager;
