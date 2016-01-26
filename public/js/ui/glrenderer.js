@@ -255,6 +255,11 @@ var GLrenderer = {
 			var toDice = state.countryDice(countryId);
 			var fromDice = self._lastRenderedState ? self._lastRenderedState.countryDice(countryId) : toDice;
 
+			if (state.stateId() == 0) {
+				// this is so we animate the initial state at game start
+				fromDice = 0;
+			}
+
 			Globals.debug("animateCountry", countryId, "from", fromDice, "to", toDice, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 
 			if (fromDice == toDice) {

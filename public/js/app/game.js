@@ -91,7 +91,6 @@ $(function() {
 			Game._controller = new Gamecontroller(0, Game._engine);
 			Game._mapController = new Mapcontroller(0, Game._canvas, Game._engine.map(), Game.mapConInterface);
 			Renderer.init3d(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game);
-			Renderer.stateUpdate(Game._engine.getState(), 0);
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
