@@ -234,8 +234,6 @@ GameServer.prototype.connectWatcher = function(socket) {
 	var sock = new SocketWrapper(socket, self._gameId);
 	self._sockets[sock.id()] = sock;
 
-	// send the map
-	sock.emit(Message.TYPE.MAP, Message.map(self._gameId));
 	if (self._started) {
 		// push the latest gamestate to them
 		sock.emit(Message.TYPE.STATE, Message.state(self._engine.currentStateId(), self._gameId));
@@ -287,7 +285,6 @@ GameServer.prototype.connectPlayer = function(socket) {
 		sock.emit(Message.TYPE.STATE, Message.state(self._engine.currentStateId(), self._gameId));
 	}
 	
-	sock.emit(Message.TYPE.MAP, Message.map(self._gameId));
 	if (self._currentHumans == self._expectedHumans && !self._started) {
 		self.startGame();
 	}

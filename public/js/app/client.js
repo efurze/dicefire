@@ -70,7 +70,6 @@ $(function() {
 			Client._socket.on('error', Client.socket_error);
 			Client._socket.on('disconnect', Client.disconnect);
 			Client._socket.on('connect', Client.connect);
-			Client._socket.on(Message.TYPE.MAP, Client.map_update);
 			Client._socket.on(Message.TYPE.STATE, Client.state);
 
 			if (!watch) {
@@ -222,12 +221,6 @@ $(function() {
 			Globals.debug("=> Socket CONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 		},
 
-		// @msg: {gameId: <string>}
-		map_update: function(sock, msg) {
-			if (!Client._map) {
-				Client._downloader.getMap(Client._gameId, Client.mapData);
-			}
-		},
 
 		// @msg: {stateId:, gameId:}
 		state: function(sock, msg) {
@@ -293,7 +286,7 @@ $(function() {
 		//====================================================================================================
 		// HTTP callbacks
 		//====================================================================================================
-		mapData: function(success, data) {
+		mapDataCB: function(success, data) {
 			if (success) {
 				if (!Client._map) {
 					Globals.debug("Got map from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
@@ -306,7 +299,7 @@ $(function() {
 						Client._players[id].start();
 					});
 
-					if (Client._playerId >= 0 && !Client._mapController) {
+					if (!Client._watch && !Client._mapController) {
 						// create map controller
 						Client._mapController = new Mapcontroller(Client._playerId, Client._canvas, Client._map, Client.MapControllerInterface);
 					}
@@ -328,10 +321,10 @@ $(function() {
 				if (!Client._gameInfo) {
 					Globals.debug("Got gameInfo from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 					Client._gameInfo = Gameinfo.deserialize(data);
+				}
 
-					if (Client._map) {
-						Client.initRenderer();
-					}
+				if (!Client._map) {
+					Client._downloader.getMap(Client._gameId, Client.mapDataCB);
 				}
 			} else {
 				Globals.debug("Get gameInfo error", data, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);

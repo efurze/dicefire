@@ -4,7 +4,6 @@ var Message = {
 
 	TYPE: {
 		'STATUS': 'status_update',
-		'MAP': 'map_update',
 		'STATE': 'state_update',
 		'CREATE_BOT': 'create_bot',
 		'CREATE_HUMAN': 'create_human',
@@ -22,11 +21,6 @@ var Message = {
 		};
 	},
 
-	map: function(gameId) {
-		return {
-			gameId: gameId
-		};
-	},
 
 	createBot: function(name, playerId) {
 		return {
