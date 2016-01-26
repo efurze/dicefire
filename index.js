@@ -118,9 +118,7 @@ app.get('/aiworker/:hash', userAIController.getAIWorker);
 
 
 // other
-app.get('/data/*', gameController.data);
 app.get('/unit', gameController.unit);
-app.get('/test', gameController.test);
 
 
 app.get('/current', function(req, res) {

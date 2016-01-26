@@ -244,16 +244,6 @@ module.exports = {
 
 	// old stuff
 	
-	data: function(req, res) { 
-		var filename = req.url.trim().split("/").slice(2).join("/");
-		fs.readFile(__dirname + "/public/" + filename + ".json", 'utf8', function (err, data) {
-			if (err) {
-				res.send({});
-			} else {
-		  		res.send("var MapData=" + data + ";");
-			}
-		});
-	},
 
 	unit: function(req, res) { 
 		res.render("unittest", {
@@ -269,16 +259,6 @@ module.exports = {
 				{ path: "https://cdn.rawgit.com/mochajs/mocha/2.2.5/mocha.css" }
 			]
 		});
-	},
-
-	test: function(req, res) { 
-	    res.render("ai_tester", {
-	    	title: "AI Test",
-	    	scripts: [
-	    		{ path: "/js/app/ai_tester.js" },
-	    		{ path: "//www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['corechart']}]}" }
-	    	]
-	    });
 	},
 	
 };
