@@ -47,6 +47,21 @@ $(function(){
 		Renderer.setSelectedCountry(country ? country.id() : -1);
 	};
 	
+	Mapcontroller.prototype.canAttack = function(country1, country2) {
+		var self = this;
+		if (!country1 || !country2 || country1.ownerId() == country2.ownerId()) {
+			return false;
+		}
+
+		var neighborIds = self._map.adjacentCountries(country1.id());
+		for (var i=0; i < neighborIds.length; i++) {
+			if (neighborIds[i] == country2.id()) {
+				return true;
+			}
+		};
+		return false;
+	};
+
 	Mapcontroller.prototype.isCountryClickable = function(country) {
 		if (!country || this._playerId != this._iface.currentPlayerId()) {
 			return false;
@@ -72,13 +87,9 @@ $(function(){
 		}
 		
 		// user is choosing a country to attack
-		if (this.selectedCountry() && country.ownerId() !== this._iface.currentPlayerId()) {
+		if (this.canAttack(this.selectedCountry(), country)) {
 			return true;
-		} else {
-			if (country.ownerId() == this._iface.currentPlayerId()) {
-				Globals.debug("IS this players' country", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
-			}
-		}
+		} 
 		
 		Globals.debug(country.id(), "NOT clickable", Globals.LEVEL.DEBUG, Globals.CHANNEL.MAP_CONTROLLER);
 		return false;
