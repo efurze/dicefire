@@ -409,7 +409,6 @@ var Renderer2d = {
 			
 			var self = this;
 			var countryId = hexToPaint.countryId();
-			var country = self._map.getCountry(countryId);
 			var upperLeft = hexToPaint.upperLeft();
 	        var upperLeftX = upperLeft[0], upperLeftY = upperLeft[1];
 
@@ -424,62 +423,59 @@ var Renderer2d = {
 	        path.closePath();
 
 
-	        self._context.fillStyle = country ? Renderer2d._countryDrawColor(countryId, state.countryOwner(countryId), isFighting) : "white";
+	        self._context.fillStyle = Renderer2d._countryDrawColor(countryId, state, isFighting);
 	        if (hexToPaint._color) {
 	            self._context.fillStyle = hexToPaint._color;
 	        }
 	        self._context.fill(path);
 
 
-	        if (country) {
-	            hexToPaint._countryEdgeDirections.forEach(function(dir) {
-	                var edgePath = new Path2D();
-	                switch(dir) {
-	                    case Dir.obj.NW: 
-	                    case "NW":
-	                        edgePath.moveTo(upperLeftX, upperLeftY);
-	                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-	                        break;
+            hexToPaint._countryEdgeDirections.forEach(function(dir) {
+                var edgePath = new Path2D();
+                switch(dir) {
+                    case Dir.obj.NW: 
+                    case "NW":
+                        edgePath.moveTo(upperLeftX, upperLeftY);
+                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        break;
 
-	                    case Dir.obj.N:
-	                    case "N":
-	                        edgePath.moveTo(upperLeftX, upperLeftY);
-	                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
-	                        break;
+                    case Dir.obj.N:
+                    case "N":
+                        edgePath.moveTo(upperLeftX, upperLeftY);
+                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
+                        break;
 
-	                    case Dir.obj.NE:
-	                    case "NE":
-	                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
-	                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-	                        break;
+                    case Dir.obj.NE:
+                    case "NE":
+                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY);
+                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        break;
 
-	                    case Dir.obj.SE:
-	                    case "SE":
-	                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-	                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
-	                        break;
+                    case Dir.obj.SE:
+                    case "SE":
+                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH + Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        edgePath.lineTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
+                        break;
 
-	                    case Dir.obj.S:
-	                    case "S":
-	                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
-	                        edgePath.lineTo(upperLeftX, upperLeftY + Hex.HEIGHT);
-	                        break;
+                    case Dir.obj.S:
+                    case "S":
+                        edgePath.moveTo(upperLeftX + Hex.EDGE_LENGTH, upperLeftY + Hex.HEIGHT);
+                        edgePath.lineTo(upperLeftX, upperLeftY + Hex.HEIGHT);
+                        break;
 
-	                    case Dir.obj.SW:
-	                    case "SW":
-	                        edgePath.moveTo(upperLeftX, upperLeftY + Hex.HEIGHT);
-	                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
-	                        break;                    
+                    case Dir.obj.SW:
+                    case "SW":
+                        edgePath.moveTo(upperLeftX, upperLeftY + Hex.HEIGHT);
+                        edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
+                        break;                    
+					}
+					
+                edgePath.closePath();
+                self._context.strokeStyle = isFighting ? "red" : "black";
+                self._context.lineWidth = hexToPaint.BORDER_THICKNESS;
 
-
-	                }
-	                edgePath.closePath();
-	                self._context.strokeStyle = isFighting ? "red" : "black";
-	                self._context.lineWidth = hexToPaint.BORDER_THICKNESS;
-
-	                self._context.stroke(edgePath);
-	            });
-	        }
+                self._context.stroke(edgePath);
+	        });
 	
 			if (Globals.showNumbers) {
 	            self._context.lineWidth = 1;
@@ -508,8 +504,9 @@ var Renderer2d = {
 			
 		},
 		
-		_countryDrawColor: function(countryId, ownerId, isFighting) {
+		_countryDrawColor: function(countryId, state, isFighting) {
 			var self = this;
+			var ownerId = state.countryOwner(countryId);
 			if (isFighting) {
 				return "black";
 			} else if (countryId == self._highlightedCountry) {
