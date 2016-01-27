@@ -64,19 +64,18 @@ AISocketWrapper.prototype.end_turn = function(socketWrapper, data) {
 
 AISocketWrapper.prototype.startTurn = function(state) {
 	if (this._started && this._socket) {
-		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
+		this._socket.sendStartTurn(this._id, state.stateId());
 	}
 };
 
 AISocketWrapper.prototype.attackDone = function(success, stateId) {
 	if (this._started && this._socket) {
-		var msg = Message.attackResult(this._id, success, stateId);
-		this._socket.emit(Message.TYPE.ATTACK_RESULT, msg);
+		this._socket.sendAttackResult(this._id, success, stateId);
 	}
 };
 AISocketWrapper.prototype.turnEnded = function() {
 	if (this._started && this._socket) {
-		this._socket.emit(Message.TYPE.TURN_ENDED, {playerId: this._id, stateId: state.stateId()});
+		this._socket.sendTurnEnded(this._id, state.stateId());
 	}
 };
 

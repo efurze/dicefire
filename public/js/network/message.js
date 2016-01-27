@@ -72,6 +72,13 @@ var Message = {
 		return {
 			playerId: playerId
 		};
+	},
+
+	turnEnded: function(playerId, stateId) {
+		return {
+			playerId: playerId,
+			stateId: stateId
+		};
 	}
 };
 

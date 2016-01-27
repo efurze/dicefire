@@ -238,7 +238,7 @@ GameServer.prototype.connectWatcher = function(socket) {
 
 	if (self._started) {
 		// push the latest gamestate to them
-		sock.emit(Message.TYPE.STATE, Message.state(self._engine.currentStateId(), self._gameId));
+		sock.sendState(self._engine.currentStateId(), self._gameId);
 	}
 };
 
@@ -282,7 +282,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 
 	if (id >= 0 && self._started) {
 		// push the latest gamestate to them
-		sock.emit(Message.TYPE.STATE, Message.state(self._engine.currentStateId(), self._gameId));
+		sock.sendState(self._engine.currentStateId(), self._gameId);
 	}
 	
 	if (self._currentHumans == self._expectedHumans && !self._started) {
@@ -420,7 +420,7 @@ GameServer.prototype.assignBot = function(bot, socket) {
 	if (!self._ipMap[socket.ip()]) { self._ipMap[socket.ip()] = []; }
 	self._ipMap[socket.ip()].push(bot.id());
 	
-	socket.emit(Message.TYPE.CREATE_BOT, Message.createBot(bot.getName(), bot.id()));
+	socket.sendCreateBot(bot.getName(), bot.id());
 };
 
 GameServer.prototype.close = function() {

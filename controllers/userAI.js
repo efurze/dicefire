@@ -125,6 +125,8 @@ var doSubmit = function(req, res, test) {
 	var className = "ai" + codeHash;
 	code += "var " + className + "={};";
 	code += className +".create=function(id){return create(id);};";
+
+	// TODO: FIXME: if name contains a single-quote, then stuff breaks.
 	code += className +".getName=function(){return '" + name + "';};";
 
 

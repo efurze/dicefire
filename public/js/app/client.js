@@ -162,7 +162,7 @@ $(function() {
 
 			if (Client._isMyTurn && Client.upToDate()) {
 				Client._isMyTurn = false;
-				Client._socket.emit(Message.TYPE.END_TURN, Message.endTurn(Client._playerId));
+				Client._socket.sendEndTurn(Client._playerId);
 			} else if (!Client._isMyTurn) {
 				Globals.debug("End Turn clicked when it's not my turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);				
 			} else if (!Client.upToDate()) {
@@ -183,7 +183,7 @@ $(function() {
 			attack: function(from, to, callback){
 				if (Client._isMyTurn) {
 					//Globals.debug("<= attack", from.id(), "to", to.id(), Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-					Client._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), Client._playerId));
+					Client._socket.sendAttack(from.id(), to.id(), Client._playerId);
 				}
 			},
 			

@@ -37,7 +37,7 @@ PlayerWrapper.prototype.setSocket = function(socket) {
 PlayerWrapper.prototype.start = function() {
 	this._started = true;
 	if (this._socket) {
-		this._socket.emit(Message.TYPE.CREATE_HUMAN, Message.createHuman(this.getName(), this._id));
+		this._socket.sendCreateHuman(this.getName(), this._id);
 	}
 };
 PlayerWrapper.prototype.stop = function() {this._started = false;};
@@ -66,7 +66,7 @@ PlayerWrapper.prototype.end_turn = function(socketWrapper, data) {
 
 PlayerWrapper.prototype.startTurn = function(state) {
 	if (this._started && this._socket) {
-		this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(this._id, state.stateId()));
+		this._socket.sendStartTurn(this._id, state.stateId());
 	}
 };
 PlayerWrapper.prototype.attackDone = function(success) {};

@@ -6,6 +6,7 @@ var CHANNEL;
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
 	var logger = require('../../../lib/logger.js');
+	var Message = require('./message');
 	log = logger.log;
 	CHANNEL = logger.CHANNEL.SERVER_SOCKET;
 } else {
@@ -114,9 +115,41 @@ SocketWrapper.prototype.disconnect = function() {
 		delete self._socket;
 		self._socket = null;
 	}
-}
+};
 
 
+SocketWrapper.prototype.sendCreateBot = function(name, playerId) {
+	this._socket.emit(Message.TYPE.CREATE_BOT, Message.createBot(name, playerId));
+};
+
+SocketWrapper.prototype.sendCreateHuman = function(name, playerId) {
+	this._socket.emit(Message.TYPE.CREATE_HUMAN, Message.createHuman(name, playerId));
+};
+
+SocketWrapper.prototype.sendState = function(stateId, gameId) {
+	this._socket.emit(Message.TYPE.STATE, Message.state(stateId, gameId));
+};
+
+SocketWrapper.prototype.sendStartTurn = function(playerId, stateId) {
+	this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(playerId, stateId));
+};
+
+SocketWrapper.prototype.sendAttack = function(fromId, toId, playerId) {
+	this._socket.emit(Message.TYPE.ATTACK, Message.attack(fromId, toId, playerId));
+};
+
+
+SocketWrapper.prototype.sendAttackResult = function(playerId, success, stateId) {
+	this._socket.emit(Message.TYPE.ATTACK_RESULT, Message.attackResult(playerId, success, stateId));
+};
+
+SocketWrapper.prototype.sendEndTurn = function(playerId) {
+	this._socket.emit(Message.TYPE.END_TURN, Message.endTurn(playerId));
+};
+
+SocketWrapper.prototype.sendTurnEnded = function(playerId, stateId) {
+	this._socket.emit(Message.TYPE.TURN_ENDED, Message.turnEnded(playerId, stateId));
+};
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = SocketWrapper;

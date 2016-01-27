@@ -144,8 +144,7 @@
 	SocketAIController.prototype.endTurn = function(playerId){
 		if (this._isMyTurn) {
 			this._isMyTurn = false;
-			var msg = Message.endTurn(this._id);
-			this._socket.emit(Message.TYPE.END_TURN, msg);
+			this._socket.sendEndTurn(this._id);
 		} else {
 			Globals.debug("AI tried to end turn when it wasn't our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 		}
@@ -155,7 +154,7 @@
 	SocketAIController.prototype.attack = function(from, to, callback) {
 		if (this._isMyTurn) {
 			this._attackPending = true;
-			this._socket.emit(Message.TYPE.ATTACK, Message.attack(from.id(), to.id(), this._id));
+			this._socket.sendAttack(from.id(), to.id(), this._id);
 		} else {
 			Globals.debug("AI tried to attack when it wasn't our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 		}
