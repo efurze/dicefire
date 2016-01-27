@@ -1,7 +1,7 @@
 <div>
 	<form action="submission" method="post">
 		Name:<br>
-		<input type="text" name="name" value="MyAI">
+		<input type="text" name="name" value="Display Name for my AI">
 		<br>
 		Code:<br>
 		<textarea rows="50" cols="100" name="code">
@@ -10,7 +10,31 @@ var MyAI = function (id) {
 
 };
 
-MyAI.prototype.startTurn = function(interface, depth) {
+
+/* startTurn - this gets called every time your AI begins its turn. 
+
+  @interface = {
+
+  		// call this with a countryId (an int) and it will return an array of the countryIds of that country's neighbors
+  		adjacentCountries: function(countryId)
+
+  		// returns the current state of the game as a Gamestate object.
+		getState: function() 
+
+		// issue an attack. Your callback will be called with the result of the attack.
+		// Result will be true if attack succeeded, false otherwise
+		attack: function(fromCountryId, toCountryId, callback = function(result){}) 
+
+		// Call this to end your turn.
+		endTurn: function()
+  }
+
+*/
+MyAI.prototype.startTurn = function(interface) {
+	this.findAttacks(interface, 0);
+};
+
+MyAI.prototype.findAttacks = function(interface, depth) {
 	depth = depth || 0;
 	var self = this;
 	var state = interface.getState();
@@ -31,7 +55,7 @@ MyAI.prototype.startTurn = function(interface, depth) {
 			if (possibleAttacks.length > 0) {
 				var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
 				interface.attack(countryId, attackCountryId, function(result) {
-					self.startTurn(interface, depth + 1);
+					self.findAttacks(interface, depth + 1);
 				});
 				return;
 			}
