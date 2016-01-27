@@ -114,6 +114,12 @@ var doSubmit = function(req, res, test) {
 	var code = req.body.code.trim();
 	var codeHash = SHA1.hex(code);
 
+	// strip out all the single and double quotes. They break
+	// all the toString-ing we do to run in the sandbox.
+	name = name.replace(/['"]/gm, "");
+
+	console.log("AI name", JSON.stringify(name));
+
 	/* 
 		Append the following to the submitted code. It creates namespaced factory
 		and getName() methods:
@@ -125,8 +131,6 @@ var doSubmit = function(req, res, test) {
 	var className = "ai" + codeHash;
 	code += "var " + className + "={};";
 	code += className +".create=function(id){return create(id);};";
-
-	// TODO: FIXME: if name contains a single-quote, then stuff breaks.
 	code += className +".getName=function(){return '" + name + "';};";
 
 
