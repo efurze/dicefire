@@ -13,7 +13,7 @@ var Mapcontroller = function(playerId, map, mapControllerInterface) {
 	Globals.ASSERT(Globals.implements(mapControllerInterface, Mapcontroller.mapControllerInterface));
 
 	this._playerId = playerId;
-	this._canvas = $('#c')
+	this._canvas = $('#c')[0];
 	this._map = map;
 	this._iface = mapControllerInterface;
 	this._mouseOverCountry = null;
