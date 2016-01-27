@@ -1,5 +1,10 @@
 'use strict'
 
+//--------------------------------------------------------------------------------------------------------------------
+// BotWorker - this is a WebWorker that runs the standard AI bots (not user-submitted code). It's only able to run
+// classes that are specified in the 'importScripts' directives below.
+//--------------------------------------------------------------------------------------------------------------------
+
 
 if( 'function' === typeof importScripts) {
 

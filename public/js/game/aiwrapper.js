@@ -3,6 +3,9 @@ if (typeof module !== 'undefined' && module.exports) {
 	var Gamestate = require('./gamestate.js');
 }
 
+/*-----------------------------------------------------------------------------------------------
+AIInterface - this is what gets passed to all AIs. 
+-----------------------------------------------------------------------------------------------*/
 var AIInterface = function(aiwrapper) {
 	var controller = aiwrapper._controller;
 	return {
@@ -18,14 +21,19 @@ var AIInterface = function(aiwrapper) {
 };
 
 
-//--------------------------------------------------------------------------------------
-//	AIWrapper - implements Engine::PlayerInterface
+//--------------------------------------------------------------------------------------------------------------------
+//	AIWrapper - implements Engine::PlayerInterface, which allows the engine to control us. This is an adapter class
+//	between engine (or Client) and bots.
 // 
-// @ai: EITHER an AI class OR a string representing the hash of an AI stored on the server. 
-//		If it's a hash, then @name must be defined
+// @ai: EITHER an AI class OR a string representing the id (hash) of an AI stored on the server. 
+//		If it's a hash, then @name must be defined, and it will automatically assumed to be untrusted, 
+//		regardless of the value of @trusted
 //
-// @controller: must implement Engine.ControllerInterface
-//--------------------------------------------------------------------------------------
+// @trusted: whether or not the ai passed in is user-submitted (and therefore potentially malicious) code. If untrusted,
+// 		AIWrapper runs the ai in a separate WebWorker process.
+//
+// @controller: what this class calls back into to attack or end a turn. must implement Engine.ControllerInterface
+//--------------------------------------------------------------------------------------------------------------------
 var AIWrapper = function(ai, controller, playerId, trusted, name) {
 	Globals.debug("AIWrapper()", (typeof ai == 'string') ? ai : ai.getName(), playerId, trusted, name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 	Globals.ASSERT(Globals.implements(controller, Engine.ControllerInterface));
@@ -47,6 +55,8 @@ var AIWrapper = function(ai, controller, playerId, trusted, name) {
 	if (this._trusted) {
 		this._ai = ai.create(playerId);
 	}
+
+	Globals.ASSERT(Globals.implements(this, Engine.PlayerInterface));
 };
 
 
@@ -63,6 +73,10 @@ AIWrapper.prototype.isHuman = function() {
 AIWrapper.prototype.start = function() {
 	Globals.debug("AIWrapper.start()", this._name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 	if (!this._trusted) {
+
+		// the difference between an AIWorker and a BotWorker is that user-submitted code must be run
+		// in an AIWorker.
+
 		if (this._aiHash) {
 			// grab a specialized worker
 			Globals.debug("Downloading new aiworker", "/aiworker/"+this._aiHash, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
