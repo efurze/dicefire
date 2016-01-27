@@ -56,7 +56,7 @@ var Globals = {
 							}
 						});
 				
-						if (level < Globals.LEVEL.TRACE && channel != Globals.CHANNEL.RENDERER) {
+						if (level < Globals.errorReportLevels[channel]) {
 							logBuffer.unshift({
 								channel: channel,
 								level: level,
@@ -105,7 +105,7 @@ var Globals = {
 		maxStoredDice: 64,
 		startingDice: 10,
 		numCountries: 32,
-		timeout: 0,
+		timeout: 120,
 		play_sounds: 0,
 		suppress_ui: 0,
 		uploadGame: false,
@@ -155,7 +155,7 @@ Object.keys(Globals.CHANNEL).forEach(function(name, idx) {
 	Globals.channelNames[idx] = name;
 });
 
-// Loglevel for each channel. Numbers correspond to Globals.LEVEL
+// Loglevel for each channel. 
 Globals.channels = [];
 Globals.channels.length = Object.keys(Globals.CHANNEL).length;
 
@@ -168,10 +168,26 @@ Globals.channels[Globals.CHANNEL.PLYER] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.RENDERER] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.GREEDY] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.INFO;
 Globals.channels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.WARN;
 
+// Error report Loglevel for each channel. Determines the detail of error reports
+Globals.errorReportLevels = [];
+Globals.errorReportLevels.length = Object.keys(Globals.CHANNEL).length;
+
+Globals.errorReportLevels[Globals.CHANNEL.ENGINE] 			= Globals.LEVEL.DEBUG;
+Globals.errorReportLevels[Globals.CHANNEL.MAP] 				= Globals.LEVEL.DEBUG;
+Globals.errorReportLevels[Globals.CHANNEL.HEX] 				= Globals.LEVEL.DEBUG;
+Globals.errorReportLevels[Globals.CHANNEL.COUNTRY] 			= Globals.LEVEL.DEBUG;
+Globals.errorReportLevels[Globals.CHANNEL.PLAYER] 			= Globals.LEVEL.DEBUG;
+Globals.errorReportLevels[Globals.CHANNEL.PLYER] 			= Globals.LEVEL.WARN;
+Globals.errorReportLevels[Globals.CHANNEL.RENDERER] 		= Globals.LEVEL.WARN;
+Globals.errorReportLevels[Globals.CHANNEL.GREEDY] 			= Globals.LEVEL.WARN;
+Globals.errorReportLevels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.TRACE;
+Globals.errorReportLevels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.TRACE;
+Globals.errorReportLevels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.TRACE;
+Globals.errorReportLevels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.TRACE;
 
 
 Globals.shuffleArray = function(inArray) {
