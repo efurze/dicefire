@@ -187,7 +187,7 @@ Globals.errorReportLevels[Globals.CHANNEL.GREEDY] 			= Globals.LEVEL.WARN;
 Globals.errorReportLevels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.TRACE;
 Globals.errorReportLevels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.TRACE;
 Globals.errorReportLevels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.TRACE;
-Globals.errorReportLevels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.TRACE;
+Globals.errorReportLevels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.INFO;
 
 
 Globals.shuffleArray = function(inArray) {
