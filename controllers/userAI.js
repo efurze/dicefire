@@ -310,7 +310,7 @@ var getAIDetail = function(req, res) {
 
 var getAIWorker = function(req, res) {
 	var sha = req.params['hash'];
-	var replaced = aiWorker.replace('_replaceThisWithAIHash_', sha);
+	var replaced = aiWorker.replace(/_replaceThisWithAIHash_/gm, sha);
 	res.send(replaced);
 };
 
