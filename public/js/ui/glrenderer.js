@@ -48,7 +48,6 @@ var GLrenderer = {
 				this.mouseVector = new THREE.Vector2();
 				this.raycaster = new THREE.Raycaster();
 
-				$('#canvas_div').css('display', 'block');
 				this._map = map;
 				this._names = playerNames || [];
 				this._initialized = true;
@@ -84,8 +83,7 @@ var GLrenderer = {
 
 				this._renderer = new THREE.WebGLRenderer({ antialias: true });
 				this._renderer.setSize(c.width, c.height);
-				$('#c').hide();
-				$('#canvas_div').append(this._renderer.domElement);
+				$('#canvas3d_div').append(this._renderer.domElement);
 				$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
 				$(this._renderer.domElement).on('mouseup', GLrenderer.mouseUp.bind(this));
 				$(this._renderer.domElement).on('mousemove', GLrenderer.mouseMove.bind(this));
@@ -255,7 +253,7 @@ var GLrenderer = {
 			var toDice = state.countryDice(countryId);
 			var fromDice = self._lastRenderedState ? self._lastRenderedState.countryDice(countryId) : toDice;
 
-			if (state.stateId() == 0) {
+			if (state.stateId() == 0 && !self._lastRenderedState) {
 				// this is so we animate the initial state at game start
 				fromDice = 0;
 			}

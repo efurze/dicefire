@@ -7,7 +7,7 @@ $(function() {
 		Globals.debug("Uncaught exception", msg, url, lineNum, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT, Game._gameId);
 	};
 
-	
+
 	window.Game = {
 		
 		_canvas: document.getElementById("c"),
@@ -89,8 +89,8 @@ $(function() {
 			
 			Game._engine.registerStateCallback(Renderer.stateUpdate.bind(Renderer));
 			Game._controller = new Gamecontroller(0, Game._engine);
-			Game._mapController = new Mapcontroller(0, Game._canvas, Game._engine.map(), Game.mapConInterface);
-			Renderer.init3d(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game);
+			Game._mapController = new Mapcontroller(0, Game._engine.map(), Game.mapConInterface);
+			Renderer.init(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game);
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));

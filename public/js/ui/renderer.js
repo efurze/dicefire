@@ -1,5 +1,17 @@
 $(function(){
 
+	$('#radio_2d').change(function() {
+		if($('#radio_2d').prop("checked")){
+			Renderer.init2d.apply(Renderer);
+    	}
+	});
+
+	$('#radio_3d').change(function() {
+		if($('#radio_3d').prop("checked")){
+			Renderer.init3d.apply(Renderer);
+    	}
+	});
+
 	window.Renderer = {
 
 		iface: {
@@ -10,25 +22,66 @@ $(function(){
 		_renderer: null,
 		_history: [], // array of gamestates
 		_rendering: false,
+		_lastState: null,
 		_renderCallback: null,
+		_listener: null,
+		_playerCount: -1,
+		_canvas: null,
+		_map: null,
+		_playerNames: [],
 
-		init2d: function(playerCount, canvas, map, playerNames, iface) {
+		_initialized2d: false,
+		_initialized3d: false,
+
+		init: function(playerCount, canvas, map, playerNames, iface) {
 			Globals.ASSERT(Globals.implements(iface, Renderer.iface));
-			this._renderer = Renderer2d;
 			this._renderCallback = iface.stateRendered;
 			iface.stateRendered = this._stateRendered.bind(this);
-			this._renderer.init(playerCount, canvas, map, playerNames, iface);
+			this._listener = iface;
+			this._playerCount = playerCount;
+			this._canvas = canvas;
+			this._map = map;
+			this._playerNames = playerNames;
+
+			if($('#radio_2d').attr("checked")){
+				Renderer.init2d();
+    		} else {
+    			Renderer.init3d();
+    		}
+		},
+
+		init2d: function() {
+			$('#radio_2d').prop('checked', true);
+			$('#canvas3d_div').hide();
+			$('#c').show();
+
+			this._renderer = Renderer2d;
+			if (!this._initialized2d) {
+				this._initialized2d = true;
+				this._renderer.init(this._playerCount, this._canvas, this._map, this._playerNames, this._listener);
+			}
+			if (this._lastState) {
+				this.stateUpdate(this._lastState, this._lastState.stateId());
+			}
 		},
 
 		init3d: function(playerCount, canvas, map, playerNames, iface) {
-			Globals.ASSERT(Globals.implements(iface, Renderer.iface));
+			$('#radio_3d').prop('checked', true);
+			$('#c').hide();
+			$('#canvas3d_div').show();
+
 			this._renderer = GLrenderer;
-			this._renderCallback = iface.stateRendered;
-			iface.stateRendered = this._stateRendered.bind(this);
-			this._renderer.init(playerCount, canvas, map, playerNames, iface);
+			if (!this._initialized3d) {
+				this._initialized3d = true;
+				this._renderer.init(this._playerCount, this._canvas, this._map, this._playerNames, this._listener);
+			}
+			if (this._lastState) {
+				this.stateUpdate(this._lastState, this._lastState.stateId());
+			}
 		},
 
 		stateUpdate: function(state, id) {
+			this._lastState = state;
 			this._history.push(state);
 			this._renderNext();
 		},

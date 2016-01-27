@@ -9,16 +9,18 @@
 			clickable(),
 	}
 */
-var Mapcontroller = function(playerId, canvas, map, mapControllerInterface) {
+var Mapcontroller = function(playerId, map, mapControllerInterface) {
 	Globals.ASSERT(Globals.implements(mapControllerInterface, Mapcontroller.mapControllerInterface));
 
 	this._playerId = playerId;
-	this._canvas = canvas;
+	this._canvas = $('#c')
 	this._map = map;
 	this._iface = mapControllerInterface;
 	this._mouseOverCountry = null;
-  this._selectedCountry = null;
-  $('#canvas_div').click(this.click.bind(this));
+  	this._selectedCountry = null;
+
+  	$('#canvas_div').click(this.click.bind(this));
+  	$('#canvas3d_div').click(this.click.bind(this));
 }
 
 Mapcontroller.mapControllerInterface = {

@@ -46,7 +46,7 @@ var Renderer2d = {
 				this._setupPlayerDivs(playerCount);
 
 				$(canvas).mousemove(this.mouseMove.bind(this));
-    		$(canvas).mouseleave(this.mouseLeave.bind(this));
+    			$(canvas).mouseleave(this.mouseLeave.bind(this));
 				
 				this._initialized = true;
 			}			
@@ -469,7 +469,7 @@ var Renderer2d = {
                         edgePath.lineTo(upperLeftX - Hex.EDGE_LENGTH / 2, upperLeftY + Hex.HEIGHT / 2);
                         break;                    
 					}
-					
+
                 edgePath.closePath();
                 self._context.strokeStyle = isFighting ? "red" : "black";
                 self._context.lineWidth = hexToPaint.BORDER_THICKNESS;

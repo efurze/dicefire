@@ -89,7 +89,7 @@ $(function() {
 				}
 				$('#game').css('display', 'block');
 				Client._rendererInitialized = true;
-				Renderer.init3d(Client._gameInfo.getPlayers().length,
+				Renderer.init(Client._gameInfo.getPlayers().length,
 							Client._canvas,
 							Client._map,
 							Client._gameInfo.getPlayers(),
@@ -301,7 +301,7 @@ $(function() {
 
 					if (!Client._watch && !Client._mapController) {
 						// create map controller
-						Client._mapController = new Mapcontroller(Client._playerId, Client._canvas, Client._map, Client.MapControllerInterface);
+						Client._mapController = new Mapcontroller(Client._playerId, Client._map, Client.MapControllerInterface);
 					}
 
 					if (Client._gameInfo) {
