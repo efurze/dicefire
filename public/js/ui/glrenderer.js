@@ -309,10 +309,19 @@ var GLrenderer = {
 			var self = this;					
 			var countryId = hex.countryId();
 			var start = hex.upperLeft();
+			var adjacencies = hex.countryEdgeDirections();
+
+			var vertexAdjacencies = [0, 0, 0, 0, 0, 0];
+			adjacencies.forEach(function(dir) {
+				var vertices = Dir.vertices(dir);
+				vertexAdjacencies[vertices[0]]++;
+				vertexAdjacencies[vertices[1]]++;
+			});
+
 			
 			if (!self._cylinders[hex.id()]) {
 				var color = self._playerColors[state.countryOwner(countryId)];
-				var geometry = new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId) * 4, 6);
+				var geometry = new THREE.CountryCylinderGeometry(vertexAdjacencies, 1.0, 1.0, state.countryDice(countryId) * 4, 6);
 				var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
 				var cylinder = new THREE.Mesh(geometry, material);
 				cylinder.rotation.x = Math.PI / 2;
@@ -328,7 +337,7 @@ var GLrenderer = {
 				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
 				cylinder.geometry.dispose();
 				cylinder.geometry = null;
-				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId) * 4, 6);
+				cylinder.geometry = new THREE.CountryCylinderGeometry(vertexAdjacencies, 1, 1, state.countryDice(countryId) * 4, 6);
 				self._scene.add(cylinder);
 			}
 		},

@@ -97,9 +97,43 @@ var Dir = {
 
             }
             return map.getHex(newHexId);
+        },
+
+        // Vertices are numbered starting at 0 in the top-left and then going clockwise.
+        // For a given direction, returns the two relevante vertices.
+        vertices: function(dir) {
+            switch (dir) {
+                case Dir.obj.N:
+                case "N":
+                    return [0, 1];
+
+                case Dir.obj.NE:
+                case "NE":
+                    return [1, 2];
+
+                case Dir.obj.SE:
+                case "SE":
+                    return [2, 3];
+
+                case Dir.obj.S:
+                case "S":
+                    return [3, 4];
+
+                case Dir.obj.NW:
+                case "NW":
+                    return [4, 5];
+
+
+                case Dir.obj.SW:
+                case "SW":
+                    return [5, 0];
+
+                default:
+                    return null;
+            }
         }
     };
 
-	if (typeof module !== 'undefined' && module.exports){
+	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = Dir;
 	}
