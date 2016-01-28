@@ -150,9 +150,15 @@ Map.prototype.generateMap = function(players) {
     }
     Globals.debug("Created hexes ", JSON.stringify(this._hexArray), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP);
 	
+    this.pruneEdges();
+
 	var country = new Country(this._countryArray.length);
 	this._countryArray.push(country);
-	this.landGrab(this._hexArray[Math.floor(Math.random() * this._hexArray.length)], country);
+	var startHex = null;
+	while(!startHex || startHex._pruned) {
+		startHex = this._hexArray[Math.floor(Math.random() * this._hexArray.length)];
+	}
+	this.landGrab(startHex, country);
 
 	for (var i = 0; i < Globals.numCountries - 1; i++) {
 		var countryStart = Math.floor(Math.random() * this._countryArray.length);
@@ -200,6 +206,173 @@ Map.prototype.generateMap = function(players) {
 	this.pruneLakes();
 	//this.validate();
 	Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP)
+};
+
+
+
+// this is designed to make the map more interesting. The idea is to prune out big chunks of real estate
+// before putting the countries down.
+Map.prototype.pruneEdges = function() {
+	var width = Hex.NUM_WIDE, height = Hex.NUM_HIGH;
+	// top row
+	this.makeBlob(Math.floor(width/4 + (Math.random() * width/2)), 0, 100 + Math.floor(Math.random() * 200));
+
+	// bottom row
+	this.makeBlob(Math.floor(width/4 + (Math.random() * width/2)), height-1, 100 + Math.floor(Math.random() * 200));
+
+	// left
+	this.makeBlob(0, Math.floor(Math.random() * height), 100 + Math.floor(Math.random() * 200));
+	
+	// right
+	this.makeBlob(width-1, Math.floor(Math.random() * height), 100 + Math.floor(Math.random() * 200));
+};
+
+Map.prototype.findAdjacentUnpruned = function(hexes) {
+	var self = this;
+	var startIdx = Math.floor(Math.random() * hexes.length); 
+    for (var i = 0; i < hexes.length; i++) {
+        
+        var hex = hexes[(startIdx + i) % hexes.length];
+
+        //Iterate over directions from the hex again randomly to see if one works.
+        var startDir = Math.floor(Math.random() * Dir.array.length);
+        for ( var j = 0; j < Dir.array.length; j++) {
+            var dir = Dir.array[(startDir + j) % Dir.array.length];
+            var newHex = Dir.nextHex(hex, dir, self);
+            if (newHex && !newHex._pruned) {
+                return newHex;
+            }
+        }
+    }
+
+    return null;
+
+};
+
+Map.prototype.makeBlob = function(startX, startY, size) {
+	var self = this;
+	var hexes = [];
+	var boundaryX = Hex.NUM_WIDE/2;
+	var boundaryY = Hex.NUM_HIGH/2;
+	var thisBlob = {};
+
+	hexes.push(self._hexArray[(startY * Hex.NUM_WIDE) + startX]);
+	hexes[0]._pruned = true;
+	thisBlob[hexes[0].id()] = true;
+	var count = 1;
+
+	while (count < size) {
+		var next = self.findAdjacentUnpruned(hexes);
+		if (!next) { continue; }
+
+		if (startY < boundaryY && next.y() >= boundaryY) {
+			continue;
+		} else if (startY >= boundaryY && next.y() <= boundaryY) {
+			continue;
+		} else if (startX < boundaryX && next.x() >= boundaryX) {
+			continue;
+		} else if (startX >= boundaryX && next.x() <= boundaryX) {
+			continue;
+		}
+
+		var tooClose = false;
+		for ( var j = 0; j < Dir.array.length; j++) {
+            var neighbor = Dir.nextHex(next, Dir.array[j], self);
+            if (neighbor && neighbor._pruned && !thisBlob[neighbor.id()]) {
+            	tooClose = true;
+            	break;
+            }
+		}
+
+		if (!tooClose) {
+			count ++;
+			next._pruned = true;
+			thisBlob[next.id()] = true;
+			hexes.push(next);
+		}
+	}
+
+};
+
+Map.prototype.oldpruneEdges = function() {
+	var self = this;
+
+	// map borders are:
+	// top row: hex.id < Hex.NUM_WIDE
+	// left column: multiples of Hex.NUM_WIDE
+	// right column: (multiples of Hex.NUM_WIDE) - 1
+	// bottom row: (TOTAL_HEXES - NUM_WIDE) to TOTAL_HEXES
+
+	var rows = {
+		TOP: 0,
+		RIGHT: 1,
+		BOTTOM: 2,
+		LEFT: 3
+	}
+
+	var numPruned = 0;
+	while (numPruned < 1200) {
+		// pick an edge
+		var edge = rows.BOTTOM;//Math.round(Math.random() * 3);
+		var x = 0, y = 0;
+		var id = 0;
+		if (edge == rows.TOP) {
+			y = 0;
+			x = Math.floor(Math.random() * Hex.NUM_WIDE);
+			id = (y * Hex.NUM_WIDE) + x;
+			while (self._hexArray[id]._pruned && y < Hex.NUM_HIGH/2) {
+				y++;
+				id = (y * Hex.NUM_WIDE) + x;
+			}
+
+			if (y < Hex.NUM_HIGH/2) {
+				self._hexArray[id]._pruned = true;
+				numPruned++;
+			}
+
+		} else if (edge == rows.RIGHT) {
+			x = Hex.NUM_WIDE - 1;
+			y = Math.floor(Math.random() * Hex.NUM_HIGH);
+			id = (y * Hex.NUM_WIDE) + x;
+			while (self._hexArray[id]._pruned && x > Hex.NUM_WIDE/2) {
+				x--;
+				id = (y * Hex.NUM_WIDE) + x;
+			}
+
+			if (x > Hex.NUM_WIDE/2) {
+				self._hexArray[id]._pruned = true;
+				numPruned++;
+			}
+
+		} else if (edge == rows.BOTTOM) {
+			y = Hex.NUM_HIGH - 1;
+			x = Math.floor(Math.random() * Hex.NUM_WIDE);
+			id = (y * Hex.NUM_WIDE) + x;
+			while (self._hexArray[id]._pruned && y > Hex.NUM_HIGH/2) {
+				y--;
+				id = (y * Hex.NUM_WIDE) + x;
+			}
+
+			if (y > Hex.NUM_HIGH/2) {
+				self._hexArray[id]._pruned = true;
+				numPruned++;
+			}
+
+		} else if (edge == rows.LEFT) {
+			x = 0;
+			y = Math.floor(Math.random() * Hex.NUM_HIGH);
+			id = (y * Hex.NUM_WIDE) + x;
+			while (self._hexArray[id]._pruned && x < Hex.NUM_WIDE/2) {
+				x++;
+				id = (y * Hex.NUM_WIDE) + x;
+			}
+
+			if (x < Hex.NUM_WIDE/2) {
+				self._hexArray[id]._pruned = true;
+				numPruned++;
+			}
+		}
+	}
 };
 
 // makes sure that the countries and hexes agree about who owns what
@@ -390,7 +563,7 @@ Map.prototype.findAdjacentHex = function(country) {
         for ( var j = 0; j < Dir.array.length; j++) {
             var dir = Dir.array[Math.floor(Math.random() * Dir.array.length)];
             var newHex = Dir.nextHex(self.getHex(country._hexIds[hex]), dir, self);
-            if (newHex && newHex.countryId() == -1) {
+            if (newHex && newHex.countryId() == -1 && !newHex._pruned) {
                 return newHex;
             }
 

@@ -10,6 +10,7 @@ var Hex = function(id, x, y, countryId, edgeDirections) {
         this._x = this._id % Hex.NUM_WIDE;
         this._y = Math.floor(this._id / Hex.NUM_WIDE);
         this._countryId = -1;
+        this._pruned = false;
         this._countryEdgeDirections = [];
 		if (typeof x !== 'undefined') {
 			this._x = x;
