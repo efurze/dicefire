@@ -151,11 +151,12 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 	self._gameId = gameId;
 	self._ns = namespace;
 	self._watchersNs = watchNamespace;
-	self._sockets = {};
-	self._socketMap = {}; // socketId to array of playerIds
-	self._ipMap = {}; // IP address to array of playerIds
+	self._playerSockets = {};	// socketId to socketWrapper
+	self._watcherSockets = {};	// socketId to socketWrapper
+	self._socketMap = {}; 		// socketId to array of playerIds
+	self._ipMap = {}; 			// IP address to array of playerIds
 	self._gameInfo = null;
-	self._players = []; // array of PlayerInterface
+	self._players = []; 		// array of PlayerInterface
 	self._connectionCount = 0;
 	self._expectedHumans = 0;
 	self._currentHumans = 0;
@@ -234,7 +235,7 @@ GameServer.prototype.connectWatcher = function(socket) {
 									logger.LEVEL.INFO, logger.CHANNEL.SERVER, this._gameId);
 	var self = this;
 	var sock = new SocketWrapper(socket, self._gameId);
-	self._sockets[sock.id()] = sock;
+	self._watcherSockets[sock.id()] = sock;
 
 	if (self._started) {
 		// push the latest gamestate to them
@@ -249,7 +250,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 									logger.LEVEL.INFO, logger.CHANNEL.SERVER, this._gameId);
 	var self = this;
 	var sock = new SocketWrapper(socket, self._gameId);
-	self._sockets[sock.id()] = sock;
+	self._playerSockets[sock.id()] = sock;
 	self._connectionCount ++;
 	sock.on('error', this.socketError.bind(this));
 	sock.on('disconnect', this.disconnect.bind(this));
@@ -345,6 +346,12 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 			}
 		});
 		delete self._socketMap[socketWrapper.id()];
+
+		if (self._playerSockets[socketWrapper.id()]) {
+			self._playerSockets[socketWrapper.id()].removeAll();
+			self._playerSockets[socketWrapper.id()].disconnect();
+			delete self._playerSockets[socketWrapper.id()]
+		}
 		
 		if (self._connectionCount == 0) {
 			logger.log('No active connections, starting linger timer', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
@@ -353,6 +360,11 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 	} else {
 		// a watcher left
 		logger.log('Watcher socket ' + socketWrapper.id() + ' disconnected.', logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
+		if (self._watcherSockets[socketWrapper.id()]) {
+			self._watcherSockets[socketWrapper.id()].removeAll();
+			self._watcherSockets[socketWrapper.id()].disconnect();
+			delete self._watcherSockets[socketWrapper.id()]
+		}
 	}
 };
 
@@ -362,17 +374,32 @@ GameServer.prototype.startGame = function() {
 	
 	logger.log('startGame', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	
-	self._players.forEach(function(player, id) {
-		if (player.isHuman()) {
-			player.start(); // sends 'create_human' message
-		} else {
-			// farm out the AIs to various players
-			Globals.ASSERT(player instanceof AISocketWrapper);
-			if (!player.hasSocket()) {
-				self.assignBot(player)
-			}	
+	
+	var humans = self._players.filter(function(player) {
+		return player.isHuman();
+	});
+
+	var bots = self._players.filter(function(player) {
+		return !player.isHuman();
+	});
+
+	humans.forEach(function(human) {
+		human.start();
+	});
+
+
+	// put the player sockets into an array so we can round-robin them
+	var socketAry = Object.keys(self._playerSockets).map(function(id) {
+		return self._playerSockets[id];
+	});
+
+	// assign each bot to a client to run
+	bots.forEach(function(bot, idx) {
+		if (!bot.hasSocket()) {
+			self.assignBot(bot, socketAry[idx % socketAry.length]);
 		}
 	});
+
 
 		
 	var current = self._engine.currentPlayerId();
@@ -399,17 +426,6 @@ GameServer.prototype.gameOver = function(winner, id) {
 // @bot: AISocketWrapper
 GameServer.prototype.assignBot = function(bot, socket) {
 	var self = this;
-	var socketIds = [];
-	Object.keys(self._sockets).forEach(function(socketId) {
-		socketIds.push(socketId);
-	});
-
-	if (!socket) {
-		// TODO: FIXME: make this round robin
-		// randomly pick a socket to assign it to
-		var index = Math.round(Math.random() * (socketIds.length - 1));
-		socket = self._sockets[socketIds[index]];
-	}
 	Globals.ASSERT(socket instanceof SocketWrapper);
 	logger.log('Assigning Bot ' + bot.getName() + ' at position ' + bot.id() + ' to socket ' + socket.id(), logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
 	bot.setSocket(socket);
@@ -434,14 +450,23 @@ GameServer.prototype.close = function() {
 		}
 	});
 	
-	Object.keys(self._sockets).forEach(function(id) {
-		self._sockets[id].removeAll();
-		self._sockets[id].disconnect();
-		delete self._sockets[id];
-		self._sockets[id] = null;
+	Object.keys(self._playerSockets).forEach(function(id) {
+		self._playerSockets[id].removeAll();
+		self._playerSockets[id].disconnect();
+		delete self._playerSockets[id];
+		self._playerSockets[id] = null;
 	});
 	
-	self._sockets.length = 0;
+	self._playerSockets.length = 0;
+
+	Object.keys(self._watcherSockets).forEach(function(id) {
+		self._watcherSockets[id].removeAll();
+		self._watcherSockets[id].disconnect();
+		delete self._watcherSockets[id];
+		self._watcherSockets[id] = null;
+	});
+	
+	self._watcherSockets.length = 0;
 
 	if (self._ns) {
 		self._ns._events = null;
