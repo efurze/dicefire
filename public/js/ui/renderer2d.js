@@ -28,7 +28,7 @@ var Renderer2d = {
 		_lastRenderedState: null,
 		_listener: null,
 		
-		init: function(playerCount, canvas, map, playerNames, listener) {
+		init: function(canvas, map, playerNames, listener) {
 			if (!Globals.suppress_ui) {
 				Globals.ASSERT(Globals.implements(listener, Renderer.iface));
 				this._canvas = canvas;
@@ -43,7 +43,7 @@ var Renderer2d = {
 				this._listener = listener;
 
 				this._setupRollDivs();
-				this._setupPlayerDivs(playerCount);
+				this._setupPlayerDivs(playerNames.length);
 
 				$(canvas).mousemove(this.mouseMove.bind(this));
     			$(canvas).mouseleave(this.mouseLeave.bind(this));

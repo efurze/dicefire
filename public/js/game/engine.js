@@ -11,8 +11,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
 var MOVE_TIME_BUDGET = 2000; // each player gets 2 seconds per turn
 
-var Engine = function(trusted) {
-	this._trusted = (typeof trusted == 'undefined') ? true : trusted;
+var Engine = function() {
 	this._AIs = null;
 	this._currentPlayerId = 0;
 	this._gameOver = false;

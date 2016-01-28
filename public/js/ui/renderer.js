@@ -25,7 +25,6 @@ $(function(){
 		_lastState: null,
 		_renderCallback: null,
 		_listener: null,
-		_playerCount: -1,
 		_canvas: null,
 		_map: null,
 		_playerNames: [],
@@ -33,12 +32,11 @@ $(function(){
 		_initialized2d: false,
 		_initialized3d: false,
 
-		init: function(playerCount, canvas, map, playerNames, iface) {
+		init: function(canvas, map, playerNames, iface) {
 			Globals.ASSERT(Globals.implements(iface, Renderer.iface));
 			this._renderCallback = iface.stateRendered;
 			iface.stateRendered = this._stateRendered.bind(this);
 			this._listener = iface;
-			this._playerCount = playerCount;
 			this._canvas = canvas;
 			this._map = map;
 			this._playerNames = playerNames;
@@ -46,7 +44,7 @@ $(function(){
 			if($('#radio_2d').attr("checked")){
 				Renderer.init2d();
     		} else {
-    			Renderer.init3d();
+    			Renderer.init2d();
     		}
 		},
 
@@ -58,7 +56,7 @@ $(function(){
 			this._renderer = Renderer2d;
 			if (!this._initialized2d) {
 				this._initialized2d = true;
-				this._renderer.init(this._playerCount, this._canvas, this._map, this._playerNames, this._listener);
+				this._renderer.init(this._canvas, this._map, this._playerNames, this._listener);
 			}
 			if (this._lastState) {
 				this.stateUpdate(this._lastState, this._lastState.stateId());
@@ -73,7 +71,7 @@ $(function(){
 			this._renderer = GLrenderer;
 			if (!this._initialized3d) {
 				this._initialized3d = true;
-				this._renderer.init(this._playerCount, this._canvas, this._map, this._playerNames, this._listener);
+				this._renderer.init(this._canvas, this._map, this._playerNames, this._listener);
 			}
 			if (this._lastState) {
 				this.stateUpdate(this._lastState, this._lastState.stateId());

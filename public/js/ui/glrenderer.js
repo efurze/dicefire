@@ -40,7 +40,7 @@ var GLrenderer = {
 		raycaster: null,
 		_listener: null,
 		
-		init: function(playerCount, canvas, map, playerNames, listener) {
+		init: function(canvas, map, playerNames, listener) {
 			var self = this;
 			if (!Globals.suppress_ui) {
 				Globals.ASSERT(Globals.implements(listener, Renderer.iface));

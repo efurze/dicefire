@@ -63,7 +63,7 @@ $(function() {
 			$('#game').css('display', 'block');
 			$('#game_controls').css('display', 'block');
 
-			Game._engine = new Engine(false);
+			Game._engine = new Engine();
 			// create the PlayerWrappers
 			var pws = [];
 			var playerNames = [];
@@ -90,7 +90,7 @@ $(function() {
 			Game._engine.registerStateCallback(Renderer.stateUpdate.bind(Renderer));
 			Game._controller = new Gamecontroller(0, Game._engine);
 			Game._mapController = new Mapcontroller(0, Game._engine.map(), Game.mapConInterface);
-			Renderer.init(playerNames.length, Game._canvas, Game._engine.map(), playerNames, Game);
+			Renderer.init(Game._canvas, Game._engine.map(), playerNames, Game);
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));

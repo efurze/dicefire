@@ -89,8 +89,7 @@ $(function() {
 				}
 				$('#game').css('display', 'block');
 				Client._rendererInitialized = true;
-				Renderer.init(Client._gameInfo.getPlayers().length,
-							Client._canvas,
+				Renderer.init(Client._canvas,
 							Client._map,
 							Client._gameInfo.getPlayers(),
 							Client);
