@@ -100,7 +100,6 @@ $(function() {
 		},
 		
 		gameOver: function(winningAI, winningID) {
-			Game.redraw();
 		},
 		
 		// from renderer
@@ -118,9 +117,6 @@ $(function() {
 			Game._mapController.mouseOverCountry(id);
 		},
 
-		redraw: function() {
-			Renderer.redraw();
-		},
 		
 		mapConInterface: {
 			currentPlayerId: function() {

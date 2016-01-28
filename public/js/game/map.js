@@ -175,8 +175,9 @@ Map.prototype.generateMap = function(players) {
 			}
 		}
 		if (!adjacentHex) {
-			Globals.debug("RAN OUT OF SPACE! ", i, Globals.LEVEL.ERROR, Globals.CHANNEL.MAP);
-			break;
+			Globals.debug("RAN OUT OF SPACE! ", i, "recursing", Globals.LEVEL.WARN, Globals.CHANNEL.MAP);
+			// this happens pretty rarely. just try again.
+			return self.generateMap(players);
 		}
 		var newCountry = new Country(this._countryArray.length);
 		this._countryArray.push(newCountry);
@@ -259,9 +260,11 @@ Map.prototype.makeBlob = function(startX, startY, size) {
 	hexes.push(self._hexArray[(startY * Hex.NUM_WIDE) + startX]);
 	hexes[0]._pruned = true;
 	thisBlob[hexes[0].id()] = true;
-	var count = 1;
+	var count = 1, 
+		tries=0; // this is just to make sure we don't get stuck in a corner or something
 
-	while (count < size) {
+	while (count < size && tries < size*2) {
+		tries++;
 		var next = self.findAdjacentUnpruned(hexes);
 		if (!next) { continue; }
 
