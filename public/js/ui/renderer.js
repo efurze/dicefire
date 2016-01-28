@@ -2,13 +2,13 @@ $(function(){
 
 	$('#radio_2d').change(function() {
 		if($('#radio_2d').prop("checked")){
-			Renderer.init2d.apply(Renderer);
+			Renderer._init2d.apply(Renderer);
     	}
 	});
 
 	$('#radio_3d').change(function() {
 		if($('#radio_3d').prop("checked")){
-			Renderer.init3d.apply(Renderer);
+			Renderer._init3d.apply(Renderer);
     	}
 	});
 
@@ -41,42 +41,13 @@ $(function(){
 			this._map = map;
 			this._playerNames = playerNames;
 
-			if($('#radio_2d').attr("checked")){
-				Renderer.init2d();
+			if($('#radio_3d').attr("checked")){
+				Renderer._init3d();
     		} else {
-    			Renderer.init2d();
+    			Renderer._init2d();
     		}
 		},
 
-		init2d: function() {
-			$('#radio_2d').prop('checked', true);
-			$('#canvas3d_div').hide();
-			$('#c').show();
-
-			this._renderer = Renderer2d;
-			if (!this._initialized2d) {
-				this._initialized2d = true;
-				this._renderer.init(this._canvas, this._map, this._playerNames, this._listener);
-			}
-			if (this._lastState) {
-				this.stateUpdate(this._lastState, this._lastState.stateId());
-			}
-		},
-
-		init3d: function(playerCount, canvas, map, playerNames, iface) {
-			$('#radio_3d').prop('checked', true);
-			$('#c').hide();
-			$('#canvas3d_div').show();
-
-			this._renderer = GLrenderer;
-			if (!this._initialized3d) {
-				this._initialized3d = true;
-				this._renderer.init(this._canvas, this._map, this._playerNames, this._listener);
-			}
-			if (this._lastState) {
-				this.stateUpdate(this._lastState, this._lastState.stateId());
-			}
-		},
 
 		stateUpdate: function(state, id) {
 			this._lastState = state;
@@ -94,6 +65,36 @@ $(function(){
 		
 		setSelectedCountry: function(id) {
 			this._renderer.setSelectedCountry(id);
+		},
+
+		_init2d: function() {
+			$('#radio_2d').prop('checked', true);
+			$('#canvas3d_div').hide();
+			$('#c').show();
+
+			this._renderer = Renderer2d;
+			if (!this._initialized2d) {
+				this._initialized2d = true;
+				this._renderer.init(this._canvas, this._map, this._playerNames, this._listener);
+			}
+			if (this._lastState) {
+				this.stateUpdate(this._lastState, this._lastState.stateId());
+			}
+		},
+
+		_init3d: function(playerCount, canvas, map, playerNames, iface) {
+			$('#radio_3d').prop('checked', true);
+			$('#c').hide();
+			$('#canvas3d_div').show();
+
+			this._renderer = GLrenderer;
+			if (!this._initialized3d) {
+				this._initialized3d = true;
+				this._renderer.init(this._canvas, this._map, this._playerNames, this._listener);
+			}
+			if (this._lastState) {
+				this.stateUpdate(this._lastState, this._lastState.stateId());
+			}
 		},
 
 		_render: function(state, callback) {
