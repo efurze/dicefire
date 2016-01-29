@@ -7,7 +7,6 @@
 
 var GameRunner = function(AIs) {
 	this._engine = new Engine();
-	this._engine.setEnforceTime(true);
 	this._players = AIs.map(function(p){return p;});
 	this._callback = null;
 	
@@ -27,9 +26,12 @@ GameRunner.prototype.start = function(gameOver_cb) {
 			return new AIWrapper(player.hash, self._engine, idx, false, player.name);
 		});
 		
-		this._engine.init(pws, this.gameDone.bind(this));
-		this._engine.setup();
+		this._engine.init(pws);
+		this._engine.setEnforceTime(true);
+		this._engine.registerGameCallback(this.gameDone.bind(this));
 		this._engine.registerStateCallback(this.engineUpdate.bind(this));
+		this._engine.setup();
+		
 		
 		this._gameId = uuid.v1();
 		this._uploader = new Uploader();

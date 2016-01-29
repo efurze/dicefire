@@ -70,9 +70,9 @@ Engine.prototype.setCurrentPlayer = function(id) {
 	this._currentPlayerId = id;
 };
 
+
 // @players =  array[object] of PlayerInterface
-// @callback = function(winningAI, winningID), called when game is over
-Engine.prototype.init = function(players, callback) {
+Engine.prototype.init = function(players, initialMap /*optional*/) {
 	console.time("DICEFIRE");
 	players.forEach(function(ai) {
 		Globals.ASSERT(Globals.implements(ai, Engine.PlayerInterface));
@@ -84,7 +84,7 @@ Engine.prototype.init = function(players, callback) {
 	self._stateCount = 0;
 	self.setCurrentPlayer(0);
 	self._gameOver = false;
-	self._gameCallback = callback;
+	self._gameCallback = null;
 	self._stateCallback = null;
 	if (self._AIs){
 		self._AIs.forEach(function(ai) {
@@ -99,6 +99,18 @@ Engine.prototype.init = function(players, callback) {
 		self._players.push(new Player(i, self));
 		self._AIs[i] = players[i];
 	}
+
+
+	self._map = new Map();
+	if (initialMap) {
+		Globals.debug("Using provided map", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
+		self._map.deserializeHexes(initialMap);
+	} else {
+		self._map.generateMap();
+		Globals.debug("Map: " + self._map.serializeHexes(), Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
+	}
+	self._map.assignCountries(self._players);
+
 	
 	self._initialized = true;	
 };
@@ -108,21 +120,17 @@ Engine.prototype.registerStateCallback = function(cb) {
 	this._stateCallback = cb;
 };
 
-Engine.prototype.setup = function(initialMap, initialState) {
+// @callback = function(winningAI, winningID), called when game is over
+Engine.prototype.registerGameCallback = function(cb) {
+	this._gameCallback = cb;
+};
+
+// if an initialState is passed in, the engine will broadcast an initial 0-dice state when
+// this fn is called. So be sure to call registerStateCallback() first if you're
+// interested in it.
+Engine.prototype.setup = function(initialState /*optional*/) {
 	Globals.debug("Engine setup", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 	var self = this;
-	
-	self._map = new Map();
-	
-	if (initialMap) {
-		Globals.debug("Using provided map", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-		self._map.deserializeHexes(initialMap);
-	} else {
-		self._map.generateMap();
-		Globals.debug("Map: " + self._map.serializeHexes(), Globals.LEVEL.TRACE, Globals.CHANNEL.ENGINE);
-	}
-	
-	self._map.assignCountries(self._players);
 	
 	// start the AIs - this has to happen after the map is initialized
 	self._AIs.forEach(function(ai) {
@@ -133,6 +141,10 @@ Engine.prototype.setup = function(initialMap, initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		self.deserialize(JSON.parse(initialState));
 	} else {
+
+		// send out a pre-dice state
+		self.pushHistory();
+		
 		// assign initial dice
 		self._players.forEach(function(player) {
 			self.addDiceToPlayer(player, Globals.startingDice);

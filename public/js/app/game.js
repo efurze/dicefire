@@ -79,18 +79,19 @@ $(function() {
 				}
 			});
 			
-			Game._engine.init(pws, Game.gameOver);
-			Game._engine.setup();
+			Game._engine.init(pws);
+			Game._engine.registerGameCallback(Game.gameOver);
+			Game._engine.registerStateCallback(Renderer.stateUpdate.bind(Renderer));
 			
 			playerCode.forEach(function(pc) {
 				playerNames.push(pc.getName());
 			});
 			
 			
-			Game._engine.registerStateCallback(Renderer.stateUpdate.bind(Renderer));
 			Game._controller = new Gamecontroller(0, Game._engine);
 			Game._mapController = new Mapcontroller(0, Game._engine.map(), Game.mapConInterface);
 			Renderer.init(Game._canvas, Game._engine.map(), playerNames, Game);
+			Game._engine.setup();
 			
 			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
 			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));

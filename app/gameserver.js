@@ -176,6 +176,7 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 				
 					self._engine = new Engine();
 					self._engine.setKeepHistory(false);
+							
 				
 					//initialize the AIs
 					var players = [];
@@ -198,15 +199,15 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 						logger.log(JSON.stringify(player), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 					})
 				
-				
 					// initialize the game engine
-					self._engine.init(players, self.gameOver.bind(self));
-					self._engine.setup(map, restoreState);
+					self._engine.init(players, map);
+					self._engine.registerGameCallback(self.gameOver.bind(self));
+					self._engine.registerStateCallback(self.engineUpdate.bind(self));	
+					self._engine.setup(restoreState);
 
 					// push the map data to redis
 					rwClient.saveMap(self._gameId, self._engine.serializeMap())
 						.then(function(reply) {
-							self._engine.registerStateCallback(self.engineUpdate.bind(self));			
 							// listen for player connections
 							namespace.on('connection', self.connectPlayer.bind(self));
 							// listen for watcher connections
@@ -237,10 +238,8 @@ GameServer.prototype.connectWatcher = function(socket) {
 	var sock = new SocketWrapper(socket, self._gameId);
 	self._watcherSockets[sock.id()] = sock;
 
-	if (self._started) {
-		// push the latest gamestate to them
-		sock.sendState(self._engine.currentStateId(), self._gameId);
-	}
+	// push the latest gamestate to them
+	sock.sendState(self._engine.currentStateId(), self._gameId);
 };
 
 
@@ -281,7 +280,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 		}
 	}
 
-	if (id >= 0 && self._started) {
+	if (id >= 0) {
 		// push the latest gamestate to them
 		sock.sendState(self._engine.currentStateId(), self._gameId);
 	}
