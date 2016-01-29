@@ -95,6 +95,13 @@ var Renderer2d = {
 			}
 		},
 		
+		setPlayerName: function(id, name) {
+			if (this._names[id]) {
+				this._names[id] = name;
+				this._setupPlayerDivs(this._names.length);
+			}
+		},
+
 		render: function(state, callback) {
 			var self = this;
 			if (self._isRendering) {

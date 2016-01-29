@@ -15,6 +15,7 @@ Downloader.prototype.hasPending = function() {
 
 // @callback: function(success, msg) - if success == true, msg = http response. if success == false, msg = err
 Downloader.prototype.get = function(url, callback) {
+	Globals.debug("Push url", url, Globals.LEVEL.DEBUG, Globals.CHANNEL.DOWNLOADER);
 	this._array.push({url: url, cb: callback});
 	this._doNext();
 };
@@ -52,7 +53,7 @@ Downloader.prototype._doNext = function() {
 		
 		window.setTimeout(function() {
 			var url = self._array[0].url;
-			//console.log("requesting url", url);
+			Globals.debug("Download url", url, Globals.LEVEL.INFO, Globals.CHANNEL.DOWNLOADER);
 			$.get(url)
 			.done(function(d) {
 				self.ajaxDone(d);
@@ -70,6 +71,7 @@ Downloader.prototype.ajaxDone = function(data) {
 	self._timeout = 10;
 	self._retryCount = 0;
 	var req = self._array.shift();
+	Globals.debug("Got url", req.url, Globals.LEVEL.INFO, Globals.CHANNEL.DOWNLOADER);
 	self._pending = false;
 	if (req && req.cb) {
 		req.cb(true, data);
@@ -78,7 +80,7 @@ Downloader.prototype.ajaxDone = function(data) {
 };
 
 Downloader.prototype.ajaxFail = function(err) {
-	console.log("DOWNLOAD FAILURE: ", err.error(), JSON.stringify(err));
+	Globals.debug("DOWNLOAD FAILURE: ", err.error(), JSON.stringify(err), Globals.LEVEL.WARN, Globals.CHANNEL.DOWNLOADER);
 	var self = this;
 	self._retryCount++;
 	if (self._retryCount > MAX_RETRIES) {

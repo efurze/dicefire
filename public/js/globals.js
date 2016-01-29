@@ -140,14 +140,15 @@ Globals.CHANNEL = {
 	"CLIENT_SOCKET" : 9,
 	"AI_WRAPPER" : 10,
 	"MAP_CONTROLLER" : 11,
+	"DOWNLOADER": 12,
 
-	"SERVER": 12,
-	"SERVER_SOCKET" : 13,
-	"USER_AI": 14,
-	"GAME": 15,
-	"ADMIN": 16,
-	"RATER": 17,
-	"DEFAULT": 18,
+	"SERVER": 13,
+	"SERVER_SOCKET" : 14,
+	"USER_AI": 15,
+	"GAME": 16,
+	"ADMIN": 17,
+	"RATER": 18,
+	"DEFAULT": 19,
 };
 
 Globals.channelNames = [];
@@ -167,10 +168,11 @@ Globals.channels[Globals.CHANNEL.PLAYER] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.PLYER] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.RENDERER] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.GREEDY] 			= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.DEBUG;
 Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.INFO;
-Globals.channels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.INFO;
 Globals.channels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.DOWNLOADER] 		= Globals.LEVEL.DEBUG;
 
 // Error report Loglevel for each channel. Determines the detail of error reports
 Globals.errorReportLevels = [];
@@ -188,6 +190,7 @@ Globals.errorReportLevels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.TRACE;
 Globals.errorReportLevels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.TRACE;
 Globals.errorReportLevels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.TRACE;
 Globals.errorReportLevels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.INFO;
+Globals.errorReportLevels[Globals.CHANNEL.DOWNLOADER] 		= Globals.LEVEL.DEBUG;
 
 
 Globals.shuffleArray = function(inArray) {

@@ -48,6 +48,11 @@ $(function(){
     		}
 		},
 
+		setPlayerName: function(id, name) {
+			if (this._renderer) {
+				this._renderer.setPlayerName(id, name);
+			}
+		},
 
 		stateUpdate: function(state, id) {
 			this._lastState = state;

@@ -71,6 +71,7 @@ $(function() {
 			Client._socket.on('disconnect', Client.disconnect);
 			Client._socket.on('connect', Client.connect);
 			Client._socket.on(Message.TYPE.STATE, Client.state);
+			Client._socket.on(Message.TYPE.PLAYER_STATUS, Client.player_status);
 
 			if (!watch) {
 				Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
@@ -218,6 +219,22 @@ $(function() {
 
 		connect: function(sock) {
 			Globals.debug("=> Socket CONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+		},
+
+		// @msg: {playerId: ,connected: ,playerName:}
+		player_status: function(sock, msg) {
+			if (Client._gameInfo) {
+				if (msg.playerId < Client._gameInfo.length) {
+					Client._gameInfo[msg.playerId].setPlayerName(msg.connected ? msg.playerName : "Disconnected");
+
+				}
+			}
+
+			if (msg.connected) {
+				Renderer.setPlayerName(msg.playerId, msg.playerName);
+			} else {
+				Renderer.setPlayerName(msg.playerId, "Disconnected");
+			}
 		},
 
 

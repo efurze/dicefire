@@ -28,6 +28,12 @@ Gameinfo.prototype.getWinner = function() {
 	return this.winner;
 };
 
+Gameinfo.prototype.setPlayerName = function(id, name) {
+	if (id < this.players.length) {
+		this.players[id].id = name;
+	}
+};
+
 Gameinfo.prototype.getPlayers = function() {
 	return this.players.map(function(info) {
 		return info.id;

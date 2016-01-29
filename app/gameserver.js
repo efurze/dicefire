@@ -283,6 +283,19 @@ GameServer.prototype.connectPlayer = function(socket) {
 	if (id >= 0) {
 		// push the latest gamestate to them
 		sock.sendState(self._engine.currentStateId(), self._gameId);
+		var newGuy = self._players[id];
+		
+		self._players.forEach(function(player) {
+			if(player.isHuman() && player != newGuy) {
+				if (!player.hasSocket()) {
+					// tell the new guy about everyone who hasn't connected yet
+					newGuy.socket().sendPlayerStatus(player.id(), false);
+				} else {
+					// tell everyone else the new guy connected
+					player.socket().sendPlayerStatus(newGuy.id(), true, newGuy.getName());
+				}
+			}
+		});
 	}
 	
 	if (self._currentHumans == self._expectedHumans && !self._started) {

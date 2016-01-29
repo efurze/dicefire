@@ -127,6 +127,10 @@ var GLrenderer = {
 			}
 		},
 
+		setPlayerName: function(id, name) {
+
+		},
+
 		render: function(state, callback) {
 			var self = this;
 			if (!state || self._isRendering) {
