@@ -308,38 +308,37 @@ GameServer.prototype.connectPlayer = function(socket) {
 GameServer.prototype.player_init = function(sock, msg) {
 	var self = this;
 	if (!self._socketMap[sock.id()] || !self._socketMap[sock.id()].length) {
-		logger.log('player_init: no player associated with socket', sock.id(), logger.LEVEL.WARN, logger.CHANNEL.SERVER, self._gameId);
-		return;
+		logger.log('player_init: no player associated with socket', sock.id(), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
+	} else {
+		var playerId = self._socketMap[sock.id()][0];
+		var newGuy = self._players[playerId];
+		if (newGuy && !newGuy.isInitialized()) {
+			logger.log('Player', newGuy.id(), 'initialized', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
+			self._currentHumans++;
+		
+			// push the latest gamestate to them
+			newGuy.setInitialized(true);
+			newGuy.socket().sendState(self._engine.currentStateId(), self._gameId);
+			
+			self._players.forEach(function(player) {
+				if(player.isHuman() && player != newGuy) {
+					if (!player.isInitialized()) {
+						// tell the new guy about everyone who hasn't connected yet
+						newGuy.socket().sendPlayerStatus(player.id(), false);
+					} else {
+						// tell everyone else the new guy connected
+						player.socket().sendPlayerStatus(newGuy.id(), true, newGuy.getName());
+					}
+				}
+			});
+
+			// update the watchers
+			self._watchersNs.emit(Message.TYPE.PLAYER_STATUS, Message.playerStatus(newGuy.id(), true, newGuy.getName()));	
+		}
 	}
 
-	var playerId = self._socketMap[sock.id()][0];
-	var newGuy = self._players[playerId];
-	if (newGuy && !newGuy.isInitialized()) {
-		logger.log('Player', newGuy.id(), 'initialized', logger.LEVEL.INFO, logger.CHANNEL.SERVER, self._gameId);
-		self._currentHumans++;
-	
-		// push the latest gamestate to them
-		newGuy.setInitialized(true);
-		newGuy.socket().sendState(self._engine.currentStateId(), self._gameId);
-		
-		self._players.forEach(function(player) {
-			if(player.isHuman() && player != newGuy) {
-				if (!player.isInitialized()) {
-					// tell the new guy about everyone who hasn't connected yet
-					newGuy.socket().sendPlayerStatus(player.id(), false);
-				} else {
-					// tell everyone else the new guy connected
-					player.socket().sendPlayerStatus(newGuy.id(), true, newGuy.getName());
-				}
-			}
-		});
-
-		// update the watchers
-		self._watchersNs.emit(Message.TYPE.PLAYER_STATUS, Message.playerStatus(newGuy.id(), true, newGuy.getName()));
-
-		if (self._currentHumans == self._expectedHumans && !self._started) {
-			self.startGame();
-		}	
+	if (self._currentHumans == self._expectedHumans && !self._started) {
+		self.startGame();
 	}
 };
 
