@@ -71,7 +71,7 @@ SocketWrapper.prototype.on = function(event, callback, context /*optional*/) {
 	}
 };
 
-SocketWrapper.prototype.emit = function(event, data) {
+SocketWrapper.prototype._emit = function(event, data) {
 	log("<=", event, JSON.stringify(data), Globals.LEVEL.INFO, CHANNEL, this._gameId);
 	this._socket.emit(event, data);
 };
@@ -117,38 +117,41 @@ SocketWrapper.prototype.disconnect = function() {
 	}
 };
 
+SocketWrapper.prototype.sendPlayerStatus = function(playerId, connected, name) {
+	this._emit(Message.TYPE.PLAYER_STATUS, Message.playerStatus(playerId, connected, name));
+};
 
 SocketWrapper.prototype.sendCreateBot = function(name, playerId) {
-	this._socket.emit(Message.TYPE.CREATE_BOT, Message.createBot(name, playerId));
+	this._emit(Message.TYPE.CREATE_BOT, Message.createBot(name, playerId));
 };
 
 SocketWrapper.prototype.sendCreateHuman = function(name, playerId) {
-	this._socket.emit(Message.TYPE.CREATE_HUMAN, Message.createHuman(name, playerId));
+	this._emit(Message.TYPE.CREATE_HUMAN, Message.createHuman(name, playerId));
 };
 
 SocketWrapper.prototype.sendState = function(stateId, gameId) {
-	this._socket.emit(Message.TYPE.STATE, Message.state(stateId, gameId));
+	this._emit(Message.TYPE.STATE, Message.state(stateId, gameId));
 };
 
 SocketWrapper.prototype.sendStartTurn = function(playerId, stateId) {
-	this._socket.emit(Message.TYPE.START_TURN, Message.startTurn(playerId, stateId));
+	this._emit(Message.TYPE.START_TURN, Message.startTurn(playerId, stateId));
 };
 
 SocketWrapper.prototype.sendAttack = function(fromId, toId, playerId) {
-	this._socket.emit(Message.TYPE.ATTACK, Message.attack(fromId, toId, playerId));
+	this._emit(Message.TYPE.ATTACK, Message.attack(fromId, toId, playerId));
 };
 
 
 SocketWrapper.prototype.sendAttackResult = function(playerId, success, stateId) {
-	this._socket.emit(Message.TYPE.ATTACK_RESULT, Message.attackResult(playerId, success, stateId));
+	this._emit(Message.TYPE.ATTACK_RESULT, Message.attackResult(playerId, success, stateId));
 };
 
 SocketWrapper.prototype.sendEndTurn = function(playerId) {
-	this._socket.emit(Message.TYPE.END_TURN, Message.endTurn(playerId));
+	this._emit(Message.TYPE.END_TURN, Message.endTurn(playerId));
 };
 
 SocketWrapper.prototype.sendTurnEnded = function(playerId, stateId) {
-	this._socket.emit(Message.TYPE.TURN_ENDED, Message.turnEnded(playerId, stateId));
+	this._emit(Message.TYPE.TURN_ENDED, Message.turnEnded(playerId, stateId));
 };
 
 if (typeof module !== 'undefined' && module.exports){

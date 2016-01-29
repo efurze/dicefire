@@ -3,7 +3,7 @@
 var Message = {
 
 	TYPE: {
-		'STATUS': 'status_update',
+		'PLAYER_STATUS': 'player_status',
 		'STATE': 'state_update',
 		'CREATE_BOT': 'create_bot',
 		'CREATE_HUMAN': 'create_human',
@@ -15,9 +15,11 @@ var Message = {
 		'END_TURN': 'end_turn',
 	},
 
-	status: function(waitingForPlayersCount) {
+	playerStatus: function(playerId, connected, playerName) {
 		return {
-			waiting: waitingForPlayersCount
+			playerId: playerId,
+			connected: connected,
+			playerName: playerName
 		};
 	},
 
