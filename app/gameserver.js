@@ -255,6 +255,13 @@ GameServer.prototype.connectWatcher = function(socket) {
 
 	// push the latest gamestate to them
 	sock.sendState(self._engine.currentStateId(), self._gameId);
+
+	// tell them who isn't connected
+	self._players.forEach(function(player) {
+		if(player.isHuman() && !player.isInitialized()) {
+			sock.sendPlayerStatus(player.id(), false);
+		}
+	});
 };
 
 
@@ -326,6 +333,9 @@ GameServer.prototype.player_init = function(sock, msg) {
 				}
 			}
 		});
+
+		// update the watchers
+		self._watchersNs.emit(Message.TYPE.PLAYER_STATUS, Message.playerStatus(newGuy.id(), true, newGuy.getName()));
 
 		if (self._currentHumans == self._expectedHumans && !self._started) {
 			self.startGame();
@@ -401,6 +411,9 @@ GameServer.prototype.disconnect = function(socketWrapper) {
 						player.socket().sendPlayerStatus(playerId, false);
 					}
 				});
+
+				// update the watchers
+				self._watchersNs.emit(Message.TYPE.PLAYER_STATUS, Message.playerStatus(playerId, false));
 
 				self._players[playerId].setSocket(null);
 				self._players[playerId].setInitialized(false);

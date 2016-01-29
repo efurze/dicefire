@@ -32,6 +32,7 @@ $(function() {
 		_map: null,
 		_gameInfo: null,
 		_players: {}, // playerId => Engine::PlayerInterface
+		_playerStatus: {}, // playerId => true iff player is connected
 
 		_rendererInitialized: false,
 		_currentViewState: -1,
@@ -96,9 +97,17 @@ $(function() {
 							Client._map,
 							Client._gameInfo.getPlayers(),
 							Client);
+
+				// render the disconnected players properly
+				Object.keys(Client._playerStatus).forEach(function(id) {
+					if (!Client._playerStatus[id]) {
+						Renderer.setPlayerName(id, "Disconnected");
+					}
+				});
+
 				Client.processNextState();
 			}
-			if (!Client._initialized) {
+			if (!Client._initialized && !Client._watch) {
 				Client._initialized = true;
 				// tell the server we're initialized
 				Client._socket.sendPlayerInitialized(Client._playerId);
@@ -226,7 +235,7 @@ $(function() {
 
 		connect: function(sock) {
 			Globals.debug("=> Socket CONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
-			if (Client._initialized) {
+			if (Client._initialized && !Client._watch) {
 				// tell the server we're initialized
 				Client._socket.sendPlayerInitialized(Client._playerId);
 			}
@@ -234,12 +243,8 @@ $(function() {
 
 		// @msg: {playerId: ,connected: ,playerName:}
 		player_status: function(sock, msg) {
-			if (Client._gameInfo) {
-				if (msg.playerId < Client._gameInfo.length) {
-					Client._gameInfo[msg.playerId].setPlayerName(msg.connected ? msg.playerName : "Disconnected");
-
-				}
-			}
+			
+			Client._playerStatus[msg.playerId] = msg.connected;
 
 			if (msg.connected) {
 				Renderer.setPlayerName(msg.playerId, msg.playerName);

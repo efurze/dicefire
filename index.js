@@ -45,8 +45,8 @@ app.use('/bluebird', express.static(path.join(__dirname, '/node_modules/bluebird
 app.use('/three', express.static(path.join(__dirname, '/node_modules/three')));
 
 app.use(cookieParser());
-app.use(bodyParser.json({limit: '50mb'}));       // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+app.use(bodyParser.json({limit: '50mb'}));      // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({                 // to support URL-encoded bodies
   extended: true
 }));
 
@@ -80,18 +80,18 @@ app.use(function(req, res, next) {
 // Routes
 
 // User routes
-app.get('/', gameController.index);					        // Front Page
-app.get('/setupsolo', gameController.setupSolo);    // Ladder Game
-app.post('/solo', gameController.solo);			        // Individual Game
-app.get('/setup', gameController.setup);		        // Ladder Game
+app.get('/', gameController.index);                             // Front Page
+app.get('/setupsolo', gameController.setupSolo);                // Ladder Game
+app.post('/solo', gameController.solo);                         // Individual Game
+app.get('/setup', gameController.setup);                        // Ladder Game
 app.get('/replay', gameController.replay);	
 
-app.get('/submit', userAIController.submissionForm);          // AI Submission form
-app.post('/submission', userAIController.submit); 						// submit the AI
-app.post('/testsubmission', userAIController.submitForTest); 	// submit for test
-app.get('/aitest', userAIController.testAI);									// instructions for testing a submitted AI
+app.get('/submit', userAIController.submissionForm);            // AI Submission form
+app.post('/submission', userAIController.submit);               // submit the AI
+app.post('/testsubmission', userAIController.submitForTest);    // submit for test
+app.get('/aitest', userAIController.testAI);					// instructions for testing a submitted AI
 app.get('/playai', userAIController.playAI);
-app.get('/ais', userAIController.getAIList);                  // AI List
+app.get('/ais', userAIController.getAIList);                    // AI List
 app.get('/ai/:hash', userAIController.getAIDetail);
 
 // admin tools
@@ -152,7 +152,6 @@ app.get('/current', function(req, res) {
             data.games.push(game);
     })
     .then(function() {
-        console.log(JSON.stringify(data));
         res.render('currentGames', data);
     })
     .catch(function(err) {
