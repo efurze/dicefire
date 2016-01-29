@@ -26,6 +26,7 @@ $(function() {
 		_downloader: null,
 		_history: null,
 		_gameId: null,	
+		_initialized: false,
 		_watch: false,
 
 		_map: null,
@@ -81,7 +82,8 @@ $(function() {
 		},
 
 
-		initRenderer: function() {
+		setInitialized: function() {
+			// initialize renderer
 			if (!Client._rendererInitialized) {
 				Globals.debug("Initializing renderer", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				if (!Client._watch) {
@@ -95,6 +97,11 @@ $(function() {
 							Client._gameInfo.getPlayers(),
 							Client);
 				Client.processNextState();
+			}
+			if (!Client._initialized) {
+				Client._initialized = true;
+				// tell the server we're initialized
+				Client._socket.sendPlayerInitialized(Client._playerId);
 			}
 		},
 
@@ -219,6 +226,10 @@ $(function() {
 
 		connect: function(sock) {
 			Globals.debug("=> Socket CONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			if (Client._initialized) {
+				// tell the server we're initialized
+				Client._socket.sendPlayerInitialized(Client._playerId);
+			}
 		},
 
 		// @msg: {playerId: ,connected: ,playerName:}
@@ -320,9 +331,7 @@ $(function() {
 						Client._mapController = new Mapcontroller(Client._playerId, Client._map, Client.MapControllerInterface);
 					}
 
-					if (Client._gameInfo) {
-						Client.initRenderer();
-					}
+					Client.setInitialized();					
 
 				} else {
 					Globals.debug("Got map when we already had one", Globals.LEVEL.DEBUG, Globals.CHANNEL.CLIENT);

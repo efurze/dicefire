@@ -25,6 +25,8 @@ AISocketWrapper.prototype.hasSocket = function() {return (this._socket != null);
 AISocketWrapper.prototype.socket = function() {return this._socket;};
 AISocketWrapper.prototype.getName = function() {return this._name;};
 AISocketWrapper.prototype.isHuman = function() {return false;};
+AISocketWrapper.prototype.isInitialized = function() {return false;};
+AISocketWrapper.prototype.setInitialized = function(init) {};
 
 AISocketWrapper.prototype.setSocket = function(socket) {
 	this._socket = socket;

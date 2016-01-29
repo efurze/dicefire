@@ -121,6 +121,10 @@ SocketWrapper.prototype.sendPlayerStatus = function(playerId, connected, name) {
 	this._emit(Message.TYPE.PLAYER_STATUS, Message.playerStatus(playerId, connected, name));
 };
 
+SocketWrapper.prototype.sendPlayerInitialized = function(playerId) {
+	this._emit(Message.TYPE.PLAYER_INITIALIZED, Message.playerInitialized(playerId));
+};
+
 SocketWrapper.prototype.sendCreateBot = function(name, playerId) {
 	this._emit(Message.TYPE.CREATE_BOT, Message.createBot(name, playerId));
 };

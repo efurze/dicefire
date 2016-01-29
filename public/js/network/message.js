@@ -4,6 +4,7 @@ var Message = {
 
 	TYPE: {
 		'PLAYER_STATUS': 'player_status',
+		'PLAYER_INITIALIZED': 'player_initialized',
 		'STATE': 'state_update',
 		'CREATE_BOT': 'create_bot',
 		'CREATE_HUMAN': 'create_human',
@@ -23,6 +24,9 @@ var Message = {
 		};
 	},
 
+	playerInitialized: function() {
+		return {};
+	},
 
 	createBot: function(name, playerId) {
 		return {

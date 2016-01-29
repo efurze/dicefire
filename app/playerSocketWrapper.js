@@ -14,6 +14,7 @@ var PlayerWrapper = function (id, controller) {
 	this._socket = null;
 	this._started = false;
 	this._id = id;
+	this._initialized = false;
 	this._controller = controller;
 
 	Globals.ASSERT(Globals.implements(this, Engine.PlayerInferface));
@@ -24,6 +25,8 @@ PlayerWrapper.prototype.hasSocket = function() {return (this._socket != null);};
 PlayerWrapper.prototype.socket = function() {return this._socket;};
 PlayerWrapper.prototype.getName = function() {return "human";};
 PlayerWrapper.prototype.isHuman = function() {return true;};
+PlayerWrapper.prototype.isInitialized = function() { return this._initialized; };
+PlayerWrapper.prototype.setInitialized = function(init) { this._initialized = init; };
 
 PlayerWrapper.prototype.setSocket = function(socket) {
 	this._socket = socket;
