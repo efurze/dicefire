@@ -3,6 +3,7 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 var passport = require('passport');
+var Promise = require('bluebird');
 var passportConf = require('./config/passport');
 var path = require('path');
 var secrets = require('./config/secrets');
@@ -17,6 +18,7 @@ var app = express();
 var redis = require('redis');
 var redisClient = redis.createClient(); //6379, 'localhost', '');
 var RedisStore = require('connect-redis')(session);	// For storing sessions.
+var rwClient = require('./lib/redisWrapper');
 
 // Controllers
 var userController = require('./controllers/user');
@@ -122,8 +124,41 @@ app.get('/unit', gameController.unit);
 
 
 app.get('/current', function(req, res) {
-	var data = {games: gameServer.activeGames()};
-	res.render('currentGames', data);
+  
+    var gameIds = gameServer.activeGames();
+    var data = {games: []};
+
+    Promise.each(gameIds.map(function(gameId) {
+        return rwClient.getGameInfo(gameId);
+    }), function(gameInfo, idx) { // Gameinfo serialized to JSON
+            var game = {};
+            game['watch'] = "<a href='/replay?gameId=" + gameIds[idx] + "'>Watch</a>";
+            game['players'] = [];
+            var hasOpen = false;
+
+            gameInfo.players.forEach(function(player, id) {
+                if (gameServer.isPositionOpen(gameIds[idx], id)) {
+                    hasOpen = true;
+                    game['players'].push("[Open]");
+                } else {
+                    game['players'].push(player.id);
+                }
+            });
+
+            if (hasOpen) {
+                game['join'] = "<a href='/play?gameId=" + gameIds[idx] + "'>Join</a>";
+            }
+
+            data.games.push(game);
+    })
+    .then(function() {
+        console.log(JSON.stringify(data));
+        res.render('currentGames', data);
+    })
+    .catch(function(err) {
+        res.status(500).send("Server Error: " + err.toString());
+    });
+	
 });
 
 

@@ -129,6 +129,13 @@ var GameManager = function() {
 			}
 			
 			rwClient.removeActiveGame(gameId);
+		},
+
+		isPositionOpen: function(gameId, playerId) {
+			if (games.hasOwnProperty(gameId)) {
+				return games[gameId].positionOpen(playerId);
+			}
+			return false;
 		}
 	};
 }();
@@ -224,6 +231,14 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 		}).catch(function(err) {
 			logger.log("Error getting gameInfo", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 		});
+};
+
+GameServer.prototype.positionOpen = function(playerId) {
+	var self = this;
+	if (self._players[playerId] && self._players[playerId].isHuman() && !self._players[playerId].hasSocket()) {
+		return true;
+	}
+	return false;
 };
 
 GameServer.prototype.createTime = function() {

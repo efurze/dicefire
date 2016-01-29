@@ -1,7 +1,13 @@
 <div id="currentGames">
-	<ul>
+	<table style="width:50%; margin: auto;">
 		{{#each games}}
-			<li><a href="/replay?gameId={{this}}">{{this}}</a></li>
+			<tr>
+				<td>{{{watch}}}</td>
+				<td>{{{join}}}</td>
+				{{#each players}}
+					<td>{{this}}</td>
+				{{/each}}
+			</tr>
 		{{/each}}
-	</ul>
+	</table>
 </div>
