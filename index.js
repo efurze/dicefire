@@ -86,6 +86,8 @@ app.post('/solo', gameController.solo);                         // Individual Ga
 app.get('/setup', gameController.setup);                        // Ladder Game
 app.get('/replay', gameController.replay);	
 
+app.get('/world', gameController.world);
+
 app.get('/submit', userAIController.submissionForm);            // AI Submission form
 app.post('/submission', userAIController.submit);               // submit the AI
 app.post('/testsubmission', userAIController.submitForTest);    // submit for test

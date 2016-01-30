@@ -27,6 +27,11 @@ var makePlayerList = function(names, dflt) {
 
 module.exports = {
 	
+
+	world: function(req, res) { 
+		res.render("world/world", {title: "DiceWorld", layout: "../world/layouts/single"});	    
+	},
+
 	index: function(req, res) { 
 		res.render("frontPage", {title: "Dicefire"});
 	},
