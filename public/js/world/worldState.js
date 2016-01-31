@@ -82,10 +82,11 @@ WorldState.prototype.hexes = function() {
 	return hexes;
 };
 
-WorldState.prototype.playerHexes = function(playerId) {
+WorldState.prototype.playerHexIds = function(playerId) {
 	var self = this;
 	return Object.keys(self._playerHexes[playerId]).map(function(key) {
-		return self._hexMap[key];
+		var parts= key.split(',');
+		return [parseInt(parts[0]), parseInt(parts[1])];
 	});
 };
 

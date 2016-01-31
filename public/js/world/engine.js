@@ -40,14 +40,46 @@ Engine.prototype.start = function() {
 };
 
 Engine.prototype._tick = function() {
+	var self = this;
+	var update = new WorldState();
 
+	self._players.forEach(function(player, idx) {
+		update.merge(self._giveDice(idx));
+	});
+
+	self._sendUpdate(update);
+
+	self._setTimer(self._tick.bind(self), 10000)
+};
+
+Engine.prototype._giveDice = function(playerId) {
+	var self = this;
+	var update = new WorldState();
+	var count = self._numContiguous(playerId);
+	var hexIds = self._state.playerHexIds(playerId);
+	while (count) {
+		count --;
+		var idx = Math.floor(hexIds.length * Math.random());
+		var hex = self._state.getHex(hexIds[idx]);
+		if (hex.diceCount() < 8) {
+			hex.setDice(hex.diceCount() + 1);
+			update.setHex(hex.id(), hex);
+		}
+	}
+
+	return update;
+};
+
+Engine.prototype._numContiguous = function(playerId) {
+	var self = this;
+	return self._state.playerHexIds(playerId).length;
 };
 
 
 Engine.prototype.attack = function(from, to, playerId) {
 	var self = this;
 
-	console.log("Attack", JSON.stringify(from), JSON.stringify(to))	;
+	//console.log("Attack", JSON.stringify(from), JSON.stringify(to))	;
 
 	var fromHex = self._state.getHex(from);
 	var toHex = self._state.getHex(to) || new HexState(to);
@@ -79,9 +111,9 @@ Engine.prototype.attack = function(from, to, playerId) {
 Engine.prototype._sendUpdate = function(updates) {
 	var self = this;
 
-	Object.keys(updates._hexMap).forEach(function(key) {
-		console.log(key, updates._hexMap[key].diceCount());
-	});
+	//Object.keys(updates._hexMap).forEach(function(key) {
+	//	console.log(key, updates._hexMap[key].diceCount());
+	//});
 
 	self._state.merge(updates);
 
@@ -124,6 +156,7 @@ Engine.EngineInterface = function(playerId, engine) {
 };
 
 Engine.PlayerInterface = {
+	id: function(){},
 	init: function(engineInterface, worldState){},
 	update: function(stateUpdate){}
 };

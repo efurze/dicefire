@@ -20,11 +20,13 @@ $(function() {
 			this._worldState = new WorldState();
 			this._worldState.setDice([0,0], 8);
 			this._worldState.setOwner([0,0], 0);
+			this._worldState.setDice([4,0], 8);
+			this._worldState.setOwner([4,0], 1);
 
 			Renderer2d.init(World._canvas);
 
 			this._engine = new Engine();
-			this._engine.init([new AI.Aggressive()]);
+			this._engine.init([new AI.Aggressive(), new AI.Aggressive()]);
 			this._engine.setup(this._worldState);
 			this._engine.registerListener(this.stateUpdate.bind(this));
 			this._engine.start();
