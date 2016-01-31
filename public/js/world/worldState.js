@@ -7,6 +7,10 @@ var HexState = function(id) {
 	this._diceCount = 0;
 };
 
+HexState.prototype.id = function() {
+	return this._id;
+};
+
 HexState.prototype.ownerId = function() {
 	return this._ownerId;
 };
@@ -23,10 +27,48 @@ HexState.prototype.setDice = function(count) {
 	this._diceCount = count;
 };
 
+HexState.prototype.adjacent = function() {
+	var x = this._id[0], y = this._id[1];
+	var list = [];
+	list.push([x, y+2]);
+	list.push([x, y-2]);
+	list.push([x+1, y+1]);
+	list.push([x+1, y-1]);
+	list.push([x-1, y+1]);
+	list.push([x-1, y-1]);
+	return list;
+};
+
 
 var WorldState = function() {
 	this._hexMap = {};
-	this._playerHexes = {}; // playerId to list of countries
+	this._playerHexes = {}; // playerId to list of hexIds
+};
+
+WorldState.prototype.merge = function(state) {
+	var self = this;
+	Object.keys(state._hexMap).forEach(function(hexId) {
+		if (self.ownerId(hexId) != state.ownerId(hexId)) {
+			self.setOwner(hexId, state.ownerId(hexId));
+		}
+		self._hexMap[hexId] = state._hexMap[hexId];
+	});
+};
+
+WorldState.prototype.hexes = function() {
+	var self = this;
+	var hexes = [];
+	Object.keys(self._hexMap).forEach(function(id) {
+		hexes.push(self._hexMap[id]);
+	});
+	return hexes;
+};
+
+WorldState.prototype.playerHexes = function(playerId) {
+	var self = this;
+	return Object.keys(self._playerHexes[playerId]).map(function(key) {
+		return self._hexMap[key];
+	});
 };
 
 // @hexId = [row, col]
@@ -59,7 +101,7 @@ WorldState.prototype.setOwner = function(hexId, ownerId) {
 
 WorldState.prototype.diceCount = function(hexId) {
 	var hex = this._hexMap[KEY(hexId)];
-	return hex ? hex[row + ',' + col].diceCount() : hex;
+	return hex ? hex.diceCount() : 0;
 };
 
 WorldState.prototype.setDice = function(hexId, count) {

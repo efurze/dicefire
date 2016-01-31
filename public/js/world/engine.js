@@ -2,8 +2,9 @@
 
 
 var Engine = function() {
-
+	this._listeners = [];
 };
+
 
 // @playerAry: array of Engine.PlayerInterface
 Engine.prototype.init = function(playersAry) {
@@ -12,11 +13,28 @@ Engine.prototype.init = function(playersAry) {
 	self._players = playersAry;
 };
 
-Engine.prototype.start = function(state) {
+Engine.prototype.setup = function(state) {
 	var self = this;
 	if (state) {
 		self._state = state;
 	}
+
+};
+
+// @callback: function(state){}
+Engine.prototype.registerListener = function(callback) {
+	if (this._state) {
+		callback(this._state);
+	}
+	this._listeners.push(callback);
+};
+
+Engine.prototype.start = function() {
+	var self = this;
+
+	self._players.forEach(function(player, idx) {
+		player.init(idx, Engine.EngineInterface(idx, self), self._state);
+	});
 
 	self._setTimer(self._tick.bind(self), 1000)
 };
@@ -30,7 +48,7 @@ Engine.prototype.attack = function(from, to, playerId) {
 	var self = this;
 
 	var fromHex = self._state.getHex(from);
-	var toHex = self._state.getHex(to);
+	var toHex = self._state.getHex(to) || new HexState(to);
 
 	var fromRoll = Engine.rollDice(fromHex.diceCount());
 	var toRoll = Engine.rollDice(toHex.diceCount());
@@ -38,14 +56,35 @@ Engine.prototype.attack = function(from, to, playerId) {
 	var fromTotal = fromRoll.reduce(function(total, die) { return total + die; }, 0);
 	var toTotal = toRoll.reduce(function(total, die) { return total + die; }, 0);
 
-	if (fromTotal > toTotal) {
+	var fromDice = fromHex.diceCount();
+	fromHex.setDice(1);
 
+	var update = new WorldState();
+	update.setHex(from, fromHex);
+
+	if (fromTotal > toTotal) {
+		toHex.setOwner(toHex, playerId);
+		toHex.setDice(toHex, fromDice-1);
+		update.setHex(to, toHex);
+		self._sendUpdate(update);
 		return true;
 	} else {
-
-
+		self._sendUpdate(update);
 		return false;
 	}
+};
+
+Engine.prototype._sendUpdate = function(updates) {
+	var self = this;
+	self._state.merge(updates);
+	
+	self._players.forEach(function(player) {
+		player.update(updates);
+	});
+
+	self._listeners.forEach(function(listener) {
+		listener(updates);
+	});
 };
 
 
@@ -79,5 +118,5 @@ Engine.EngineInterface = function(playerId, engine) {
 
 Engine.PlayerInterface = {
 	init: function(engineInterface, worldState){},
-	update: function(hexState){}
+	update: function(stateUpdate){}
 };

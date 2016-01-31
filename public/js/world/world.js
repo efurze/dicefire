@@ -18,15 +18,23 @@ $(function() {
 		
 		init: function () {
 			this._worldState = new WorldState();
-			this._worldState.setDice([0,0], 5);
+			this._worldState.setDice([0,0], 8);
 			this._worldState.setOwner([0,0], 0);
 
-			this._worldState.setDice([6,0], 5);
-			this._worldState.setOwner([6,0], 1);
-
 			Renderer2d.init(World._canvas);
-			Renderer2d.render(this._worldState);
+
+			this._engine = new Engine();
+			this._engine.init([new AI.Aggressive()]);
+			this._engine.setup(this._worldState);
+			this._engine.registerListener(this.stateUpdate.bind(this));
+			this._engine.start();
+
 			$(document).keydown(this.keyDown.bind(this));
+		},
+
+		stateUpdate: function(state) {
+			this._worldState.merge(state);
+			Renderer2d.render(this._worldState);
 		},
 
 		keyDown: function(event) {
