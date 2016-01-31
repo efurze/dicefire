@@ -82,6 +82,14 @@ WorldState.prototype.hexes = function() {
 	return hexes;
 };
 
+WorldState.prototype.hexIds = function() {
+	var self = this;
+	return Object.keys(self._hexMap).map(function(key) {
+		var parts= key.split(',');
+		return [parseInt(parts[0]), parseInt(parts[1])];
+	});
+};
+
 WorldState.prototype.playerHexIds = function(playerId) {
 	var self = this;
 	return Object.keys(self._playerHexes[playerId]).map(function(key) {

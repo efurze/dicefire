@@ -28,6 +28,7 @@ $(function() {
 			this._engine = new Engine();
 			this._engine.init([new AI.Aggressive(), new AI.Aggressive()]);
 			this._engine.setup(this._worldState);
+			Renderer2d.render(World._worldState);
 			this._engine.registerListener(this.stateUpdate.bind(this));
 			this._engine.start();
 
@@ -36,7 +37,7 @@ $(function() {
 
 		stateUpdate: function(state) {
 			World._worldState.merge(state);
-			Renderer2d.render(World._worldState);
+			Renderer2d.update(state);
 		},
 
 		keyDown: function(event) {

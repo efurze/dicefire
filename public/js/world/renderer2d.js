@@ -80,6 +80,16 @@ var Renderer2d = {
 
 	},
 
+	update: function(state) {
+		var self = this;
+
+		state.hexIds().forEach(function(hexId) {
+			self._renderHex(hexId, state);
+		});
+
+		self._lastState.merge(state);
+	},
+
 	_worldToScreen: function(point) {
 		return [point[0] - this._screenUpperLeft[0], this._screenUpperLeft[1] - point[1]];
 	},
