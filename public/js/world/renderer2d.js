@@ -1,15 +1,8 @@
 'use strict'
 
 var Hex = {};
-Hex.BORDER_THICKNESS = 3;
-Hex.EDGE_LENGTH = 40;
 Hex.HEIGHT = 60;
 Hex.WIDTH = Hex.HEIGHT;
-Hex.TOP_LEFT_X = 10;
-Hex.TOP_LEFT_Y = 10;
-Hex.TOTAL_HEXES = Hex.NUM_WIDE * Hex.NUM_HIGH;
-// The fudge was selected to make it look nice :-)
-Hex.FUDGE = 0;
 
 var Renderer2d = {
 
@@ -43,14 +36,14 @@ var Renderer2d = {
 		var hexId = self._pointToHex(self._screenToWorld([event.offsetX, event.offsetY]));
 		if (!self._pointCmp(hexId, self._mouseOverHex)) {
 			self._mouseOverHex = hexId;
-			self.render(this._screenCenter);
+			self.render(self._lastState);
 		}
 	},
 
 	mouseLeave: function(event) {
 		if (this._mouseOverHex != null) {
 			this._mouseOverHex = null;
-			this.render(this._screenCenter);
+			this.render(self._lastState);
 		}
 	},
 
@@ -59,10 +52,16 @@ var Renderer2d = {
 	},
 
 	// @screenCenter: [x,y] screen center in world coordinates
-	render: function(screenCenter) {
+	setPosition: function(screenCenter) {
+		this._screenCenter = screenCenter || [0,0];
+		this.render(this._lastState);
+	},
+
+	
+	render: function(state) {
 		var self = this;
 		self._clear();
-		self._screenCenter = screenCenter || [0,0];
+		self._lastState = state;
 		self._screenUpperLeft = [self._screenCenter[0] - self._canvasWidth/2, self._screenCenter[1] + self._canvasHeight/2]
 
 		var x=0, y=0;
@@ -72,7 +71,7 @@ var Renderer2d = {
 				var hex = self._pointToHex(worldPt);
 				var hexCtr = self._worldToScreen(self._hexCenter(hex));
 				x = hexCtr[0];
-				self._renderHex(hex);
+				self._renderHex(hex, state);
 				x += 3*Hex.WIDTH/4 + 1;
 			}
 			x = 0;
@@ -93,7 +92,7 @@ var Renderer2d = {
 		return Math.sqrt(Math.pow(p1[0]-p2[0], 2) + Math.pow(p1[1]-p2[1], 2));
 	},
 
-	// _hexCenter() - uses world coords
+	// _pointToHex() - uses world coords. Returns hex id
 	// A hex is centered on (0,0) in the world. That defines row 0, col 0
 	// 
 	//		[0,2]
@@ -148,9 +147,10 @@ var Renderer2d = {
 
 
 
-	_renderHex: function (hexId) {
+	_renderHex: function (hexId, state) {
 		var self = this;
 
+		var hexState = state.getHex(hexId);
 		var hexCenter = self._worldToScreen(self._hexCenter(hexId));
 
 		var upperLeftX = hexCenter[0] - Hex.WIDTH/4;
@@ -174,9 +174,20 @@ var Renderer2d = {
 		    self._context.fillStyle = "lightgray";
 			self._context.fill(path);
 		}
+
+		if (hexState) {
+			self._renderDice(hexCenter, hexState.diceCount());
+		}
 		
 	},
 
+	_renderDice: function (hexCenter, count) {
+		var self = this;
+		self._context.fillStyle = "black";
+	    self._context.font = "14px sans-serif";
+	    self._context.textAlign = "center";
+	    self._context.fillText(count, hexCenter[0], hexCenter[1]+7);
+	},
 
 
 };
