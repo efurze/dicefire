@@ -26,11 +26,17 @@ var Renderer2d = {
 		this._context.lineJoin = "straight";
 		this._canvasWidth = this._context.canvas.clientWidth;
 		this._canvasHeight = this._context.canvas.clientHeight;
+		
+	},
+
+	_clear: function() {
+		this._context.clearRect(0,0,2000,2000);
 	},
 
 	// @screenCenter: [x,y] screen center in world coordinates
 	render: function(screenCenter) {
 		var self = this;
+		self._clear();
 		self._screenCenter = screenCenter || [0,0];
 		self._screenUpperLeft = [self._screenCenter[0] - self._canvasWidth/2, self._screenCenter[1] + self._canvasHeight/2]
 
@@ -129,9 +135,12 @@ var Renderer2d = {
         path.lineTo(upperLeftX, upperLeftY);
         path.closePath();
 
-        self._context.strokeStyle = "black";
+        self._context.strokeStyle = "blue";
 	    self._context.lineWidth = 1;
 	    self._context.stroke(path);
 		
 	},
+
+
+
 };
