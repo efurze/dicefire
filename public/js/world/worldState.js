@@ -7,6 +7,13 @@ var HexState = function(id) {
 	this._diceCount = 0;
 };
 
+HexState.prototype.clone = function() {
+	var copy = new HexState(this._id);
+	copy._ownerId = this._ownerId;
+	copy._diceCount = this._diceCount;
+	return copy;
+};
+
 HexState.prototype.id = function() {
 	return this._id;
 };
@@ -45,13 +52,24 @@ var WorldState = function() {
 	this._playerHexes = {}; // playerId to list of hexIds
 };
 
+WorldState.prototype.clone = function() {
+	var self = this;
+	var copy = new WorldState();
+	copy._playerHexes = JSON.parse(JSON.stringify(self._playerHexes));
+	Object.keys(self._hexMap).forEach(function(key) {
+		copy._hexMap[key] = self._hexMap[key].clone();
+	});
+
+	return copy;
+}
+
 WorldState.prototype.merge = function(state) {
 	var self = this;
 	Object.keys(state._hexMap).forEach(function(hexId) {
 		if (self.ownerId(hexId) != state.ownerId(hexId)) {
 			self.setOwner(hexId, state.ownerId(hexId));
 		}
-		self._hexMap[hexId] = state._hexMap[hexId];
+		self._hexMap[hexId] = state._hexMap[hexId].clone();
 	});
 };
 
@@ -73,7 +91,8 @@ WorldState.prototype.playerHexes = function(playerId) {
 
 // @hexId = [row, col]
 WorldState.prototype.getHex = function(hexId) {
-	return this._hexMap[KEY(hexId)];
+	var hex = this._hexMap[KEY(hexId)];
+	return hex ? hex.clone() : null;
 };
 
 WorldState.prototype.setHex = function(hexId, hexState) {
@@ -109,4 +128,6 @@ WorldState.prototype.setDice = function(hexId, count) {
 	this._hexMap[KEY(hexId)].setDice(count);
 };
 
-var KEY = function(hexId) { return hexId[0] + ',' + hexId[1]};
+var KEY = function(hexId) { 
+	return Array.isArray(hexId) ? hexId[0] + ',' + hexId[1] : hexId;
+};

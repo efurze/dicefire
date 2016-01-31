@@ -24,7 +24,7 @@ Engine.prototype.setup = function(state) {
 // @callback: function(state){}
 Engine.prototype.registerListener = function(callback) {
 	if (this._state) {
-		callback(this._state);
+		callback(this._state.clone());
 	}
 	this._listeners.push(callback);
 };
@@ -33,7 +33,7 @@ Engine.prototype.start = function() {
 	var self = this;
 
 	self._players.forEach(function(player, idx) {
-		player.init(idx, Engine.EngineInterface(idx, self), self._state);
+		player.init(idx, Engine.EngineInterface(idx, self), self._state.clone());
 	});
 
 	self._setTimer(self._tick.bind(self), 1000)
@@ -46,6 +46,8 @@ Engine.prototype._tick = function() {
 
 Engine.prototype.attack = function(from, to, playerId) {
 	var self = this;
+
+	console.log("Attack", JSON.stringify(from), JSON.stringify(to))	;
 
 	var fromHex = self._state.getHex(from);
 	var toHex = self._state.getHex(to) || new HexState(to);
@@ -63,8 +65,8 @@ Engine.prototype.attack = function(from, to, playerId) {
 	update.setHex(from, fromHex);
 
 	if (fromTotal > toTotal) {
-		toHex.setOwner(toHex, playerId);
-		toHex.setDice(toHex, fromDice-1);
+		toHex.setOwner(playerId);
+		toHex.setDice(fromDice-1);
 		update.setHex(to, toHex);
 		self._sendUpdate(update);
 		return true;
@@ -76,14 +78,19 @@ Engine.prototype.attack = function(from, to, playerId) {
 
 Engine.prototype._sendUpdate = function(updates) {
 	var self = this;
+
+	Object.keys(updates._hexMap).forEach(function(key) {
+		console.log(key, updates._hexMap[key].diceCount());
+	});
+
 	self._state.merge(updates);
-	
+
 	self._players.forEach(function(player) {
-		player.update(updates);
+		self._setTimer(function() { player.update(updates); }, 0);
 	});
 
 	self._listeners.forEach(function(listener) {
-		listener(updates);
+		self._setTimer(function() { listener(updates); }, 0);
 	});
 };
 

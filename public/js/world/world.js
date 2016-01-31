@@ -33,8 +33,8 @@ $(function() {
 		},
 
 		stateUpdate: function(state) {
-			this._worldState.merge(state);
-			Renderer2d.render(this._worldState);
+			World._worldState.merge(state);
+			Renderer2d.render(World._worldState);
 		},
 
 		keyDown: function(event) {
