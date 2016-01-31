@@ -43,7 +43,7 @@ var Renderer2d = {
 	mouseLeave: function(event) {
 		if (this._mouseOverHex != null) {
 			this._mouseOverHex = null;
-			this.render(self._lastState);
+			this.render(this._lastState);
 		}
 	},
 
@@ -150,7 +150,10 @@ var Renderer2d = {
 	_renderHex: function (hexId, state) {
 		var self = this;
 
-		var hexState = state.getHex(hexId);
+		var hexState = null;
+		if (state) {
+			hexState = state.getHex(hexId);
+		}
 		var hexCenter = self._worldToScreen(self._hexCenter(hexId));
 
 		var upperLeftX = hexCenter[0] - Hex.WIDTH/4;
@@ -170,15 +173,31 @@ var Renderer2d = {
 	    self._context.lineWidth = 1;
 	    self._context.stroke(path);
 
+	    var color = "white";
+
+	    if (hexState && hexState.ownerId() >= 0) {
+	    	color = self._ownerColor(hexState.ownerId());
+	    }
+
 	    if (self._pointCmp(hexId, self._mouseOverHex)) {
-		    self._context.fillStyle = "lightgray";
-			self._context.fill(path);
+		    color = "lightgray";
 		}
+
+		self._context.fillStyle = color;
+		self._context.fill(path);
 
 		if (hexState) {
 			self._renderDice(hexCenter, hexState.diceCount());
 		}
 		
+	},
+
+	_ownerColor: function(id) {
+		if (id == 0) {
+			return "rgb(255, 120, 120)";
+		} else if (id == 1) {
+			return "rgb(120, 255, 120)";
+		}
 	},
 
 	_renderDice: function (hexCenter, count) {

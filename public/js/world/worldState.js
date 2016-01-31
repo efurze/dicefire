@@ -2,12 +2,17 @@
 
 
 var HexState = function(id) {
+	this._id = id;
 	this._ownerId = -1;
 	this._diceCount = 0;
 };
 
 HexState.prototype.ownerId = function() {
 	return this._ownerId;
+};
+
+HexState.prototype.setOwner = function(owner) {
+	this._ownerId = owner;
 };
 
 HexState.prototype.diceCount = function() {
@@ -21,28 +26,45 @@ HexState.prototype.setDice = function(count) {
 
 var WorldState = function() {
 	this._hexMap = {};
+	this._playerHexes = {}; // playerId to list of countries
 };
 
 // @hexId = [row, col]
 WorldState.prototype.getHex = function(hexId) {
-	return this._hexMap[hexId[0] + ',' + hexId[1]];
+	return this._hexMap[KEY(hexId)];
 };
 
 WorldState.prototype.setHex = function(hexId, hexState) {
-	this._hexMap[hexId[0] + ',' + hexId[1]] = hexState;
+	this._hexMap[KEY(hexId)] = hexState;
 };
 
 WorldState.prototype.ownerId = function(hexId) {
-	var hex = this._hexMap[hexId[0] + ',' + hexId[1]];
+	var hex = this._hexMap[KEY(hexId)];
 	return hex ? hex.ownerId() : -1;
 };
 
+WorldState.prototype.setOwner = function(hexId, ownerId) {
+	var hex = this._hexMap[KEY(hexId)] || new HexState(hexId);
+	this._hexMap[KEY(hexId)] = hex;
+
+	if (hex.ownerId() >= 0) {
+		delete this._playerHexes[hex.ownerId()][KEY(hexId)];
+	}
+	hex.setOwner(ownerId);
+	if (!this._playerHexes[ownerId]) {
+		this._playerHexes[ownerId] = {};
+	}
+	this._playerHexes[ownerId][KEY(hexId)] = true;
+};
+
 WorldState.prototype.diceCount = function(hexId) {
-	var hex = this._hexMap[rhexId[0] + ',' + hexId[1]];
+	var hex = this._hexMap[KEY(hexId)];
 	return hex ? hex[row + ',' + col].diceCount() : hex;
 };
 
 WorldState.prototype.setDice = function(hexId, count) {
-	this._hexMap[hexId[0] + ',' + hexId[1]] = this._hexMap[hexId[0] + ',' + hexId[1]] || new HexState(hexId);
-	this._hexMap[hexId[0] + ',' + hexId[1]].setDice(count);
+	this._hexMap[KEY(hexId)] = this._hexMap[KEY(hexId)] || new HexState(hexId);
+	this._hexMap[KEY(hexId)].setDice(count);
 };
+
+var KEY = function(hexId) { return hexId[0] + ',' + hexId[1]};

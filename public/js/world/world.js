@@ -19,6 +19,10 @@ $(function() {
 		init: function () {
 			this._worldState = new WorldState();
 			this._worldState.setDice([0,0], 5);
+			this._worldState.setOwner([0,0], 0);
+
+			this._worldState.setDice([6,0], 5);
+			this._worldState.setOwner([6,0], 1);
 
 			Renderer2d.init(World._canvas);
 			Renderer2d.render(this._worldState);
