@@ -14,6 +14,8 @@ Hex.FUDGE = 0;
 var Renderer2d = {
 
 	_screenCenter: [0,0],
+	_mouseOverHex: null,
+	_selectedHex: null,
 
 	init: function(canvas) {
 
@@ -26,7 +28,30 @@ var Renderer2d = {
 		this._context.lineJoin = "straight";
 		this._canvasWidth = this._context.canvas.clientWidth;
 		this._canvasHeight = this._context.canvas.clientHeight;
+
+		$(canvas).mousemove(this.mouseMove.bind(this));
+    	$(canvas).mouseleave(this.mouseLeave.bind(this));
 		
+	},
+
+	_pointCmp: function(p1, p2) {
+		return p1 == p2 ||  (p1 && p2 && p1[0] == p2[0] && p1[1] == p2[1]);
+ 	},
+
+	mouseMove: function(event) {
+		var self = this;
+		var hexId = self._pointToHex(self._screenToWorld([event.offsetX, event.offsetY]));
+		if (!self._pointCmp(hexId, self._mouseOverHex)) {
+			self._mouseOverHex = hexId;
+			self.render(this._screenCenter);
+		}
+	},
+
+	mouseLeave: function(event) {
+		if (this._mouseOverHex != null) {
+			this._mouseOverHex = null;
+			this.render(this._screenCenter);
+		}
 	},
 
 	_clear: function() {
@@ -44,13 +69,11 @@ var Renderer2d = {
 		while (y < self._canvasHeight) {
 			while (x < self._canvasWidth) {
 				var worldPt = self._screenToWorld([x, y]);
-				var hexW = self._hexCenter(worldPt);
-				var hex = self._worldToScreen(hexW);
-
-				x = hex[0];
+				var hex = self._pointToHex(worldPt);
+				var hexCtr = self._worldToScreen(self._hexCenter(hex));
+				x = hexCtr[0];
 				self._renderHex(hex);
-				x += 3*Hex.WIDTH/4;
-				
+				x += 3*Hex.WIDTH/4 + 1;
 			}
 			x = 0;
 			y += Hex.HEIGHT/2;
@@ -82,7 +105,7 @@ var Renderer2d = {
 	// The coords of [1,1] are (Hex.WIDTH*3/4, Hex.HEIGHT*1/2)
 	// In general, the center coords of a hex in row R and column C are
 	// (C * Hex.WIDTH * 3/4, R * Hex.HEIGHT * 1/2)
-	_hexCenter: function(point) {
+	_pointToHex: function(point) {
 		var self = this;
 		
 		var col = 4*point[0] / (3*Hex.WIDTH);
@@ -109,7 +132,7 @@ var Renderer2d = {
 					col = c;
 					row = r;
 					minDistance = dist;
-					closestHex = hexCenter;
+					closestHex = [c, r];
 				}
 			}
 		}
@@ -118,9 +141,17 @@ var Renderer2d = {
 
 	},
 
+	// uses world coords
+	_hexCenter: function(hexId) {
+		return [hexId[0] * Hex.WIDTH * 3 / 4, hexId[1] * Hex.HEIGHT/2];
+	},
 
-	_renderHex: function (hexCenter) {
+
+
+	_renderHex: function (hexId) {
 		var self = this;
+
+		var hexCenter = self._worldToScreen(self._hexCenter(hexId));
 
 		var upperLeftX = hexCenter[0] - Hex.WIDTH/4;
 		var upperLeftY = hexCenter[1] + Hex.WIDTH/2;
@@ -138,6 +169,11 @@ var Renderer2d = {
         self._context.strokeStyle = "blue";
 	    self._context.lineWidth = 1;
 	    self._context.stroke(path);
+
+	    if (self._pointCmp(hexId, self._mouseOverHex)) {
+		    self._context.fillStyle = "lightgray";
+			self._context.fill(path);
+		}
 		
 	},
 
