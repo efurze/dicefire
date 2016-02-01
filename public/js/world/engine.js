@@ -36,7 +36,7 @@ Engine.prototype.start = function() {
 		player.init(idx, Engine.EngineInterface(idx, self), self._state.clone());
 	});
 
-	self._setTimer(self._tick.bind(self), 1000)
+	self._setTimer(self._tick.bind(self), 10000)
 };
 
 Engine.prototype._tick = function() {
@@ -83,6 +83,10 @@ Engine.prototype.attack = function(from, to, playerId) {
 
 	var fromHex = self._state.getHex(from);
 	var toHex = self._state.getHex(to) || new HexState(to);
+
+	if (!fromHex || !toHex) {
+		return false;
+	}
 
 	var fromRoll = Engine.rollDice(fromHex.diceCount());
 	var toRoll = Engine.rollDice(toHex.diceCount());

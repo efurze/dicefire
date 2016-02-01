@@ -73,14 +73,12 @@ WorldState.prototype.merge = function(state) {
 	});
 };
 
-WorldState.prototype.hexes = function() {
+
+WorldState.prototype.playerIds = function() {
 	var self = this;
-	var hexes = [];
-	Object.keys(self._hexMap).forEach(function(id) {
-		hexes.push(self._hexMap[id]);
-	});
-	return hexes;
+	return Object.keys(self._playerHexes);
 };
+
 
 WorldState.prototype.hexIds = function() {
 	var self = this;
@@ -96,6 +94,10 @@ WorldState.prototype.playerHexIds = function(playerId) {
 		var parts= key.split(',');
 		return [parseInt(parts[0]), parseInt(parts[1])];
 	});
+};
+
+WorldState.prototype.storedDice = function(playerId) {
+	return 0;
 };
 
 // @hexId = [row, col]

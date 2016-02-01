@@ -19,10 +19,10 @@
 	AI.Aggressive.prototype.update = function(update) {
 		var self = this;
 		var us = false;
-		var hexes = update.hexes();
+		var hexIds = update.hexIds();
 
-		for (var i=0; i < hexes.length; i++) {
-			if (hexes[i].ownerId() == self._playerId) {
+		for (var i=0; i < hexIds.length; i++) {
+			if (update.ownerId(hexIds[i]) == self._playerId) {
 				us = true;
 				break;
 			}
