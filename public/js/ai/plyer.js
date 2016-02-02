@@ -164,9 +164,6 @@
 	// return a Move object
 	AI.Plyer.prototype.findBestGreedyMove = function(state, length) {
 		var self = this;
-		self.findAllGreedyMoves(state, length);
-		//Globals.ASSERT(self.foobar && self.foobar.length);
-		
 		var moves = self.findAllGreedyMoves(state, length);
 		Globals.ASSERT(moves.length);
 		return self.pickBest(moves, state);
