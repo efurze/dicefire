@@ -282,7 +282,7 @@ $(function() {
 					}
 				}
 
-				Client._players[id] = new SocketAIController(Client._socket, Client._history, AIMap[aiName], id, false); 
+				Client._players[id] = new SocketAIController(Client._socket, Client._history, AIMap[aiName], id); 
 				if (Client._map) {
 					Client._players[id].start();
 				}

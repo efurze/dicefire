@@ -5,12 +5,11 @@
 	// 						Implelments Engine.PlayerInterface so client can use it
 	/*========================================================================================================================================*/
 
-	var SocketAIController = function(socket, history, ai, playerId, trusted) {
+	var SocketAIController = function(socket, history, ai, playerId) {
 		this._socket = socket;
 		this._ai = ai;
 		this._id = playerId;
 		this._history = history;
-		this._trusted = trusted;
 		this._started = false;
 		this._isMyTurn = false;
 		this._startTurnPending = false;
@@ -32,7 +31,7 @@
 			this._aiWrapper.stop();
 			this._aiWrapper = null;
 		}
-		this._aiWrapper = new AIWrapper(this._ai, this, this._id, this._trusted);
+		this._aiWrapper = new AIWrapper(this._ai, this, this._id, false);
 	};
 
 	//

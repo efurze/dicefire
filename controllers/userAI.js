@@ -75,7 +75,9 @@ var submissionForm = function(req, res) {
 
 var testAI = function(req, res) {
 	var aiHash = req.query['ai'];
-	var aiPath = '/aicode/'+aiHash;
+	logger.log("testAI", aiHash, logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
+	var aiPath = '/aitest/'+aiHash;
+
 	res.render("ai/test", {
 					ai_path: aiPath,
 					ai_hash: aiHash,
@@ -88,6 +90,7 @@ var testAI = function(req, res) {
 
 var playAI = function(req, res) {
 	var aiHash = req.query['ai'];
+	logger.log("playAI", aiHash, logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 	var aiPath = '/aicode/'+aiHash;
 	res.render("ai/play", {
 					ai_path: aiPath,
@@ -160,7 +163,7 @@ var doSubmit = function(req, res, test) {
 								res.status(200).render('ai/received', {hash: codeHash});
 							}
 						}).catch(function(err) {
-							res.status(500).render('ai/error', {error_message: err});
+							res.status(500).send('Error Saving Submission ' + err.toString());
 						});
 				} else if (result.startsWith("Server Error")) {
 					logger.log("Server vaidate error", result, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
@@ -178,14 +181,15 @@ var doSubmit = function(req, res, test) {
 };
 
 var storeAI = function(codeStr, sha, name, temporary) {
-	return rwClient.saveAI(sha, JSON.stringify({name: name, code: codeStr, wins: 0, losses: 0}))
+	if (temporary) {
+		return rwClient.saveTempAI(sha, JSON.stringify({name: name, code: codeStr, wins: 0, losses: 0}), 3600);
+	} else {
+		return rwClient.saveAI(sha, JSON.stringify({name: name, code: codeStr, wins: 0, losses: 0}))
 				.then(function(reply) {
-					if (temporary) {
-						return rwClient.expireAI(sha, 3600);
-					} else {
-						return rwClient.pushAI(sha, name);
-					}
+					return rwClient.pushAI(sha, name);
 				});
+	}
+	
 };
 
 // erases AI's game history and win-loss record
@@ -314,9 +318,18 @@ var getAIDetail = function(req, res) {
 		});
 };
 
+var getTestWorker = function(req, res) {
+	logger.log("getTestWorker", logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
+	req.params['test'] = true;
+	return getAIWorker(req, res);
+};
+
 var getAIWorker = function(req, res) {
 	var sha = req.params['hash'];
-	var replaced = aiWorker.replace(/_replaceThisWithAIHash_/gm, sha);
+	var test = req.params['test'];
+	logger.log("getAIWorker", sha, test, logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
+	var path = test ? 'aitest/' + sha : 'aicode/' + sha;
+	var replaced = aiWorker.replace(/_replaceThisWithAIHash_/gm, path);
 	res.send(replaced);
 };
 
@@ -332,6 +345,7 @@ module.exports = {
 	getAIList: getAIList,
 	getAIListJSON: getAIListJSON,
 	getAIDetail: getAIDetail,
+	getTestWorker: getTestWorker,
 	getAIWorker: getAIWorker,
 	resetAI: resetAI
 };

@@ -29,15 +29,14 @@ var AIInterface = function(aiwrapper) {
 //		If it's a hash, then @name must be defined, and it will automatically assumed to be untrusted, 
 //		regardless of the value of @trusted
 //
-// @trusted: whether or not the ai passed in is user-submitted (and therefore potentially malicious) code. If untrusted,
-// 		AIWrapper runs the ai in a separate WebWorker process.
+// @test: true only if we're testing a submitted AI
 //
 // @controller: what this class calls back into to attack or end a turn. must implement Engine.ControllerInterface
 //--------------------------------------------------------------------------------------------------------------------
-var AIWrapper = function(ai, controller, playerId, trusted, name) {
-	Globals.debug("AIWrapper()", (typeof ai == 'string') ? ai : ai.getName(), playerId, trusted, name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
+var AIWrapper = function(ai, controller, playerId, test, name) {
+	Globals.debug("AIWrapper()", (typeof ai == 'string') ? ai : ai.getName(), playerId, test, name, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 	Globals.ASSERT(Globals.implements(controller, Engine.ControllerInterface));
-	this._trusted = trusted;
+	this._test = test;
 	this._isMyTurn = false;
 	this._controller = controller;
 	this._id = playerId;
@@ -49,6 +48,7 @@ var AIWrapper = function(ai, controller, playerId, trusted, name) {
 		this._aiHash = ai;
 		this._name = name;
 	} else {
+		this._trusted = true;
 		this._name = ai.getName();
 	}
 	
@@ -79,8 +79,9 @@ AIWrapper.prototype.start = function() {
 
 		if (this._aiHash) {
 			// grab a specialized worker
-			Globals.debug("Downloading new aiworker", "/aiworker/"+this._aiHash, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
-			this._worker = new Worker("/aiworker/" + this._aiHash);
+			var workerPath = (this._test ? "/testworker/" : "/aiworker/") + this._aiHash;
+			Globals.debug("Downloading new aiworker", workerPath, Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
+			this._worker = new Worker(workerPath);
 		} else {
 			Globals.debug("Creating new botworker", Globals.LEVEL.INFO, Globals.CHANNEL.AI_WRAPPER);
 			this._worker = new Worker("/js/game/botworker.js");

@@ -101,6 +101,7 @@ app.get('/serverLog', adminController.getServerLog);
 app.get('/thunderdome', adminController.thunderdome);
 app.get('/resetai/:hash', adminController.resetAI);
 app.get('/aicode/:hash', adminController.getAICode);
+app.get('/aitest/:hash', adminController.getAIForTest);
 
 
 // client routes
@@ -117,6 +118,7 @@ app.get('/getStateCount', gameController.getStateCount);
 app.post('/uploadErrorReport', adminController.uploadErrorReport);
 app.get('/aisjson', userAIController.getAIListJSON);
 app.get('/aiworker/:hash', userAIController.getAIWorker);
+app.get('/testworker/:hash', userAIController.getTestWorker);
 
 
 // other

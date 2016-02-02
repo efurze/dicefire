@@ -14,7 +14,7 @@ if( 'function' === typeof importScripts) {
 importScripts('/js/globals.js');
 importScripts('/js/game/gamestate.js');
 importScripts('/js/ai/util.js');
-importScripts('/aicode/_replaceThisWithAIHash_'); /* NEVER EDIT THIS LINE */
+importScripts('/_replaceThisWithAIHash_'); /* NEVER EDIT THIS LINE */
 
 
 

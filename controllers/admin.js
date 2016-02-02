@@ -68,16 +68,24 @@ module.exports = {
 				res.status(500).send("Error retrieving error log" + err);
 			});
 	},
-	
+
+	getAIForTest: function(req, res) {	
+		logger.log("getAIForTest", logger.LEVEL.DEBUG, logger.CHANNEL.ADMIN);
+		req.params['test'] = true;
+		return module.exports.getAICode(req, res);
+	},
+
 	getAICode: function(req, res) {
 		var sha = req.params['hash'];
-		rwClient.getAI(sha)
+		var test = req.params['test'];
+		logger.log("getAICode", sha, test, logger.LEVEL.DEBUG, logger.CHANNEL.ADMIN);
+		rwClient.getAI(sha, test)
 			.then(function(result) {
 				result = JSON.parse(result);
 				res.send(result.code);
 			}).catch(function(err) {
 				logger.log("Error retrieving AI", sha, JSON.stringify(err), logger.LEVEL.ERROR, logger.CHANNEL.ADMIN);
-				res.status(500).send("Error retrieving AI: " + err);
+				res.status(500).send("Error retrieving AI: " + err.toString());
 			});
 	},
 	

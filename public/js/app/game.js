@@ -21,12 +21,11 @@ $(function() {
 		_aiIdx: -1,
 		
 		
-		currentPlayer: function() { return Game._engine.currentPlayer(); },
-		
 		// @players = ['human', 'Aggressive', 'Plyer 1.0']
-		init: function (gameId, players, aiHash) {
+		init: function (gameId, players, aiHash, test) {
 			Game._gameId = gameId;
 			Game._aiHash = aiHash;
+			Game._test = test;
 			Game._uploader = new Uploader();
 			Globals.initLogger(gameId, Game._uploader.uploadLogDump.bind(Game._uploader));
 
@@ -73,9 +72,9 @@ $(function() {
 				if (player.getName() == 'human') {
 					pws.push(Engine.PlayerInterface);
 				} else if (idx == Game._aiIdx) {
-					pws.push(new AIWrapper(Game._aiHash, Game._engine, pws.length, false, player.getName()));
+					pws.push(new AIWrapper(Game._aiHash, Game._engine, pws.length, Game._test, player.getName()));
 				} else {
-					pws.push(new AIWrapper(player, Game._engine, pws.length, true));
+					pws.push(new AIWrapper(player, Game._engine, pws.length, false));
 				}
 			});
 			
