@@ -192,6 +192,7 @@ var submit = function(req, res) {
 		})
 		.catch(function(err) {
 			res.status(500).send('Error Saving AI' + err.toString() + '. Please resubmit.');
+			logger.log("submit error", err, err.toString(), logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 		});
 };
 
