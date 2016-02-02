@@ -34,8 +34,7 @@ MyAI.prototype.startTurn = function(interface) {
 	this.findAttacks(interface, 0);
 };
 
-MyAI.prototype.findAttacks = function(interface, depth) {
-	depth = depth || 0;
+MyAI.prototype.findAttacks = function(interface) {
 	var self = this;
 	var state = interface.getState();
 
@@ -55,7 +54,7 @@ MyAI.prototype.findAttacks = function(interface, depth) {
 			if (possibleAttacks.length > 0) {
 				var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
 				interface.attack(countryId, attackCountryId, function(result) {
-					self.findAttacks(interface, depth + 1);
+					self.findAttacks(interface);
 				});
 				return;
 			}
@@ -72,8 +71,7 @@ var create = function(playerId) {
 		
 		</textarea>
 		<br>
-		<input type="submit" value="Submit">
-		<input type="submit" formaction="testsubmission" value="testSubmit">
+		<input type="submit" formaction="testsubmission" value="Submit for Test">
 	</form>
 	
 </div>

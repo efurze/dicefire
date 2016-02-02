@@ -107,9 +107,6 @@ var submitForTest = function(req, res) {
 	doSubmit(req, res, true);
 };
 
-var submit = function(req, res) {
-	doSubmit(req, res, false);
-};
 
 var doSubmit = function(req, res, test) {
 	test = (typeof test == 'undefined') ? false : test;
@@ -177,6 +174,24 @@ var doSubmit = function(req, res, test) {
 		})
 		.catch(function(err) {
 				res.send("Submission error: " + err + "<br><br>Invalid Sumbission");
+		});
+};
+
+
+var submit = function(req, res) {
+	var sha = req.params['hash'];
+	rwClient.makeAIPermanent(sha)
+		.then(function() {
+			return rwClient.getAI(sha);
+		})
+		.then(function(result) {
+			return rwClient.pushAI(sha, result.name);
+		})
+		.then(function() {
+			res.status(200).render('ai/received', {hash: sha});
+		})
+		.catch(function(err) {
+			res.status(500).send('Error Saving AI' + err.toString() + '. Please resubmit.');
 		});
 };
 

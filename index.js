@@ -87,7 +87,7 @@ app.get('/setup', gameController.setup);                        // Ladder Game
 app.get('/replay', gameController.replay);	
 
 app.get('/submit', userAIController.submissionForm);            // AI Submission form
-app.post('/submission', userAIController.submit);               // submit the AI
+app.get('/submission/:hash', userAIController.submit);         // promote the test AI to saved
 app.post('/testsubmission', userAIController.submitForTest);    // submit for test
 app.get('/aitest', userAIController.testAI);					// instructions for testing a submitted AI
 app.get('/playai', userAIController.playAI);
