@@ -142,3 +142,7 @@ WorldState.prototype.setDice = function(hexId, count) {
 var KEY = function(hexId) { 
 	return Array.isArray(hexId) ? hexId[0] + ',' + hexId[1] : hexId;
 };
+
+
+
+

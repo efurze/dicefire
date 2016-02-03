@@ -13,6 +13,8 @@ $(function() {
 		_canvas: document.getElementById("c"),
 		_position: [0,0],
 		_worldState: null,
+		_mouseStartPos: null,
+		_mousePos: null,
 		
 		
 		
@@ -33,6 +35,11 @@ $(function() {
 			this._engine.start();
 
 			$(document).keydown(this.keyDown.bind(this));
+			$(this._canvas).mousedown(this.mouseDown.bind(this));
+			$(this._canvas).mouseup(this.mouseUp.bind(this));
+			$(this._canvas).mousemove(this.mouseMove.bind(this));
+			$(this._canvas).mouseleave(this.mouseLeave.bind(this));
+
 		},
 
 		stateUpdate: function(state) {
@@ -67,6 +74,35 @@ $(function() {
 					break;
 			}
 		},
+
+		mouseDown: function(event) {
+			var self = this;
+			self._mousePos = [event.clientX, event.clientY];
+			self._mouseStartPos = [self._position[0], self._position[1]];	// Avoid shallow copy.
+		},
+
+		mouseUp: function(event) {
+			var self = this;
+			self._mousePos = null;
+			self._mouseStartPos = null;
+		},
+
+		mouseMove: function(event) {
+
+			var self = this;
+			if (self._mousePos && self._mouseStartPos) {
+				console.log(self._mousePos[0] - event.clientX);
+				self._position[0] = self._mouseStartPos[0] + (self._mousePos[0] - event.clientX);
+				self._position[1] = self._mouseStartPos[1] + (event.clientY - self._mousePos[1]);				
+				Renderer2d.setPosition(self._position);
+			}
+		},
+
+		mouseLeave: function(event) {
+			var self = this;
+			self._mousePos = null;
+			self._mouseStartPos = null;			
+		}
 	};
 });
 
