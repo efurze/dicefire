@@ -26,7 +26,7 @@ $(function() {
 			Renderer2d.init(World._canvas);
 
 			this._engine = new Engine();
-			this._engine.init([new AI.Aggressive(), new AI.Plyer(1,1)]);
+			this._engine.init([new AI.Aggressive(), new AI.Aggressive()]);
 			this._engine.setup(this._worldState);
 			Renderer2d.render(World._worldState);
 			this._engine.registerListener(this.stateUpdate.bind(this));

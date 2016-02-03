@@ -41,22 +41,12 @@
 		var self = this;
 		var state = self._state;
 		
-		var move = self.findBestGreedyMove(state, 1);
+		var move = self.findBestGreedyMove(state, 10);
 		if (move.length()) {
 			var attack = move.pop();
 			self._interface.attack(attack.from(), attack.to());
 		}
 	};
-	
-	AI.Plyer.prototype.logEval = function(state) {
-		var self = this;
-		var scores = state.playerIds().map(function(playerId){
-			return self.evalPlayer(state, playerId);
-		});
-		
-		Globals.debug("Player Scores: ", JSON.stringify(scores), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-	};
-			
 	
 
 	
