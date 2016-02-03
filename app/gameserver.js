@@ -172,7 +172,10 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 	self._lingerTimer = null;
 	
 	// get the game info
-	rwClient.getGameInfo(gameId)
+	self.restore()
+		.then(function() {
+			return rwClient.getGameInfo(gameId);
+		})
 		.then(function(gameInfo) {
 			try {
 				if (!gameInfo) {
@@ -232,6 +235,31 @@ var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*opt
 			logger.log("Error getting gameInfo", err, err.stack, logger.LEVEL.ERROR, logger.CHANNEL.SERVER, gameId);
 		});
 };
+
+GameServer.prototype.persist = function() {
+	var self = this;
+	var serverState = {ipMap: self._ipMap};
+	rwClient.saveServerState(self._gameId, JSON.stringify(serverState))
+		.catch(function(err) {
+			logger.log("Error persisting server state", err.toString(), logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
+		});
+};
+
+GameServer.prototype.restore = function() {
+	var self = this;
+	return rwClient.getServerState(self._gameId)
+		.then(function(data) {
+			if (data) {
+				var state = JSON.parse(data);
+				logger.log("Restoring server state", state, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, self._gameId);
+				self._ipMap = state.ipMap;
+			}
+		})
+		.catch(function(err) {
+			logger.log("Error restoring server state", err.toString(), logger.LEVEL.ERROR, logger.CHANNEL.SERVER, self._gameId);
+		});
+};
+
 
 GameServer.prototype.positionOpen = function(playerId) {
 	var self = this;
@@ -296,6 +324,7 @@ GameServer.prototype.connectPlayer = function(socket) {
 				
 				if (!self._ipMap[sock.ip()]) { self._ipMap[sock.ip()] = []; }
 				self._ipMap[sock.ip()].push(i);
+				self.persist();
 				id = i;
 				break;
 			}
