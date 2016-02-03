@@ -297,6 +297,9 @@ $(function() {
 			if (Client._playerId != msg.playerId) {
 				Client._playerId = msg.playerId;
 				Client._players[msg.playerId] = Engine.PlayerInterface;
+				if (Client._mapController) {
+					Client._mapController.setPlayerId(Client._playerId);
+				}
 				$('#end_turn').click(Client.endTurnClicked);
 				$('#game_controls').css('display', 'block');
 			}

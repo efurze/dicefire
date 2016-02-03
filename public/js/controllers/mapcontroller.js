@@ -31,7 +31,9 @@ Mapcontroller.mapControllerInterface = {
 
 $(function(){
 
-		
+	Mapcontroller.prototype.setPlayerId = function(id) { 
+		this._playerId = id;
+	};	
 	Mapcontroller.prototype.getMouseOverCountry = function() { return this._mouseOverCountry; };
 	Mapcontroller.prototype.setMouseOverCountry = function(country) {
 		Globals.debug("SetMouseOverCountry", country ? country.id() : -1, Globals.LEVEL.INFO, Globals.CHANNEL.MAP_CONTROLLER);
