@@ -42,9 +42,6 @@ var Renderer2d = {
 				this._names = playerNames || [];
 				this._listener = listener;
 
-				this._setupRollDivs();
-				this._setupPlayerDivs(playerNames.length);
-
 				$(canvas).mousemove(this.mouseMove.bind(this));
     			$(canvas).mouseleave(this.mouseLeave.bind(this));
 				
@@ -95,12 +92,6 @@ var Renderer2d = {
 			}
 		},
 		
-		setPlayerName: function(id, name) {
-			if (this._names[id]) {
-				this._names[id] = name;
-				this._setupPlayerDivs(this._names.length);
-			}
-		},
 
 		render: function(state, callback) {
 			var self = this;
@@ -113,7 +104,6 @@ var Renderer2d = {
 			Globals.ASSERT(state instanceof Gamestate);
 			
 			self._renderMap(state);
-			self._renderPlayers(state);
 			self._lastRenderedState = state;
 
 			if (state.attack()) {
@@ -218,43 +208,6 @@ var Renderer2d = {
 			});
 		},
 		
-		_renderPlayers: function(state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			Globals.debug("renderPlayers", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
-			Globals.ASSERT(state instanceof Gamestate);
-			
-			var self = this;
-			state.playerIds().forEach(function(playerId){
-				self._renderPlayer(playerId, state);
-			});
-		},
-		
-		_renderPlayer: function(playerId, state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			Globals.debug("renderPlayer " + playerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-			Globals.ASSERT(state instanceof Gamestate);
-			
-			if (state.playerHasLost(playerId)) {
-				$('#player' + playerId).hide();
-			} else {				
-				$('#player' + playerId).show();
-				
-				// Highlight the player's status box
-				if (playerId == state.currentPlayerId()) {
-					$('#player' + playerId).addClass("current-player");
-				} else {
-					$('#player' + playerId).removeClass("current-player");
-				}
-				
-				// update stats
-				$('#dice' + playerId).html(state.numContiguous(playerId));
-		    	$('#stored' + playerId).html(state.storedDice(playerId));
-			}
-		},
 		
 		_renderCountry: function (countryId, state, isFighting) {
 			if (Globals.suppress_ui || !this._initialized) {
@@ -529,40 +482,6 @@ var Renderer2d = {
 		            return self._playerColors[ownerId];
 		        }
 		    }
-		},
-		
-		_setupPlayerDivs: function(playerCount) {
-			if (Globals.suppress_ui) {
-				return;
-			}
-			
-			var self = this;
-			
-			$('#players').html('');
-			
-			// add a "country count" div for each player
-			for (var id=0; id < playerCount; ++id) {
-				
-				$('#players').append(
-		    		"<div id='player" + id + "' class='col-sm-2 player-box'><div id='colorblock" + id + "' class='color-block'></div>"
-					+ ((self._names && self._names[id]) ? ("<div id='name" + id + "' class='name-box'>" + self._names[id] + "</div>") : "")
-		    		+ "<div id='dice" + id + "' class='dice-box'>1</div>"
-		    		+ "<div id='stored" + id + "' class='stored-box'>0</div></div>"
-		    	);
-
-		    	$('#colorblock' + id).css( 
-			    	{		
-			    		'background-color': self._playerColors[id]
-			    	}
-		    	);
-
-				$('#stored' + id).css(
-			    	{
-						'color': self._playerColors[id]
-			    	}
-		    	);
-			}
-			
 		},
 		
 		_setupRollDivs: function() {

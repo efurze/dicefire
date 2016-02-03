@@ -46,17 +46,18 @@ $(function(){
     		} else {
     			Renderer._init2d();
     		}
+
+    		PlayerStatus.init(playerNames);
 		},
 
 		setPlayerName: function(id, name) {
-			if (this._renderer) {
-				this._renderer.setPlayerName(id, name);
-			}
+			PlayerStatus.setPlayerName(id, name);
 		},
 
 		stateUpdate: function(state, id) {
 			this._lastState = state;
 			this._history.push(state);
+			PlayerStatus.renderPlayers(state);
 			this._renderNext();
 		},
 
