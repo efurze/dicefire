@@ -1,6 +1,7 @@
 //'use strict'
 
-
+var ANIMATE = true;
+var DRAW_DICE = true;
 
 var GLrenderer = {
 		
@@ -34,6 +35,7 @@ var GLrenderer = {
 		_lastRenderTime: -1,
 		_diceGraph: [], // array of Cube
 		_cylinders: {},
+		_dice: {},
 		_canvasHeight: 0,
 		_canvasWidth: 0,
 		mouseVector: null,
@@ -68,13 +70,16 @@ var GLrenderer = {
 				this._scene.add( ambientLight );
 
 				var lights = [];
-				lights[0] = new THREE.PointLight( 0xffffff, 1, 0 );
-				lights[1] = new THREE.PointLight( 0xffffff, 1, 0 );
-				lights[2] = new THREE.PointLight( 0xffffff, 1, 0 );
+				lights[0] = new THREE.SpotLight( 0xffffff, 1, 0 );
+				lights[1] = new THREE.SpotLight( 0xffffff, 1, 0 );
+				lights[2] = new THREE.SpotLight( 0xffffff, 1, 0 );
 				
 				lights[0].position.set( 0, 200, 0 );
 				lights[1].position.set( 100, 200, 100 );
 				lights[2].position.set( -100, -200, -100 );
+
+				lights[1].castShadow = true;
+				lights[1].shadowDarkness = 1;
 
 				this._scene.add( lights[0] );
 				this._scene.add( lights[1] );
@@ -82,6 +87,7 @@ var GLrenderer = {
 
 
 				this._renderer = new THREE.WebGLRenderer({ antialias: true });
+				this._renderer.shadowMap.enabled = true;
 				this._renderer.setSize(c.width, c.height);
 				$('#canvas3d_div').append(this._renderer.domElement);
 				$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
@@ -260,13 +266,16 @@ var GLrenderer = {
 
 			Globals.debug("animateCountry", countryId, "from", fromDice, "to", toDice, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 
-			if (fromDice == toDice) {
+			if (!ANIMATE || fromDice == toDice || (DRAW_DICE && state.attack())) {
 				return self._drawCountry(countryId, state, false);
 			}
 
 			Globals.debug("animating", toDice, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 
 			var STEP = (fromDice < toDice) ? 0.5 : -0.5;
+			if (DRAW_DICE) {
+				STEP = (fromDice < toDice) ? 1 : -1;
+			}
 			state.setCountryDice(countryId, fromDice);
 
 			return new Promise(function(resolve) {
@@ -307,6 +316,11 @@ var GLrenderer = {
 				self._drawHex(self._map.getHex(hexId), state, isFighting);
 			});
 
+			// draw dice
+			if (DRAW_DICE) {
+				self._drawDice(countryId, state);
+			}
+
 		},
 
 		
@@ -314,10 +328,11 @@ var GLrenderer = {
 			var self = this;					
 			var countryId = hex.countryId();
 			var start = hex.upperLeft();
+			var height = DRAW_DICE ? 1 : 4 * state.countryDice(countryId);
 			
 			if (!self._cylinders[hex.id()]) {
 				var color = self._playerColors[state.countryOwner(countryId)];
-				var geometry = new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId) * 4, 6);
+				var geometry = new THREE.CylinderGeometry( 1, 1, height, 6);
 				var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
 				var cylinder = new THREE.Mesh(geometry, material);
 				cylinder.rotation.x = Math.PI / 2;
@@ -325,6 +340,7 @@ var GLrenderer = {
 				cylinder.position.x = ( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
 				cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
 				cylinder.userData['hexId'] = hex.id();
+				cylinder.receiveShadow = true;
 				self._scene.add(cylinder);
 				self._cylinders[hex.id()] = cylinder;
 			} else {
@@ -333,7 +349,8 @@ var GLrenderer = {
 				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
 				cylinder.geometry.dispose();
 				cylinder.geometry = null;
-				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId) * 4, 6);
+				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, height, 6);
+				cylinder.receiveShadow = true;
 				self._scene.add(cylinder);
 			}
 		},
@@ -361,87 +378,52 @@ var GLrenderer = {
 		},
 		
 		_drawDice: function (countryId, state) {
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
+			var self = this;
+			if (!self._dice[countryId + ':' + 1]) {
+				self._initializeDice(countryId);
 			}
-			
-			var self = this;
-			/*
-			var ctr = self._map.countryCenter(countryId);
-			
-			self._diceGraph.push(new Cube(ctr, "gray"));
-			*/
-		},
-		
-		_renderDice: function() {
-			var self = this;
-			self._diceGraph.forEach(function(die) {
-				self._renderDie(die);
-			});
-		},
-		
-		_renderDie: function(die) {
-			var self = this;
-			
-			var bottomFace = die.bottomFace();
-			var topFace = die.topFace();
-			
-			self._context.strokeStyle = Cube.EDGE_COLOR;
-			self._context.lineWidth = 1;
-						
-			var COLORS = ['white', 'blue', 'red', 'green'];
-			
-			// returns corner with largest z-value
-			var topCorner = function() {
-				var topCorner = Cube.CORNER.NORTHWEST;
-				var z = 0;
-				Cube.CORNER.forEach(function(corner) {
-					if (topFace[corner][Z] > z) {
-						z = topFace[corner][Z];
-						topCorner = corner;
-					}
-				});
-				return topCorner;
-			};
-			
-			// draw faces
-			var edgePath;
-			for (var i=0; i < 4; i++) {
-				
-				switch (i) {
-					case Cube.FACE.NORTH:
-						break;
-					case Cube.FACE.EAST:
-						break;
-					case Cube.FACE.SOUTH:
-						break;
-					case CUBE.FACE.WEST:
-						break;
+
+			for (var i=1; i < 9; i++) {
+				if (i <= state.countryDice(countryId)) {
+					self._dice[countryId + ':' + i].visible = true;
+				} else {
+					self._dice[countryId + ':' + i].visible = false;
 				}
-				
-				edgePath = new Path2D();
-				edgePath.moveTo(bottomFace[i][0], bottomFace[i][1]);
-				edgePath.lineTo(bottomFace[(i+1) % 4][0], bottomFace[(i+1) % 4][1]);
-				edgePath.lineTo(topFace[(i+1) % 4][0], topFace[(i+1) % 4][1]);
-				edgePath.lineTo(topFace[i][0], topFace[i][1]);
-				edgePath.closePath();
-	            self._context.stroke(edgePath);
-				self._context.fillStyle = 'gray';
-				self._context.fill(edgePath);
 			}
-			
-			// draw top
-			edgePath = new Path2D();
-			edgePath.moveTo(topFace[0][0], topFace[0][1]);
-			edgePath.lineTo(topFace[1][0], topFace[1][1]);
-			edgePath.lineTo(topFace[2][0], topFace[2][1]);
-			edgePath.lineTo(topFace[3][0], topFace[3][1]);
-			edgePath.lineTo(topFace[0][0], topFace[0][1]);
-			edgePath.closePath();
-            self._context.stroke(edgePath)
-			self._context.fillStyle = "gray";
-			self._context.fill(edgePath);
-			
+		},
+
+		_initializeDice: function (countryId) {
+			var self = this;
+
+			var center = self._map.countryCenter(countryId);
+			var x = ( center[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
+			var y = ( center[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;
+			var z = 1;
+			var angle = 0;
+
+			var color = 0x888888;//self._playerColors[state.countryOwner(countryId)];
+			var geometry = new THREE.BoxGeometry( 1.5, 1.5, 1.5 );
+			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x7d7d7d, shininess: 0, shading: THREE.FlatShading});
+
+			for (var i=1; i < 9; i++) {
+				var cube = new THREE.Mesh( geometry, material );
+				cube.position.x = x;
+				cube.position.y = y;
+				cube.position.z = z;
+				cube.rotation.z = angle;
+				cube.castShadow = true;
+				self._dice[countryId + ':' + i] = cube;
+				self._scene.add(cube);
+
+				z += 1.5;
+				angle += Math.PI/10;
+
+				if (i == 4) {
+					z = 1;
+					angle = 0;
+					y += 1.6;
+				}
+			}
 		},
 		
 
