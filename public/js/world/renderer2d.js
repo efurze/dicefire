@@ -1,8 +1,45 @@
 'use strict'
 
-var Hex = {};
-Hex.HEIGHT = 60;
-Hex.WIDTH = Hex.HEIGHT;
+var Hex = {
+	STARTING_RADIUS: 20,
+	RADIUS: 20,
+	BORDER_THICKNESS: 1,
+	FUDGE: 0.5,
+	SVG_TEMPLATE: _.template("M<%=x1%> <%=y1%> L<%=x2%> <%=y2%> L<%=x3%> <%=y3%> L<%=x4%> <%=y4%> L<%=x5%> <%=y5%> L<%=x6%> <%=y6%>z"),
+	COS: Math.cos(Math.PI/3),
+	SIN: Math.sin(Math.PI/3),
+	ROOT3: Math.sqrt(3),
+	width: function() { 
+		return Hex.RADIUS * Hex.ROOT3;
+	},
+	height: function() { 
+		return Hex.RADIUS;
+	},
+	center: function(hexId) {
+		return [hexId[0] * Hex.width(), hexId[1] * Hex.height()];
+	},
+	svg: function(center, radius) {
+//		radius *= 1.15;
+		var cx = center[0], cy = center[1];
+		return new Path2D(Hex.SVG_TEMPLATE({
+			x1: cx - radius,
+			y1: cy,
+			x2: cx - Hex.COS * radius,
+			y2: cy - Hex.SIN * radius,
+			x3: cx + Hex.COS * radius,
+			y3: cy - Hex.SIN * radius,
+			x4: cx + radius,
+			y4: cy,
+			x5: cx + Hex.COS * radius,
+			y5: cy + Hex.SIN * radius,
+			x6: cx - Hex.COS * radius,
+			y6: cy + Hex.SIN * radius
+		}));
+	},
+	isValid: function(x, y) {
+		return !((x + y) % 2);
+	}
+};
 
 var Renderer2d = {
 
@@ -19,12 +56,17 @@ var Renderer2d = {
 
 		this._context = this._canvas.getContext('2d');
 		this._context.lineJoin = "straight";
-		this._canvasWidth = this._context.canvas.clientWidth;
-		this._canvasHeight = this._context.canvas.clientHeight;
 
 		$(canvas).mousemove(this.mouseMove.bind(this));
     	$(canvas).mouseleave(this.mouseLeave.bind(this));
-		
+	},
+
+	canvasWidth: function() {
+		return this._context.canvas.clientWidth;
+	},
+
+	canvasHeight: function() {
+		return this._context.canvas.clientHeight;
 	},
 
 	_pointCmp: function(p1, p2) {
@@ -57,27 +99,34 @@ var Renderer2d = {
 		this.render(this._lastState);
 	},
 
-	
+	setZoomLevel: function(zoomLevel) {
+		Hex.RADIUS = Hex.STARTING_RADIUS * zoomLevel;
+		this.render(this._lastState);
+	},
+
+	zoomLevel: function() {
+		return Hex.RADIUS / Hex.STARTING_RADIUS;
+	},
+
 	render: function(state) {
 		var self = this;
 		self._clear();
 		self._lastState = state;
-		self._screenUpperLeft = [self._screenCenter[0] - self._canvasWidth/2, self._screenCenter[1] + self._canvasHeight/2]
 
-		var x=0, y=0;
-		while (y < self._canvasHeight) {
-			while (x < self._canvasWidth) {
-				var worldPt = self._screenToWorld([x, y]);
-				var hex = self._pointToHex(worldPt);
-				var hexCtr = self._worldToScreen(self._hexCenter(hex));
-				x = hexCtr[0];
-				self._renderHex(hex, state);
-				x += 3*Hex.WIDTH/4 + 1;
+		// Note this should happen on resize or something not constantly.
+		self._screenUpperLeft = [self._screenCenter[0] - self.canvasWidth()/2, self._screenCenter[1] - self.canvasHeight()/2]
+		self._screenBottomRight = [self._screenCenter[0] + self.canvasWidth()/2, self._screenCenter[1] + self.canvasHeight()/2];
+		var upperLeftHex = self._pointToHex(self._screenUpperLeft);
+		var bottomRightHex = self._pointToHex(self._screenBottomRight);
+
+		// Iterate over an extra index in each direction to ensure we get everything.
+		for (var i = upperLeftHex[0] - 1; i <= bottomRightHex[0] + 1; i++) {
+			for (var j = upperLeftHex[1] - 1; j <= bottomRightHex[1] + 1; j++) {
+				if (Hex.isValid(i, j)) {
+					self._renderHex([i, j], state);
+				}
 			}
-			x = 0;
-			y += Hex.HEIGHT/2;
 		}
-
 	},
 
 	update: function(state) {
@@ -91,15 +140,20 @@ var Renderer2d = {
 	},
 
 	_worldToScreen: function(point) {
-		return [point[0] - this._screenUpperLeft[0], this._screenUpperLeft[1] - point[1]];
+		return [point[0] - this._screenUpperLeft[0], point[1] - this._screenUpperLeft[1]];
 	},
 
 	_screenToWorld: function(point) {
-		return [point[0] + this._screenUpperLeft[0], this._screenUpperLeft[1] - point[1]];
+		return [point[0] + this._screenUpperLeft[0], point[1] + this._screenUpperLeft[1]];
+	},
+
+	_distanceSquared: function(p1, p2) {
+		return Math.pow(p1[0]-p2[0], 2) + Math.pow(p1[1]-p2[1], 2);
+
 	},
 
 	_distance: function(p1, p2) {
-		return Math.sqrt(Math.pow(p1[0]-p2[0], 2) + Math.pow(p1[1]-p2[1], 2));
+		return Math.sqrt(this._distanceSquared(p1, p2));
 	},
 
 	// _pointToHex() - uses world coords. Returns hex id
@@ -117,42 +171,33 @@ var Renderer2d = {
 	_pointToHex: function(point) {
 		var self = this;
 		
-		var col = 4*point[0] / (3*Hex.WIDTH);
-		var row = 2 * point[1] / Hex.HEIGHT;
+		var col = point[0] / Hex.width();
+		var row = point[1] / Hex.height();
 
 		var possibleCols = (col == Math.floor(col)) ? [col-1, col, col+1] : [Math.floor(col), Math.ceil(col)];
 		var possibleRows = (row == Math.floor(row)) ? [row-1, row, row+1] : [Math.floor(row), Math.ceil(row)];
 
 		var minDistance = 10000000;
-		var closestHex = [0,0];
+		var closestHex = [0,0];	// Is this right?
 
 		for (var i=0; i < possibleCols.length; i++) {
 			for (var j=0; j < possibleRows.length; j++) {
-				// even columns only have even rows
-				if (Math.abs(possibleCols[i]%2) !== Math.abs(possibleRows[j]%2)) {
-					continue; 
-				}
+				var x = possibleCols[i];
+				var y = possibleRows[j];
+				if (Hex.isValid(x, y)) {
+					var hexCenter = Hex.center([x, y]);
+					var dist = self._distanceSquared(point, hexCenter);
 
-				var c = possibleCols[i];
-				var r = possibleRows[j];
-				var hexCenter = [c * Hex.WIDTH * 3 / 4, r * Hex.HEIGHT/2];
-				var dist = self._distance(point, hexCenter);
-				if (dist < minDistance) {
-					col = c;
-					row = r;
-					minDistance = dist;
-					closestHex = [c, r];
+					if (dist < minDistance) {
+						minDistance = dist;
+						closestHex = [x, y];
+					}
 				}
 			}
 		}
 
 		return closestHex;
 
-	},
-
-	// uses world coords
-	_hexCenter: function(hexId) {
-		return [hexId[0] * Hex.WIDTH * 3 / 4, hexId[1] * Hex.HEIGHT/2];
 	},
 
 
@@ -164,23 +209,12 @@ var Renderer2d = {
 		if (state) {
 			hexState = state.getHex(hexId);
 		}
-		var hexCenter = self._worldToScreen(self._hexCenter(hexId));
+		var hexCenter = self._worldToScreen(Hex.center(hexId));
 
-		var upperLeftX = hexCenter[0] - Hex.WIDTH/4;
-		var upperLeftY = hexCenter[1] + Hex.WIDTH/2;
-
-        var path = new Path2D();
-        path.moveTo(upperLeftX, upperLeftY);
-        path.lineTo(upperLeftX + Hex.WIDTH/2, upperLeftY);
-        path.lineTo(hexCenter[0] + Hex.WIDTH/2, hexCenter[1]);
-        path.lineTo(upperLeftX + Hex.WIDTH/2, hexCenter[1] - Hex.WIDTH/2);
-        path.lineTo(upperLeftX, hexCenter[1] - Hex.WIDTH/2);
-        path.lineTo(hexCenter[0] - Hex.WIDTH/2, hexCenter[1]);
-        path.lineTo(upperLeftX, upperLeftY);
-        path.closePath();
+        var path = Hex.svg(hexCenter, Hex.RADIUS);
 
         self._context.strokeStyle = "blue";
-	    self._context.lineWidth = 1;
+	    self._context.lineWidth = Hex.BORDER_THICKNESS;
 	    self._context.stroke(path);
 
 	    var color = "white";
@@ -212,10 +246,14 @@ var Renderer2d = {
 
 	_renderDice: function (hexCenter, count) {
 		var self = this;
-		self._context.fillStyle = "black";
-	    self._context.font = "14px sans-serif";
-	    self._context.textAlign = "center";
-	    self._context.fillText(count, hexCenter[0], hexCenter[1]+7);
+		var pointSize = Math.floor(14 * this.zoomLevel());
+
+		if (pointSize > 7) {
+			self._context.fillStyle = "black";
+		    self._context.font = pointSize + "px sans-serif";
+		    self._context.textAlign = "center";
+		    self._context.fillText(count, hexCenter[0], hexCenter[1] + ((pointSize - 4) / 2));
+		}
 	},
 
 

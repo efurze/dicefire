@@ -54,8 +54,9 @@ $(function() {
 			switch (event.which) {
 				case 37: // left
 				case 65: // a
-					self._position[0] -= 10;
-					Renderer2d.setPosition(self._position);
+//					self._position[0] -= 10;
+//					Renderer2d.setPosition(self._position);
+					Renderer2d.setZoomLevel(Renderer2d.zoomLevel() / 1.2);
 					break;
 				case 38: // up
 				case 87: // w
@@ -64,8 +65,9 @@ $(function() {
 					break;
 				case 39: // right
 				case 68: // d
-					self._position[0] += 10;
-					Renderer2d.setPosition(self._position);
+//					self._position[0] += 10;
+//					Renderer2d.setPosition(self._position);
+					Renderer2d.setZoomLevel(Renderer2d.zoomLevel() * 1.2);
 					break;
 				case 40: // down
 				case 83: // s
@@ -91,9 +93,8 @@ $(function() {
 
 			var self = this;
 			if (self._mousePos && self._mouseStartPos) {
-				console.log(self._mousePos[0] - event.clientX);
 				self._position[0] = self._mouseStartPos[0] + (self._mousePos[0] - event.clientX);
-				self._position[1] = self._mouseStartPos[1] + (event.clientY - self._mousePos[1]);				
+				self._position[1] = self._mouseStartPos[1] + (self._mousePos[1] - event.clientY);
 				Renderer2d.setPosition(self._position);
 			}
 		},
