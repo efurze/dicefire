@@ -1,39 +1,57 @@
 'use strict'
 
-var Hex = {
-	STARTING_RADIUS: 20,
-	RADIUS: 20,
-	BORDER_THICKNESS: 1,
-	FUDGE: 0.5,
-	SVG_TEMPLATE: _.template("M<%=x1%> <%=y1%> L<%=x2%> <%=y2%> L<%=x3%> <%=y3%> L<%=x4%> <%=y4%> L<%=x5%> <%=y5%> L<%=x6%> <%=y6%>z"),
+var ComputeCache = {
+	MAGIC_NUMBER: 2 / Math.sqrt(3),	// This is the ratio, for a hex, between a circumscribed and an inscribed edge.
 	COS: Math.cos(Math.PI/3),
-	SIN: Math.sin(Math.PI/3),
+	SIN: Math.sin(Math.PI/3),	
 	ROOT3: Math.sqrt(3),
+	COS_TIMES_RADIUS: 0,
+	SIN_TIMES_RADIUS: 0,
+	RADIUS: 0,
+	RADIUS_TIMES_MAGIC_NUMBER: 0,
+	RADIUS_TIMES_ROOT3: 0,
+	setup: function(radius, zoomFactor) {
+		ComputeCache.RADIUS = radius;
+		ComputeCache.RADIUS_TIMES_MAGIC_NUMBER = radius * Math.pow(3, zoomFactor - 1) * ComputeCache.MAGIC_NUMBER;		
+		ComputeCache.COS_TIMES_RADIUS = ComputeCache.COS * ComputeCache.RADIUS_TIMES_MAGIC_NUMBER;
+		ComputeCache.SIN_TIMES_RADIUS = ComputeCache.SIN * ComputeCache.RADIUS_TIMES_MAGIC_NUMBER;
+		ComputeCache.RADIUS_TIMES_ROOT3 = radius * ComputeCache.ROOT3;
+	}
+};
+
+var Hex = {
+	BORDER_THICKNESS: 1,
+	SVG_TEMPLATE: _.template("M<%=x1%> <%=y1%> L<%=x2%> <%=y2%> L<%=x3%> <%=y3%> L<%=x4%> <%=y4%> L<%=x5%> <%=y5%> L<%=x6%> <%=y6%>z"),
 	width: function() { 
-		return Hex.RADIUS * Hex.ROOT3;
+		return ComputeCache.RADIUS_TIMES_ROOT3;
 	},
 	height: function() { 
-		return Hex.RADIUS;
+		return ComputeCache.RADIUS;
 	},
 	center: function(hexId) {
 		return [hexId[0] * Hex.width(), hexId[1] * Hex.height()];
 	},
-	svg: function(center, radius) {
-//		radius *= 1.15;
+	svg: function(center) {
 		var cx = center[0], cy = center[1];
+
+		var cx_minus_cos = cx - ComputeCache.COS_TIMES_RADIUS;
+		var cx_plus_cos = cx + ComputeCache.COS_TIMES_RADIUS;
+		var cy_minus_sin = cy - ComputeCache.SIN_TIMES_RADIUS;
+		var cy_plus_sin = cy + ComputeCache.SIN_TIMES_RADIUS;
+
 		return new Path2D(Hex.SVG_TEMPLATE({
-			x1: cx - radius,
+			x1: cx - ComputeCache.RADIUS_TIMES_MAGIC_NUMBER,
 			y1: cy,
-			x2: cx - Hex.COS * radius,
-			y2: cy - Hex.SIN * radius,
-			x3: cx + Hex.COS * radius,
-			y3: cy - Hex.SIN * radius,
-			x4: cx + radius,
+			x2: cx_minus_cos,
+			y2: cy_minus_sin,
+			x3: cx_plus_cos,
+			y3: cy_minus_sin,
+			x4: cx + ComputeCache.RADIUS_TIMES_MAGIC_NUMBER,
 			y4: cy,
-			x5: cx + Hex.COS * radius,
-			y5: cy + Hex.SIN * radius,
-			x6: cx - Hex.COS * radius,
-			y6: cy + Hex.SIN * radius
+			x5: cx_plus_cos,
+			y5: cy_plus_sin,
+			x6: cx_minus_cos,
+			y6: cy_plus_sin
 		}));
 	},
 	isValid: function(x, y) {
@@ -42,10 +60,11 @@ var Hex = {
 };
 
 var Renderer2d = {
-
+	_hexRadius: 20,
 	_screenCenter: [0,0],
 	_mouseOverHex: null,
 	_selectedHex: null,
+	_zoomLevel: 1,
 
 	init: function(canvas) {
 
@@ -57,8 +76,14 @@ var Renderer2d = {
 		this._context = this._canvas.getContext('2d');
 		this._context.lineJoin = "straight";
 
+		$('.navbar').css('opacity', '0.7');
+
 		$(canvas).mousemove(this.mouseMove.bind(this));
     	$(canvas).mouseleave(this.mouseLeave.bind(this));
+		this.setZoomLevel(1);		
+    	$(window).resize(this.resize.bind(this));
+
+    	this.resize(null);
 	},
 
 	canvasWidth: function() {
@@ -89,6 +114,12 @@ var Renderer2d = {
 		}
 	},
 
+	resize: function(event) {
+		this._context.canvas.width = $('#game').width();
+		this._context.canvas.height = $('#game').height();
+		this.render(this._lastState);
+	},
+
 	_clear: function() {
 		this._context.clearRect(0,0,2000,2000);
 	},
@@ -100,12 +131,40 @@ var Renderer2d = {
 	},
 
 	setZoomLevel: function(zoomLevel) {
-		Hex.RADIUS = Hex.STARTING_RADIUS * zoomLevel;
+		this._zoomLevel = zoomLevel;	
+		this._zoomNotch = this._computeZoomNotch();
+		this._zoomDivisor = Math.pow(3, this._zoomNotch - 1);
+		ComputeCache.setup(this.hexRadius(), this._zoomNotch);
 		this.render(this._lastState);
 	},
 
 	zoomLevel: function() {
-		return Hex.RADIUS / Hex.STARTING_RADIUS;
+		return this._zoomLevel;
+	},
+
+	_computeZoomNotch: function() {
+		var NOTCH = 0.5;
+		var z = this.zoomLevel();
+		var notch = 1;
+		while (true) {
+			if (z > NOTCH) {
+				return notch;
+			}
+			notch++;
+			z /= NOTCH;
+		}
+
+		return notch;
+	},
+
+	_shouldRender: function(x, y) {
+		x /= this._zoomDivisor;
+		y /= this._zoomDivisor;
+		return Math.round(x) == x && Math.round(y) == y;
+	},
+
+	hexRadius: function() {
+		return this._hexRadius * this.zoomLevel();
 	},
 
 	render: function(state) {
@@ -205,13 +264,18 @@ var Renderer2d = {
 	_renderHex: function (hexId, state) {
 		var self = this;
 
+		if (!self._shouldRender(hexId[0], hexId[1])) {
+			return;
+		}
+
+
 		var hexState = null;
 		if (state) {
 			hexState = state.getHex(hexId);
 		}
 		var hexCenter = self._worldToScreen(Hex.center(hexId));
 
-        var path = Hex.svg(hexCenter, Hex.RADIUS);
+        var path = Hex.svg(hexCenter);
 
         self._context.strokeStyle = "blue";
 	    self._context.lineWidth = Hex.BORDER_THICKNESS;

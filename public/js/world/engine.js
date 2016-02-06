@@ -72,7 +72,7 @@ Engine.prototype._giveDice = function(playerId) {
 
 Engine.prototype._numContiguous = function(playerId) {
 	var self = this;
-	return self._state.playerHexIds(playerId).length;
+	return self._state.playerHexIds(playerId).length;	// lol
 };
 
 
@@ -121,6 +121,7 @@ Engine.prototype._sendUpdate = function(updates) {
 
 	self._state.merge(updates);
 
+	// I'm not sure doing this in a timer adds value since JS is sync.
 	self._players.forEach(function(player) {
 		self._setTimer(function() { player.update(updates); }, 0);
 	});

@@ -2,15 +2,22 @@
 
 
 var HexState = function(id) {
+	var self = this;
+
 	this._id = id;
 	this._ownerId = -1;
 	this._diceCount = 0;
+	this._adjacencies = [];
+	this._adjacencies = [[0, 2], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]].map(function(elem) {
+		return [id[0] + elem[0], id[1] + elem[1]];
+	});
 };
 
 HexState.prototype.clone = function() {
 	var copy = new HexState(this._id);
 	copy._ownerId = this._ownerId;
 	copy._diceCount = this._diceCount;
+	copy._adjacencies = _.clone(this._adjacencies);
 	return copy;
 };
 
@@ -35,16 +42,12 @@ HexState.prototype.setDice = function(count) {
 };
 
 HexState.prototype.adjacent = function() {
-	var x = this._id[0], y = this._id[1];
-	var list = [];
-	list.push([x, y+2]);
-	list.push([x, y-2]);
-	list.push([x+1, y+1]);
-	list.push([x+1, y-1]);
-	list.push([x-1, y+1]);
-	list.push([x-1, y-1]);
-	return list;
+	return this._adjacencies;	// Note that this can be changed by the recipient. Could clone it to avoid.
 };
+
+
+
+
 
 
 var WorldState = function() {
