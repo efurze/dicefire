@@ -25,7 +25,7 @@ var GLrenderer = {
 		],
 		_angleY: 0,
 		_angleX: 0,
-		_angleZ: -Math.PI/2,
+		_angleZ: Math.PI/2,
 		_theta: Math.PI/4,
 		_elevation: 35,
 		_radius: 75,
@@ -217,7 +217,56 @@ var GLrenderer = {
 					Globals.debug("render defender", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 					self._drawCountry(toCountry, state, true);
 					self.update();
-		            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
+					window.setTimeout(function(){renderDefendRoll(state);}, timeout);
+					/*
+					if (DRAW_DICE) {
+						var ary = [];
+						ary.length = fromNumDice;
+						return Promise.map(ary, function(item, idx) {
+							return animateAttackDice(idx+1);
+						});
+					} else {
+			            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
+			        }
+			        */
+				}
+
+				function animateAttackDice(diceId) {
+					self._camera.updateMatrix();
+					self._camera.updateMatrixWorld();
+
+					var dest = self._camera.localToWorld(new THREE.Vector3(-7,2,-10));
+					dest.x += (diceId-1);
+					var dice = self._dice[fromCountry + ':' + diceId];
+					var step = 0;
+					var stepCount = 10;
+					var stepX = (dest.x - dice.position.x)/stepCount;
+					var stepY = (dest.y - dice.position.y)/stepCount;
+					var stepZ = (dest.z - dice.position.z)/stepCount;
+
+					return new Promise(function(resolve) {
+						var animateCallback = function() {
+
+							self._renderer.render(self._scene, self._camera);
+							step++;
+							
+							if (step < stepCount) {
+								dice.position.x += stepX;
+								dice.position.y += stepY;
+								dice.position.z += stepZ;
+								dice.lookAt(self._camera.localToWorld(new THREE.Vector3(0,0,0)));
+								requestAnimationFrame(animateCallback);
+							} else {
+								dice.position.x = dest.x;
+								dice.position.y = dest.y;
+								dice.position.z = dest.z;
+								dice.lookAt(self._camera.localToWorld(new THREE.Vector3(0,0,0)));
+								self.update();
+								resolve();
+							}
+						}
+						requestAnimationFrame(animateCallback);
+					});
 				}
 				
 				function renderDefendRoll(state) {
@@ -242,7 +291,7 @@ var GLrenderer = {
 				}
 			});
 		},
-		
+
 		
 		_drawMap: function(state) {
 			if (Globals.suppress_ui || !this._initialized) {
