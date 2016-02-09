@@ -23,6 +23,8 @@ var GLrenderer = {
 			0x804030,
 			0xb09080
 		],
+		_mapCenterX: 0,
+		_mapCenterY: 0,
 		_angleY: 0,
 		_angleX: 0,
 		_angleZ: Math.PI/2,
@@ -38,8 +40,8 @@ var GLrenderer = {
 		_dice: {},
 		_canvasHeight: 0,
 		_canvasWidth: 0,
-		mouseVector: null,
-		raycaster: null,
+		_mouseVector: null,
+		_raycaster: null,
 		_listener: null,
 		
 		init: function(canvas, map, playerNames, listener) {
@@ -47,16 +49,27 @@ var GLrenderer = {
 			if (!Globals.suppress_ui) {
 				Globals.ASSERT(Globals.implements(listener, Renderer.iface));
 				this._listener = listener;
-				this.mouseVector = new THREE.Vector2();
-				this.raycaster = new THREE.Raycaster();
+				this._mouseVector = new THREE.Vector2();
+				this._raycaster = new THREE.Raycaster();
 
 				this._map = map;
 				this._names = playerNames || [];
 				this._initialized = true;
 
+				var maxX=-1, minX=10000, minY=10000, maxY=-1;
+				map._hexArray.forEach(function(hex) {
+					var ul = hex.upperLeft();
+					maxX = Math.max(maxX, ul[0]);
+					minX = Math.min(minX, ul[0]);
+					maxY = Math.max(maxY, ul[1]);
+					minY = Math.min(minY, ul[1]);
+				});
+				self._mapCenterX = (maxX - minX)/(2 * Hex.EDGE_LENGTH);
+				self._mapCenterY = (maxY - minY)/(2 * Hex.EDGE_LENGTH);
+
 				var canvas = $('#c')[0];
 				this._scene = new THREE.Scene();
-				this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 0.1, 1000 );
+				this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 1, 1000 );
 				this._camera.up = new THREE.Vector3(0,0,1);
 
 				var xyProjection = self._radius * Math.cos(self._theta);
@@ -64,7 +77,10 @@ var GLrenderer = {
 				self._camera.position.y = xyProjection * Math.sin(self._angleZ);
 				self._camera.position.x = xyProjection * Math.cos(self._angleZ);
 
-				this._camera.lookAt(new THREE.Vector3(0, 0, 0));
+				self._camera.position.y += self._mapCenterY;
+				self._camera.position.x += self._mapCenterX;
+
+				this._camera.lookAt(new THREE.Vector3(self._mapCenterX, self._mapCenterY, 0));
 
 				var ambientLight = new THREE.AmbientLight( 0x000000 );
 				this._scene.add( ambientLight );
@@ -73,10 +89,12 @@ var GLrenderer = {
 				lights[0] = new THREE.SpotLight( 0xffffff, 1, 0 );
 				lights[1] = new THREE.SpotLight( 0xffffff, 1, 0 );
 				lights[2] = new THREE.SpotLight( 0xffffff, 1, 0 );
+				lights[3] = new THREE.SpotLight( 0xffffff, 1, 0 );
 				
-				lights[0].position.set( 0, 200, 0 );
-				lights[1].position.set( 100, 200, 100 );
-				lights[2].position.set( -100, -200, -100 );
+				lights[0].position.set( -200, 200, 100 );
+				lights[1].position.set( 200, 200, 100 );
+				lights[2].position.set( -200, -200, 100 );
+				lights[3].position.set( -200, 200, 100 );
 
 				lights[1].castShadow = true;
 				lights[1].shadowDarkness = 1;
@@ -386,8 +404,8 @@ var GLrenderer = {
 				var cylinder = new THREE.Mesh(geometry, material);
 				cylinder.rotation.x = Math.PI / 2;
 				cylinder.rotation.y = Math.PI / 6;
-				cylinder.position.x = ( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
-				cylinder.position.y = ( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
+				cylinder.position.x = start[0]/Hex.EDGE_LENGTH;//( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
+				cylinder.position.y = start[1]/Hex.EDGE_LENGTH;//( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
 				cylinder.userData['hexId'] = hex.id();
 				cylinder.receiveShadow = true;
 				self._scene.add(cylinder);
@@ -445,8 +463,8 @@ var GLrenderer = {
 			var self = this;
 
 			var center = self._map.countryCenter(countryId);
-			var x = ( center[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
-			var y = ( center[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;
+			var x = center[0]/Hex.EDGE_LENGTH;//( center[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
+			var y = center[1]/Hex.EDGE_LENGTH;//( center[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;
 			var z = 1;
 			var angle = 0;
 
@@ -489,16 +507,16 @@ var GLrenderer = {
 		mouseMove: function(event) {
 			var self = this;
 			
-			self.mouseVector.x = 2 * (event.offsetX / self._canvasWidth) - 1;
-			self.mouseVector.y = 1 - 2 * ( event.offsetY / self._canvasHeight );
+			self._mouseVector.x = 2 * (event.offsetX / self._canvasWidth) - 1;
+			self._mouseVector.y = 1 - 2 * ( event.offsetY / self._canvasHeight );
 
 			var hexes = [];
 			Object.keys(self._cylinders).forEach(function(id) {
 				hexes.push(self._cylinders[id]);
 			});
 
-			self.raycaster.setFromCamera(self.mouseVector, self._camera);
-			var intersects = self.raycaster.intersectObjects(hexes);
+			self._raycaster.setFromCamera(self._mouseVector, self._camera);
+			var intersects = self._raycaster.intersectObjects(hexes);
 
 			var cylinder = intersects[0];
 			var countryId = -1;
@@ -570,8 +588,11 @@ var GLrenderer = {
 			self._camera.position.z = self._radius * Math.sin(self._theta);
 			self._camera.position.y = xyProjection * Math.sin(self._angleZ);
 			self._camera.position.x = xyProjection * Math.cos(self._angleZ);
+			self._camera.position.y += self._mapCenterY;
+			self._camera.position.x += self._mapCenterX;
 
-			self._camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+			self._camera.lookAt(new THREE.Vector3(self._mapCenterX, self._mapCenterY, 0));
 
 			self.update();
 		},
