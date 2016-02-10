@@ -1,6 +1,6 @@
 //'use strict'
 
-var ANIMATE = true;
+var ANIMATE = false;
 var DRAW_DICE = true;
 
 var GLrenderer = {
@@ -322,6 +322,8 @@ var GLrenderer = {
 			return Promise.mapSeries(state.countryIds(), function(countryId) {
 				return self._animateCountry(countryId, state);
 			});
+
+			
 		},
 
 		_animateCountry: function(countryId, state) {
@@ -390,28 +392,100 @@ var GLrenderer = {
 
 		},
 
-		
+
 		_drawHex: function(hex, state, isFighting) {
 			var self = this;					
 			var countryId = hex.countryId();
 			var start = hex.upperLeft();
 			var height = DRAW_DICE ? 1 : 4 * state.countryDice(countryId);
+			var cylinder;
 			
 			if (!self._cylinders[hex.id()]) {
 				var color = self._playerColors[state.countryOwner(countryId)];
 				var geometry = new THREE.CylinderGeometry( 1, 1, height, 6);
 				var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
-				var cylinder = new THREE.Mesh(geometry, material);
+				cylinder = new THREE.Mesh(geometry, material);
 				cylinder.rotation.x = Math.PI / 2;
 				cylinder.rotation.y = Math.PI / 6;
-				cylinder.position.x = start[0]/Hex.EDGE_LENGTH;//( start[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
-				cylinder.position.y = start[1]/Hex.EDGE_LENGTH;//( start[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;	
+				cylinder.position.x = start[0]/Hex.EDGE_LENGTH;
+				cylinder.position.y = start[1]/Hex.EDGE_LENGTH;
 				cylinder.userData['hexId'] = hex.id();
 				cylinder.receiveShadow = true;
 				self._scene.add(cylinder);
 				self._cylinders[hex.id()] = cylinder;
+
+				if (hex._countryEdgeDirections.length) {
+					cylinder.updateMatrixWorld();
+
+					material = new THREE.LineBasicMaterial({
+						color: 0x000000
+					});
+
+					
+					hex._countryEdgeDirections.forEach(function(dir) {
+						var g = new THREE.Geometry();
+						if (dir == Dir.obj.NE) {
+							var vertex = cylinder.geometry.vertices[0].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+
+							vertex = cylinder.geometry.vertices[1].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+						} 
+						if (dir == Dir.obj.SE) {
+							var vertex = cylinder.geometry.vertices[1].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+
+							vertex = cylinder.geometry.vertices[2].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+						} 
+						if (dir == Dir.obj.S) {
+							var vertex = cylinder.geometry.vertices[2].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+
+							vertex = cylinder.geometry.vertices[3].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);
+						}
+						if (dir == Dir.obj.SW) {
+							var vertex = cylinder.geometry.vertices[3].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+
+							vertex = cylinder.geometry.vertices[4].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+						}
+						if (dir == Dir.obj.NW) {
+							var vertex = cylinder.geometry.vertices[4].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+
+							vertex = cylinder.geometry.vertices[5].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+						}
+						if (dir == Dir.obj.N) {
+							var vertex = cylinder.geometry.vertices[5].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+
+							vertex = cylinder.geometry.vertices[0].clone();
+							cylinder.localToWorld(vertex);
+							g.vertices.push(vertex);	
+						} 
+						var line = new THREE.Line(g, material);
+						self._scene.add(line);
+					});
+					
+				}
+
 			} else {
-				var cylinder = self._cylinders[hex.id()];
+				cylinder = self._cylinders[hex.id()];
 				self._scene.remove(cylinder);
 				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
 				cylinder.geometry.dispose();
