@@ -117,6 +117,7 @@ var GLrenderer = {
 				var canvas = $(this._renderer.domElement);
 				this._canvasWidth = canvas.width();
 				this._canvasHeight = canvas.height();
+				this._texture = new THREE.TextureLoader().load('/public/images/dice1.png')
 			}
 		},
 
@@ -537,14 +538,16 @@ var GLrenderer = {
 			var self = this;
 
 			var center = self._map.countryCenter(countryId);
-			var x = center[0]/Hex.EDGE_LENGTH;//( center[0] - (Hex.NUM_WIDE * Hex.EDGE_LENGTH) ) / Hex.EDGE_LENGTH;
-			var y = center[1]/Hex.EDGE_LENGTH;//( center[1] - (Hex.NUM_HIGH * Hex.HEIGHT / 4) ) / Hex.EDGE_LENGTH;
+			var x = center[0]/Hex.EDGE_LENGTH;
+			var y = center[1]/Hex.EDGE_LENGTH;
 			var z = 1;
 			var angle = 0;
 
-			var color = 0x888888;//self._playerColors[state.countryOwner(countryId)];
+			var color = 0xeeeee0;
 			var geometry = new THREE.BoxGeometry( 1.5, 1.5, 1.5 );
-			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x7d7d7d, shininess: 0, shading: THREE.FlatShading});
+			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x7d7d7d, 
+														shininess: 0, shading: THREE.FlatShading,
+														map: self._texture});
 
 			for (var i=1; i < 9; i++) {
 				var cube = new THREE.Mesh( geometry, material );
