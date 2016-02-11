@@ -117,7 +117,23 @@ var GLrenderer = {
 				var canvas = $(this._renderer.domElement);
 				this._canvasWidth = canvas.width();
 				this._canvasHeight = canvas.height();
-				this._texture = new THREE.TextureLoader().load('/public/images/dice1.png')
+				
+				this._texture = new THREE.TextureLoader().load('/public/images/dice6-red.png', function() {
+					self.update();
+				});
+
+				
+				var loader = new THREE.CubeTextureLoader();
+				self._cubeTexture = loader.load(['/public/images/dice6.png',
+											'/public/images/dice6.png',
+											'/public/images/dice6.png',
+											'/public/images/dice6.png',
+											'/public/images/dice6.png',
+			 								'/public/images/dice6.png'], 
+							 				function(img) {
+												self.update();
+											}
+				);
 			}
 		},
 
@@ -521,6 +537,7 @@ var GLrenderer = {
 		
 		_drawDice: function (countryId, state) {
 			var self = this;
+
 			if (!self._dice[countryId + ':' + 1]) {
 				self._initializeDice(countryId);
 			}
@@ -540,13 +557,12 @@ var GLrenderer = {
 			var center = self._map.countryCenter(countryId);
 			var x = center[0]/Hex.EDGE_LENGTH;
 			var y = center[1]/Hex.EDGE_LENGTH;
-			var z = 1;
+			var z = 2;
 			var angle = 0;
 
 			var color = 0xeeeee0;
-			var geometry = new THREE.BoxGeometry( 1.5, 1.5, 1.5 );
-			var material = new THREE.MeshPhongMaterial({color: color, specular: 0x7d7d7d, 
-														shininess: 0, shading: THREE.FlatShading,
+			var geometry = new THREE.BoxGeometry( 2,2,2 );
+			var material = new THREE.MeshBasicMaterial({color: 0xffffff,
 														map: self._texture});
 
 			for (var i=1; i < 9; i++) {
@@ -559,13 +575,13 @@ var GLrenderer = {
 				self._dice[countryId + ':' + i] = cube;
 				self._scene.add(cube);
 
-				z += 1.5;
+				z += 2;
 				angle += Math.PI/10;
 
 				if (i == 4) {
-					z = 1;
+					z = 2;
 					angle = 0;
-					y += 1.6;
+					y += 2.1;
 				}
 			}
 		},
