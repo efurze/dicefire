@@ -2,6 +2,9 @@
 
 var ANIMATE = true;
 var DRAW_DICE = true;
+var SKY = true;
+var SHADOW = true;
+var DRAW_BORDERS = false;
 
 var GLrenderer = {
 		
@@ -96,8 +99,10 @@ var GLrenderer = {
 			lights[2].position.set( -200, -200, 100 );
 			lights[3].position.set( -200, 200, 100 );
 
-			lights[1].castShadow = true;
-			lights[1].shadowDarkness = 1;
+			if (SHADOW) {
+				lights[1].castShadow = true;
+				lights[1].shadowDarkness = 1;
+			}
 
 			this._scene.add( lights[0] );
 			this._scene.add( lights[1] );
@@ -105,7 +110,9 @@ var GLrenderer = {
 
 
 			this._renderer = new THREE.WebGLRenderer({ antialias: true });
-			this._renderer.shadowMap.enabled = true;
+			if (SHADOW) {
+				this._renderer.shadowMap.enabled = true;
+			}
 			this._renderer.setSize(c.width, c.height);
 			$('#canvas3d_div').append(this._renderer.domElement);
 			$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
@@ -118,38 +125,42 @@ var GLrenderer = {
 			this._canvasWidth = canvas.width();
 			this._canvasHeight = canvas.height();
 			
-			this._texture = new THREE.TextureLoader().load('/public/images/dice6-red.png', function() {
-				self.update();
-			});
-
-
-			new THREE.CubeTextureLoader().load(['/public/images/sky.jpg',
-										'/public/images/sky.jpg',
-										'/public/images/sky.jpg',
-										'/public/images/sky.jpg',
-										'/public/images/sky.jpg',
-		 								'/public/images/sky.jpg'], function(texture) {
-
-		 		var shader = THREE.ShaderLib['cube'];
-		 		shader.uniforms['tCube'].value = texture;
-
-				var skyBoxMaterial = new THREE.ShaderMaterial( {
-				  fragmentShader: shader.fragmentShader,
-				  vertexShader: shader.vertexShader,
-				  uniforms: shader.uniforms,
-				  depthWrite: false,
-				  side: THREE.BackSide
+			if (DRAW_DICE) {
+				this._texture = new THREE.TextureLoader().load('/public/images/dice6-red.png', function() {
+					self.update();
 				});
+			}
 
-				// create skybox mesh
-				var skybox = new THREE.Mesh(
-				  new THREE.CubeGeometry(1000, 1000, 1000),
-				  skyBoxMaterial
-				);
 
-				self._scene.add(skybox);
-				self.update();
-			});
+			if (SKY) {
+				new THREE.CubeTextureLoader().load(['/public/images/sky.jpg',
+											'/public/images/sky.jpg',
+											'/public/images/sky.jpg',
+											'/public/images/sky.jpg',
+											'/public/images/sky.jpg',
+			 								'/public/images/sky.jpg'], function(texture) {
+
+			 		var shader = THREE.ShaderLib['cube'];
+			 		shader.uniforms['tCube'].value = texture;
+
+					var skyBoxMaterial = new THREE.ShaderMaterial( {
+					  fragmentShader: shader.fragmentShader,
+					  vertexShader: shader.vertexShader,
+					  uniforms: shader.uniforms,
+					  depthWrite: false,
+					  side: THREE.BackSide
+					});
+
+					// create skybox mesh
+					var skybox = new THREE.Mesh(
+					  new THREE.CubeGeometry(1000, 1000, 1000),
+					  skyBoxMaterial
+					);
+
+					self._scene.add(skybox);
+					self.update();
+				});
+			}
 
 		},
 
@@ -446,81 +457,92 @@ var GLrenderer = {
 				cylinder.position.x = start[0]/Hex.EDGE_LENGTH;
 				cylinder.position.y = start[1]/Hex.EDGE_LENGTH;
 				cylinder.userData['hexId'] = hex.id();
-				cylinder.receiveShadow = true;
+				if (SHADOW) {
+					cylinder.receiveShadow = true;
+				}
 				self._scene.add(cylinder);
 				self._cylinders[hex.id()] = cylinder;
 
 				// draw map borders
-				if (hex._countryEdgeDirections.length) {
-					cylinder.updateMatrixWorld();
+				if (DRAW_BORDERS) {
+					if (hex._countryEdgeDirections.length) {
+						cylinder.updateMatrixWorld();
 
-					material = new THREE.LineBasicMaterial({
-						color: 0x000000
-					});
+						material = new THREE.LineBasicMaterial({
+							color: 0x000000
+						});
 
-					
-					hex._countryEdgeDirections.forEach(function(dir) {
-						var g = new THREE.Geometry();
-						if (dir == Dir.obj.NE) {
-							var vertex = cylinder.geometry.vertices[0].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
+						
+						hex._countryEdgeDirections.forEach(function(dir) {
+							
+							var nextHex = Dir.nextHex(hex, dir, self._map);
+							if (!nextHex || !nextHex.hasCountry()) {
+								// don't draw lines if it's on the edge of the map
+								return;
+							}
+							
+							var g = new THREE.Geometry();
 
-							vertex = cylinder.geometry.vertices[1].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
-						} 
-						if (dir == Dir.obj.SE) {
-							var vertex = cylinder.geometry.vertices[1].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
+							if (dir == Dir.obj.NE) {
+								var vertex = cylinder.geometry.vertices[0].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
 
-							vertex = cylinder.geometry.vertices[2].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
-						} 
-						if (dir == Dir.obj.S) {
-							var vertex = cylinder.geometry.vertices[2].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
+								vertex = cylinder.geometry.vertices[1].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
+							} 
+							if (dir == Dir.obj.SE) {
+								var vertex = cylinder.geometry.vertices[1].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
 
-							vertex = cylinder.geometry.vertices[3].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);
-						}
-						if (dir == Dir.obj.SW) {
-							var vertex = cylinder.geometry.vertices[3].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
+								vertex = cylinder.geometry.vertices[2].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
+							} 
+							if (dir == Dir.obj.S) {
+								var vertex = cylinder.geometry.vertices[2].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
 
-							vertex = cylinder.geometry.vertices[4].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
-						}
-						if (dir == Dir.obj.NW) {
-							var vertex = cylinder.geometry.vertices[4].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
+								vertex = cylinder.geometry.vertices[3].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);
+							}
+							if (dir == Dir.obj.SW) {
+								var vertex = cylinder.geometry.vertices[3].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
 
-							vertex = cylinder.geometry.vertices[5].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
-						}
-						if (dir == Dir.obj.N) {
-							var vertex = cylinder.geometry.vertices[5].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
+								vertex = cylinder.geometry.vertices[4].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
+							}
+							if (dir == Dir.obj.NW) {
+								var vertex = cylinder.geometry.vertices[4].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
 
-							vertex = cylinder.geometry.vertices[0].clone();
-							cylinder.localToWorld(vertex);
-							g.vertices.push(vertex);	
-						} 
-						var line = new THREE.Line(g, material);
-						self._scene.add(line);
-					});
-					
+								vertex = cylinder.geometry.vertices[5].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
+							}
+							if (dir == Dir.obj.N) {
+								var vertex = cylinder.geometry.vertices[5].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
+
+								vertex = cylinder.geometry.vertices[0].clone();
+								cylinder.localToWorld(vertex);
+								g.vertices.push(vertex);	
+							} 
+							var line = new THREE.Line(g, material);
+							self._scene.add(line);
+						});
+					}
 				}
-
+				
 			} else {
 				// resize cylinder height
 				cylinder = self._cylinders[hex.id()];
@@ -529,7 +551,9 @@ var GLrenderer = {
 				cylinder.geometry.dispose();
 				cylinder.geometry = null;
 				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, height, 6);
-				cylinder.receiveShadow = true;
+				if (SHADOW) {
+					cylinder.receiveShadow = true;
+				}
 				self._scene.add(cylinder);
 			}
 		},
@@ -584,7 +608,8 @@ var GLrenderer = {
 			var color = 0xeeeee0;
 			var geometry = new THREE.BoxGeometry( 2,2,2 );
 			var material = new THREE.MeshBasicMaterial({color: 0xffffff,
-														map: self._texture});
+														map: self._texture
+													});
 
 			for (var i=1; i < 9; i++) {
 				var cube = new THREE.Mesh( geometry, material );
@@ -592,7 +617,9 @@ var GLrenderer = {
 				cube.position.y = y;
 				cube.position.z = z;
 				cube.rotation.z = angle;
-				cube.castShadow = true;
+				if (SHADOW) {
+					cube.castShadow = true;
+				}
 				self._dice[countryId + ':' + i] = cube;
 				self._scene.add(cube);
 
