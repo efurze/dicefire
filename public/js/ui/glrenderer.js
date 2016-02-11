@@ -1,6 +1,6 @@
 //'use strict'
 
-var ANIMATE = false;
+var ANIMATE = true;
 var DRAW_DICE = true;
 
 var GLrenderer = {
@@ -46,95 +46,111 @@ var GLrenderer = {
 		
 		init: function(canvas, map, playerNames, listener) {
 			var self = this;
-			if (!Globals.suppress_ui) {
-				Globals.ASSERT(Globals.implements(listener, Renderer.iface));
-				this._listener = listener;
-				this._mouseVector = new THREE.Vector2();
-				this._raycaster = new THREE.Raycaster();
 
-				this._map = map;
-				this._names = playerNames || [];
-				this._initialized = true;
+			Globals.ASSERT(Globals.implements(listener, Renderer.iface));
+			this._listener = listener;
+			this._mouseVector = new THREE.Vector2();
+			this._raycaster = new THREE.Raycaster();
 
-				var maxX=-1, minX=10000, minY=10000, maxY=-1;
-				map._hexArray.forEach(function(hex) {
-					var ul = hex.upperLeft();
-					maxX = Math.max(maxX, ul[0]);
-					minX = Math.min(minX, ul[0]);
-					maxY = Math.max(maxY, ul[1]);
-					minY = Math.min(minY, ul[1]);
+			this._map = map;
+			this._names = playerNames || [];
+			this._initialized = true;
+
+			var maxX=-1, minX=10000, minY=10000, maxY=-1;
+			map._hexArray.forEach(function(hex) {
+				var ul = hex.upperLeft();
+				maxX = Math.max(maxX, ul[0]);
+				minX = Math.min(minX, ul[0]);
+				maxY = Math.max(maxY, ul[1]);
+				minY = Math.min(minY, ul[1]);
+			});
+			self._mapCenterX = (maxX - minX)/(2 * Hex.EDGE_LENGTH);
+			self._mapCenterY = (maxY - minY)/(2 * Hex.EDGE_LENGTH);
+
+			var canvas = $('#c')[0];
+			this._scene = new THREE.Scene();
+			this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 1, 1000 );
+			this._camera.up = new THREE.Vector3(0,0,1);
+
+			var xyProjection = self._radius * Math.cos(self._theta);
+			self._camera.position.z = self._radius * Math.sin(self._theta);
+			self._camera.position.y = xyProjection * Math.sin(self._angleZ);
+			self._camera.position.x = xyProjection * Math.cos(self._angleZ);
+
+			self._camera.position.y += self._mapCenterY;
+			self._camera.position.x += self._mapCenterX;
+
+			this._camera.lookAt(new THREE.Vector3(self._mapCenterX, self._mapCenterY, 0));
+
+			var ambientLight = new THREE.AmbientLight( 0x000000 );
+			this._scene.add( ambientLight );
+
+			var lights = [];
+			lights[0] = new THREE.SpotLight( 0xffffff, 1, 0 );
+			lights[1] = new THREE.SpotLight( 0xffffff, 1, 0 );
+			lights[2] = new THREE.SpotLight( 0xffffff, 1, 0 );
+			lights[3] = new THREE.SpotLight( 0xffffff, 1, 0 );
+			
+			lights[0].position.set( -200, 200, 100 );
+			lights[1].position.set( 200, 200, 100 );
+			lights[2].position.set( -200, -200, 100 );
+			lights[3].position.set( -200, 200, 100 );
+
+			lights[1].castShadow = true;
+			lights[1].shadowDarkness = 1;
+
+			this._scene.add( lights[0] );
+			this._scene.add( lights[1] );
+			this._scene.add( lights[2] );				
+
+
+			this._renderer = new THREE.WebGLRenderer({ antialias: true });
+			this._renderer.shadowMap.enabled = true;
+			this._renderer.setSize(c.width, c.height);
+			$('#canvas3d_div').append(this._renderer.domElement);
+			$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
+			$(this._renderer.domElement).on('mouseup', GLrenderer.mouseUp.bind(this));
+			$(this._renderer.domElement).on('mousemove', GLrenderer.mouseMove.bind(this));
+			$(this._renderer.domElement).on('mouseleave', GLrenderer.mouseLeave.bind(this));
+			$(document).keydown(GLrenderer.keyDown.bind(this));
+
+			var canvas = $(this._renderer.domElement);
+			this._canvasWidth = canvas.width();
+			this._canvasHeight = canvas.height();
+			
+			this._texture = new THREE.TextureLoader().load('/public/images/dice6-red.png', function() {
+				self.update();
+			});
+
+
+			new THREE.CubeTextureLoader().load(['/public/images/sky.jpg',
+										'/public/images/sky.jpg',
+										'/public/images/sky.jpg',
+										'/public/images/sky.jpg',
+										'/public/images/sky.jpg',
+		 								'/public/images/sky.jpg'], function(texture) {
+
+		 		var shader = THREE.ShaderLib['cube'];
+		 		shader.uniforms['tCube'].value = texture;
+
+				var skyBoxMaterial = new THREE.ShaderMaterial( {
+				  fragmentShader: shader.fragmentShader,
+				  vertexShader: shader.vertexShader,
+				  uniforms: shader.uniforms,
+				  depthWrite: false,
+				  side: THREE.BackSide
 				});
-				self._mapCenterX = (maxX - minX)/(2 * Hex.EDGE_LENGTH);
-				self._mapCenterY = (maxY - minY)/(2 * Hex.EDGE_LENGTH);
 
-				var canvas = $('#c')[0];
-				this._scene = new THREE.Scene();
-				this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 1, 1000 );
-				this._camera.up = new THREE.Vector3(0,0,1);
-
-				var xyProjection = self._radius * Math.cos(self._theta);
-				self._camera.position.z = self._radius * Math.sin(self._theta);
-				self._camera.position.y = xyProjection * Math.sin(self._angleZ);
-				self._camera.position.x = xyProjection * Math.cos(self._angleZ);
-
-				self._camera.position.y += self._mapCenterY;
-				self._camera.position.x += self._mapCenterX;
-
-				this._camera.lookAt(new THREE.Vector3(self._mapCenterX, self._mapCenterY, 0));
-
-				var ambientLight = new THREE.AmbientLight( 0x000000 );
-				this._scene.add( ambientLight );
-
-				var lights = [];
-				lights[0] = new THREE.SpotLight( 0xffffff, 1, 0 );
-				lights[1] = new THREE.SpotLight( 0xffffff, 1, 0 );
-				lights[2] = new THREE.SpotLight( 0xffffff, 1, 0 );
-				lights[3] = new THREE.SpotLight( 0xffffff, 1, 0 );
-				
-				lights[0].position.set( -200, 200, 100 );
-				lights[1].position.set( 200, 200, 100 );
-				lights[2].position.set( -200, -200, 100 );
-				lights[3].position.set( -200, 200, 100 );
-
-				lights[1].castShadow = true;
-				lights[1].shadowDarkness = 1;
-
-				this._scene.add( lights[0] );
-				this._scene.add( lights[1] );
-				this._scene.add( lights[2] );				
-
-
-				this._renderer = new THREE.WebGLRenderer({ antialias: true });
-				this._renderer.shadowMap.enabled = true;
-				this._renderer.setSize(c.width, c.height);
-				$('#canvas3d_div').append(this._renderer.domElement);
-				$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
-				$(this._renderer.domElement).on('mouseup', GLrenderer.mouseUp.bind(this));
-				$(this._renderer.domElement).on('mousemove', GLrenderer.mouseMove.bind(this));
-				$(this._renderer.domElement).on('mouseleave', GLrenderer.mouseLeave.bind(this));
-				$(document).keydown(GLrenderer.keyDown.bind(this));
-
-				var canvas = $(this._renderer.domElement);
-				this._canvasWidth = canvas.width();
-				this._canvasHeight = canvas.height();
-				
-				this._texture = new THREE.TextureLoader().load('/public/images/dice6-red.png', function() {
-					self.update();
-				});
-
-				
-				var loader = new THREE.CubeTextureLoader();
-				self._cubeTexture = loader.load(['/public/images/dice6.png',
-											'/public/images/dice6.png',
-											'/public/images/dice6.png',
-											'/public/images/dice6.png',
-											'/public/images/dice6.png',
-			 								'/public/images/dice6.png'], 
-							 				function(img) {
-												self.update();
-											}
+				// create skybox mesh
+				var skybox = new THREE.Mesh(
+				  new THREE.CubeGeometry(1000, 1000, 1000),
+				  skyBoxMaterial
 				);
-			}
+
+				self._scene.add(skybox);
+				self.update();
+			});
+
 		},
 
 		setMouseOverCountry: function(id) {
@@ -352,7 +368,7 @@ var GLrenderer = {
 
 			Globals.debug("animateCountry", countryId, "from", fromDice, "to", toDice, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
 
-			if (!ANIMATE || fromDice == toDice || (DRAW_DICE && state.attack())) {
+			if (!ANIMATE || fromDice == toDice || (DRAW_DICE && (state.attack() || self._lastRenderedState.attack()))) {
 				return self._drawCountry(countryId, state, false);
 			}
 
@@ -420,7 +436,10 @@ var GLrenderer = {
 			if (!self._cylinders[hex.id()]) {
 				var color = self._playerColors[state.countryOwner(countryId)];
 				var geometry = new THREE.CylinderGeometry( 1, 1, height, 6);
-				var material = new THREE.MeshPhongMaterial({color: color, specular: 0x111111, shininess: 30, shading: THREE.FlatShading});
+				var material = new THREE.MeshPhongMaterial({color: color, 
+					specular: 0x111111, 
+					shininess: 30, 
+					shading: THREE.FlatShading});
 				cylinder = new THREE.Mesh(geometry, material);
 				cylinder.rotation.x = Math.PI / 2;
 				cylinder.rotation.y = Math.PI / 6;
@@ -431,6 +450,7 @@ var GLrenderer = {
 				self._scene.add(cylinder);
 				self._cylinders[hex.id()] = cylinder;
 
+				// draw map borders
 				if (hex._countryEdgeDirections.length) {
 					cylinder.updateMatrixWorld();
 
@@ -502,6 +522,7 @@ var GLrenderer = {
 				}
 
 			} else {
+				// resize cylinder height
 				cylinder = self._cylinders[hex.id()];
 				self._scene.remove(cylinder);
 				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
