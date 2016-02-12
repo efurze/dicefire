@@ -441,12 +441,14 @@ var GLrenderer = {
 			var self = this;					
 			var countryId = hex.countryId();
 			var start = hex.upperLeft();
-			var height = DRAW_DICE ? 1 : 4 * state.countryDice(countryId);
 			var cylinder;
+			if (!self._hexGeometry && DRAW_DICE) {
+				self._hexGeometry = new THREE.CylinderGeometry( 1, 1, 1, 6);
+			}
 			
 			if (!self._cylinders[hex.id()]) {
 				var color = self._playerColors[state.countryOwner(countryId)];
-				var geometry = new THREE.CylinderGeometry( 1, 1, height, 6);
+				var geometry = DRAW_DICE ? self._hexGeometry : new THREE.CylinderGeometry( 1, 1, 4 * state.countryDice(countryId), 6);
 				var material = new THREE.MeshPhongMaterial({color: color, 
 					specular: 0x111111, 
 					shininess: 30, 
@@ -550,7 +552,7 @@ var GLrenderer = {
 				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
 				cylinder.geometry.dispose();
 				cylinder.geometry = null;
-				cylinder.geometry = new THREE.CylinderGeometry( 1, 1, height, 6);
+				cylinder.geometry = DRAW_DICE ? self._hexGeometry : new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId), 6);
 				if (SHADOW) {
 					cylinder.receiveShadow = true;
 				}
@@ -599,20 +601,35 @@ var GLrenderer = {
 		_initializeDice: function (countryId) {
 			var self = this;
 
+			var DICE_SIZE = 2;
+
 			var center = self._map.countryCenter(countryId);
 			var x = center[0]/Hex.EDGE_LENGTH;
 			var y = center[1]/Hex.EDGE_LENGTH;
-			var z = 2;
+			var z = DICE_SIZE;
 			var angle = 0;
 
-			var color = 0xeeeee0;
-			var geometry = new THREE.BoxGeometry( 2,2,2 );
-			var material = new THREE.MeshBasicMaterial({color: 0xffffff,
-														map: self._texture
-													});
+			if (!self._diceGeometry) {
+				self._diceGeometry = new THREE.BoxGeometry( DICE_SIZE, DICE_SIZE, DICE_SIZE );
+			}
+			if (!self._diceMaterial) {
+				loader = new THREE.TextureLoader();
+				var texture = new THREE.CubeTexture([
+						loader.load('/public/images/dice6.png'),
+						loader.load('/public/images/dice6.png'),
+						loader.load('/public/images/dice6.png'),
+						loader.load('/public/images/dice6.png'),
+						loader.load('/public/images/dice6.png'),
+						loader.load('/public/images/dice6.png')
+					]);
+				self._diceMaterial = new THREE.MeshBasicMaterial({
+						map: self._texture
+					});
+			}
 
+			// we add 8 dice to every country and just hide/show them as needed
 			for (var i=1; i < 9; i++) {
-				var cube = new THREE.Mesh( geometry, material );
+				var cube = new THREE.Mesh( self._diceGeometry, self._diceMaterial);
 				cube.position.x = x;
 				cube.position.y = y;
 				cube.position.z = z;
@@ -623,13 +640,13 @@ var GLrenderer = {
 				self._dice[countryId + ':' + i] = cube;
 				self._scene.add(cube);
 
-				z += 2;
+				z += DICE_SIZE;
 				angle += Math.PI/10;
 
 				if (i == 4) {
 					z = 2;
 					angle = 0;
-					y += 2.1;
+					y += DICE_SIZE + 0.1;
 				}
 			}
 		},
@@ -747,11 +764,13 @@ var GLrenderer = {
 		renderEngineCallback: function() {
 			//Globals.debug("renderEngineCallback", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
 			var self = this;	
-			//console.time("RenderTime");
+			console.time("RenderTime");
 			self._renderer.render(self._scene, self._camera);
-			//console.timeEnd("RenderTime");
+			console.timeEnd("RenderTime");
 		},
 
+		// this is to keep track of which countries have changed since we last drew them.
+		// If the hash of a country's state hasn't changed, we don't redraw it.
 		stateHash: {
 	
 			_players: {},
