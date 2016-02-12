@@ -626,18 +626,19 @@ var GLrenderer = {
 				self._diceGeometry = new THREE.BoxGeometry( DICE_SIZE, DICE_SIZE, DICE_SIZE );
 			}
 			if (!self._diceMaterial) {
+				
 				loader = new THREE.TextureLoader();
-				var texture = new THREE.CubeTexture([
-						loader.load('/public/images/dice6.png'),
-						loader.load('/public/images/dice6.png'),
-						loader.load('/public/images/dice6.png'),
-						loader.load('/public/images/dice6.png'),
-						loader.load('/public/images/dice6.png'),
-						loader.load('/public/images/dice6.png')
-					]);
-				self._diceMaterial = new THREE.MeshBasicMaterial({
-						map: self._texture
-					});
+
+				var materials = [
+					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice1.png')}),
+					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice2.png')}),
+					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice3.png')}),
+					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice4.png')}),
+					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice5.png')}),
+					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice6.png')}),
+				];
+
+				self._diceMaterial = new THREE.MultiMaterial(materials);
 			}
 
 			// we add 8 dice to every country and just hide/show them as needed
