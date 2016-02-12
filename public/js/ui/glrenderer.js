@@ -1,9 +1,9 @@
 //'use strict'
 
-var ANIMATE = true;
+var ANIMATE = false;
 var DRAW_DICE = true;
 var SKY = true;
-var SHADOW = true;
+var SHADOW = false;
 var DRAW_BORDERS = false;
 
 var GLrenderer = {
@@ -446,6 +446,7 @@ var GLrenderer = {
 				self._hexGeometry = new THREE.CylinderGeometry( 1, 1, 1, 6);
 			}
 			
+
 			if (!self._cylinders[hex.id()]) {
 				var color = self._playerColors[state.countryOwner(countryId)];
 				var geometry = DRAW_DICE ? self._hexGeometry : new THREE.CylinderGeometry( 1, 1, 4 * state.countryDice(countryId), 6);
@@ -466,97 +467,109 @@ var GLrenderer = {
 				self._cylinders[hex.id()] = cylinder;
 
 				// draw map borders
-				if (DRAW_BORDERS) {
-					if (hex._countryEdgeDirections.length) {
-						cylinder.updateMatrixWorld();
-
-						material = new THREE.LineBasicMaterial({
-							color: 0x000000
-						});
-
-						
-						hex._countryEdgeDirections.forEach(function(dir) {
-							
-							var nextHex = Dir.nextHex(hex, dir, self._map);
-							if (!nextHex || !nextHex.hasCountry()) {
-								// don't draw lines if it's on the edge of the map
-								return;
-							}
-							
-							var g = new THREE.Geometry();
-
-							if (dir == Dir.obj.NE) {
-								var vertex = cylinder.geometry.vertices[0].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-
-								vertex = cylinder.geometry.vertices[1].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-							} 
-							if (dir == Dir.obj.SE) {
-								var vertex = cylinder.geometry.vertices[1].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-
-								vertex = cylinder.geometry.vertices[2].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-							} 
-							if (dir == Dir.obj.S) {
-								var vertex = cylinder.geometry.vertices[2].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-
-								vertex = cylinder.geometry.vertices[3].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);
-							}
-							if (dir == Dir.obj.SW) {
-								var vertex = cylinder.geometry.vertices[3].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-
-								vertex = cylinder.geometry.vertices[4].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-							}
-							if (dir == Dir.obj.NW) {
-								var vertex = cylinder.geometry.vertices[4].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-
-								vertex = cylinder.geometry.vertices[5].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-							}
-							if (dir == Dir.obj.N) {
-								var vertex = cylinder.geometry.vertices[5].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-
-								vertex = cylinder.geometry.vertices[0].clone();
-								cylinder.localToWorld(vertex);
-								g.vertices.push(vertex);	
-							} 
-							var line = new THREE.Line(g, material);
-							self._scene.add(line);
-						});
-					}
-				}
+				self._drawBorder(hex, cylinder);
+				
 				
 			} else {
-				// resize cylinder height
 				cylinder = self._cylinders[hex.id()];
-				self._scene.remove(cylinder);
+				// update color:
 				cylinder.material.color = self._getCountryColor(countryId, state, isFighting);
-				cylinder.geometry.dispose();
-				cylinder.geometry = null;
-				cylinder.geometry = DRAW_DICE ? self._hexGeometry : new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId), 6);
-				if (SHADOW) {
-					cylinder.receiveShadow = true;
+
+				// resize cylinder height
+				if (!DRAW_DICE && cylinder.geometry.height != state.countryDice(countryId) * 4)
+				{
+					self._scene.remove(cylinder);
+					cylinder.geometry.dispose();
+					cylinder.geometry = null;
+					cylinder.geometry = new THREE.CylinderGeometry( 1, 1, state.countryDice(countryId) * 4, 6);
+					if (SHADOW) {
+						cylinder.receiveShadow = true;
+					}
+					self._scene.add(cylinder);
 				}
-				self._scene.add(cylinder);
+			}
+		},
+
+		_drawBorder: function(hex, cylinder) {
+			if (!DRAW_BORDERS) {
+				return;
+			}
+			var self = this;
+			if (hex._countryEdgeDirections.length) {
+				cylinder.updateMatrixWorld();
+
+				material = new THREE.LineBasicMaterial({
+					color: 0x000000
+				});
+
+				
+				hex._countryEdgeDirections.forEach(function(dir) {
+					
+					var nextHex = Dir.nextHex(hex, dir, self._map);
+					if (!nextHex || !nextHex.hasCountry()) {
+						// don't draw lines if it's on the edge of the map
+						return;
+					}
+
+					var g = new THREE.Geometry();
+
+					if (dir == Dir.obj.NE) {
+						var vertex = cylinder.geometry.vertices[0].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+
+						vertex = cylinder.geometry.vertices[1].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+					} 
+					if (dir == Dir.obj.SE) {
+						var vertex = cylinder.geometry.vertices[1].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+
+						vertex = cylinder.geometry.vertices[2].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+					} 
+					if (dir == Dir.obj.S) {
+						var vertex = cylinder.geometry.vertices[2].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+
+						vertex = cylinder.geometry.vertices[3].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);
+					}
+					if (dir == Dir.obj.SW) {
+						var vertex = cylinder.geometry.vertices[3].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+
+						vertex = cylinder.geometry.vertices[4].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+					}
+					if (dir == Dir.obj.NW) {
+						var vertex = cylinder.geometry.vertices[4].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+
+						vertex = cylinder.geometry.vertices[5].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+					}
+					if (dir == Dir.obj.N) {
+						var vertex = cylinder.geometry.vertices[5].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+
+						vertex = cylinder.geometry.vertices[0].clone();
+						cylinder.localToWorld(vertex);
+						g.vertices.push(vertex);	
+					} 
+					var line = new THREE.Line(g, material);
+					self._scene.add(line);
+				});
 			}
 		},
 
