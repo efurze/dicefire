@@ -1,10 +1,10 @@
 //'use strict'
 
-var ANIMATE = false;
+var ANIMATE = true;
 var DRAW_DICE = true;
 var SKY = true;
 var SHADOW = false;
-var DRAW_BORDERS = false;
+var DRAW_BORDERS = true;
 
 var GLrenderer = {
 		
@@ -70,7 +70,6 @@ var GLrenderer = {
 			self._mapCenterX = (maxX - minX)/(2 * Hex.EDGE_LENGTH);
 			self._mapCenterY = (maxY - minY)/(2 * Hex.EDGE_LENGTH);
 
-			var canvas = $('#c')[0];
 			this._scene = new THREE.Scene();
 			this._camera = new THREE.PerspectiveCamera( 75, c.width / c.height, 1, 1000 );
 			this._camera.up = new THREE.Vector3(0,0,1);
@@ -498,9 +497,11 @@ var GLrenderer = {
 			if (hex._countryEdgeDirections.length) {
 				cylinder.updateMatrixWorld();
 
-				material = new THREE.LineBasicMaterial({
-					color: 0x000000
-				});
+				if (!self._lineMaterial) {
+					self._lineMaterial = new THREE.LineBasicMaterial({
+						color: 0x000000
+					});
+				}
 
 				
 				hex._countryEdgeDirections.forEach(function(dir) {
@@ -567,7 +568,10 @@ var GLrenderer = {
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 					} 
-					var line = new THREE.Line(g, material);
+					g.vertices.forEach(function(v) {
+						v.z += 0.01;
+					})
+					var line = new THREE.Line(g, self._lineMaterial);
 					self._scene.add(line);
 				});
 			}
@@ -721,38 +725,39 @@ var GLrenderer = {
 		keyDown: function(event) {
 			
 			var self = this;
+			var handled = false;
 
 			switch (event.which) {
 				case 37: // left
 				case 65: // a
 					self._angleZ -= .1;
-					//self._camera.position.x -= 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), -5);
+					handled = true;
 					break;
 				case 38: // up
 				case 87: // w
-					//self._elevation += 5;
 					self._theta += .1;
 					self._theta = Math.min(self._theta, Math.PI/2);
+					handled = true;
 					break;
 				case 39: // right
 				case 68: // d
 					self._angleZ += .1;
-					//self._camera.position.x += 5;
-					//self._camera.translateOnAxis(new THREE.Vector3(1,0,0), 5);
+					handled = true;
 					break;
 				case 40: // down
 				case 83: // s
-					//self._elevation -= 5;
 					self._theta -= .1;
 					self._theta = Math.max(self._theta, 0);
+					handled = true;
 					break;
 				case 81: // q
 					self._radius -= 5;
 					self._radius = Math.max(self._radius, 0);
+					handled = true;
 					break;
 				case 90: // z
 					self._radius += 5;
+					handled = true;
 					break;
 			}
 
@@ -767,6 +772,7 @@ var GLrenderer = {
 			self._camera.lookAt(new THREE.Vector3(self._mapCenterX, self._mapCenterY, 0));
 
 			self.update();
+			return !handled;
 		},
 
 		update: function() {
