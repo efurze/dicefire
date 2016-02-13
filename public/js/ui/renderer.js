@@ -57,7 +57,6 @@ $(function(){
 		stateUpdate: function(state, id) {
 			this._lastState = state;
 			this._history.push(state);
-			PlayerStatus.renderPlayers(state);
 			this._renderNext();
 		},
 
@@ -118,6 +117,7 @@ $(function(){
 				var state = this._history.shift();
 				this._rendering = true;
 				this._render(state, this._stateRendered.bind(this));
+				PlayerStatus.renderPlayers(state);
 			}
 		}
 
