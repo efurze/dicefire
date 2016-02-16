@@ -46,6 +46,8 @@ var Renderer2d = {
     			$(canvas).mouseleave(this.mouseLeave.bind(this));
 				
 				this._initialized = true;
+
+                this._setupRollDivs();
 			}			
 		},
 

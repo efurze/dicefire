@@ -2,3 +2,8 @@ node_modules/*
 public/upload/*
 thunderdome/results/*
 dump.rdb
+*.swp
+
+# OS metadata
+.DS_Store
+Thumbs.db
