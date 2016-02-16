@@ -1,7 +1,8 @@
-"use strict"
-
+/*jslint browser: true*/
 
 $(function() {
+
+	"use strict";
 
 	window.onerror = function(msg, url, lineNum) {
 		Globals.debug("Uncaught exception", msg, url, lineNum, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT, Game._gameId);
@@ -52,6 +53,7 @@ $(function() {
 					}
 					if (name === aiHash) {
 						Game._aiIdx = idx;
+						/*jslint evil: true */
 						return eval(aiClassName);
 					}
 				}));
