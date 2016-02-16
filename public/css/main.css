@@ -8557,14 +8557,10 @@ button.close {
 .nav-container .navbar-nav .navbar-toggle {
   margin-top: 14px; }
 
-.container {
-  margin-top: 70px; }
-
-.players-box {
+#game .players-box {
   margin-top: 10px;
   margin-bottom: 10px; }
-
-.player-box {
+#game .player-box {
   font-family: sans-serif;
   display: inline-block;
   margin: 10px;
@@ -8572,45 +8568,38 @@ button.close {
   height: 46px;
   border: 1px solid;
   min-width: 200px; }
-
-.color-block {
+#game .color-block {
   display: inline-block;
   width: 20px;
   height: 20px; }
-
-.dice-box {
+#game .dice-box {
   display: inline-block;
   margin-left: 12px;
   margin-top: 2px;
   vertical-align: top;
   text-align: center; }
-
-.stored-box {
+#game .stored-box {
   display: inline-block;
   margin-left: 5px;
   margin-top: 2px;
   vertical-align: top;
   text-align: center; }
-
-.name-box {
+#game .name-box {
   display: inline-block;
   margin-left: 10px;
   margin-top: 2px;
   font-size: 14px;
   vertical-align: top;
   text-align: center; }
-
-.current-player {
+#game .current-player {
   border: 3px double; }
-
-.roll-row {
+#game .roll-row {
   display: block;
   min-height: 30px;
   margin-left: 10px;
   vertical-align: top;
   margin-top: 15px; }
-
-.roll-die {
+#game .roll-die {
   display: inline-block;
   width: 23px;
   height: 23px;
@@ -8625,8 +8614,7 @@ button.close {
   font-weight: bold;
   margin-left: 5px;
   margin-top: 1px; }
-
-.roll-total {
+#game .roll-total {
   display: inline-block;
   vertical-align: top;
   font-family: sans-serif;
@@ -8634,11 +8622,9 @@ button.close {
   text-align: center;
   color: black;
   margin-left: 20px; }
-
-#leftroll {
+#game #leftroll {
   text-align: right; }
-
-#rightroll {
+#game #rightroll {
   text-align: left; }
 
 /*# sourceMappingURL=main.css.map */

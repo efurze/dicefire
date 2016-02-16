@@ -5016,13 +5016,16 @@ if (typeof module !== 'undefined' && module.exports){
 	module.exports = SocketWrapper;
 };//'use strict'
 
-var ANIMATE = true;
+var ANIMATE = false;
 var DRAW_DICE = true;
 var SKY = true;
 var SHADOW = false;
 var DRAW_BORDERS = true;
 
 var GLrenderer = {
+		WIDTH: 1080,
+		HEIGHT: 580,
+		DICE_SIZE: 2,
 		
 		X: 0, Y:1, Z: 2,
 		_context: null,
@@ -5128,7 +5131,7 @@ var GLrenderer = {
 			if (SHADOW) {
 				this._renderer.shadowMap.enabled = true;
 			}
-			this._renderer.setSize(c.width, c.height);
+			this._renderer.setSize(this.WIDTH, this.HEIGHT);
 			$('#canvas3d_div').append(this._renderer.domElement);
 			$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
 			$(this._renderer.domElement).on('mouseup', GLrenderer.mouseUp.bind(this));
@@ -5176,6 +5179,8 @@ var GLrenderer = {
 					self.update();
 				});
 			}
+
+			self._initializeRollingDice();
 
 		},
 
@@ -5299,51 +5304,23 @@ var GLrenderer = {
 					if (DRAW_DICE) {
 						var ary = [];
 						ary.length = fromNumDice;
-						return Promise.map(ary, function(item, idx) {
-							return animateAttackDice(idx+1);
-						});
+						return animateAttackDice(fromCountry);
 					} else {
 			            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
 			        }
 			        */
 				}
 
-				function animateAttackDice(diceId) {
+
+				function animateAttackDice(countryId) {
 					self._camera.updateMatrix();
 					self._camera.updateMatrixWorld();
 
-					var dest = self._camera.localToWorld(new THREE.Vector3(-7,2,-10));
-					dest.x += (diceId-1);
-					var dice = self._dice[fromCountry + ':' + diceId];
-					var step = 0;
-					var stepCount = 10;
-					var stepX = (dest.x - dice.position.x)/stepCount;
-					var stepY = (dest.y - dice.position.y)/stepCount;
-					var stepZ = (dest.z - dice.position.z)/stepCount;
+					var count = state.countryDice(countryId);
 
-					return new Promise(function(resolve) {
-						var animateCallback = function() {
-
-							self._renderer.render(self._scene, self._camera);
-							step++;
-							
-							if (step < stepCount) {
-								dice.position.x += stepX;
-								dice.position.y += stepY;
-								dice.position.z += stepZ;
-								dice.lookAt(self._camera.localToWorld(new THREE.Vector3(0,0,0)));
-								requestAnimationFrame(animateCallback);
-							} else {
-								dice.position.x = dest.x;
-								dice.position.y = dest.y;
-								dice.position.z = dest.z;
-								dice.lookAt(self._camera.localToWorld(new THREE.Vector3(0,0,0)));
-								self.update();
-								resolve();
-							}
-						}
-						requestAnimationFrame(animateCallback);
-					});
+					for (var diceId=1; diceId <= count; diceId++) {
+						self._rollAttackDie(diceId, 5);
+					}
 				}
 				
 				function renderDefendRoll(state) {
@@ -5368,6 +5345,7 @@ var GLrenderer = {
 				}
 			});
 		},
+
 
 		
 		_drawMap: function(state) {
@@ -5634,32 +5612,11 @@ var GLrenderer = {
 		_initializeDice: function (countryId) {
 			var self = this;
 
-			var DICE_SIZE = 2;
-
 			var center = self._map.countryCenter(countryId);
 			var x = center[0]/Hex.EDGE_LENGTH;
 			var y = center[1]/Hex.EDGE_LENGTH;
-			var z = DICE_SIZE;
+			var z = self.DICE_SIZE;
 			var angle = 0;
-
-			if (!self._diceGeometry) {
-				self._diceGeometry = new THREE.BoxGeometry( DICE_SIZE, DICE_SIZE, DICE_SIZE );
-			}
-			if (!self._diceMaterial) {
-				
-				loader = new THREE.TextureLoader();
-
-				var materials = [
-					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice1.png')}),
-					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice2.png')}),
-					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice3.png')}),
-					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice4.png')}),
-					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice5.png')}),
-					new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice6.png')}),
-				];
-
-				self._diceMaterial = new THREE.MultiMaterial(materials);
-			}
 
 			// we add 8 dice to every country and just hide/show them as needed
 			for (var i=1; i < 9; i++) {
@@ -5674,14 +5631,45 @@ var GLrenderer = {
 				self._dice[countryId + ':' + i] = cube;
 				self._scene.add(cube);
 
-				z += DICE_SIZE;
+				z += self.DICE_SIZE;
 				angle += Math.PI/10;
 
 				if (i == 4) {
 					z = 2;
 					angle = 0;
-					y += DICE_SIZE + 0.1;
+					y += self.DICE_SIZE + 0.1;
 				}
+			}
+		},
+
+		_initializeRollingDice: function() {
+			var self = this;
+			self._diceGeometry = new THREE.BoxGeometry( self.DICE_SIZE, self.DICE_SIZE, self.DICE_SIZE );				
+
+			loader = new THREE.TextureLoader();
+			var materials = [
+				new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice1.png')}),
+				new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice2.png')}),
+				new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice3.png')}),
+				new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice4.png')}),
+				new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice5.png')}),
+				new THREE.MeshBasicMaterial({map: loader.load('/public/images/dice6.png')}),
+			];
+			self._diceMaterial = new THREE.MultiMaterial(materials);
+
+			self._attackDice = [];
+			self._defendDice = [];
+			var cube;
+			for (var i=0; i < 8; i++) {
+				cube = new THREE.Mesh( self._diceGeometry, self._diceMaterial);
+				cube.visible = false;
+				self._attackDice.push(cube);
+				self._scene.add(cube);
+
+				cube = new THREE.Mesh( self._diceGeometry, self._diceMaterial);
+				cube.visible = false;
+				self._defendDice.push(cube);
+				self._scene.add(cube);
 			}
 		},
 		
@@ -5844,6 +5832,69 @@ var GLrenderer = {
 				}
 			}
 		}
+
+		/*
+				// @id = 1 to 8
+		_rollAttackDie(id, value) {
+			var self = this;
+			var pos = new THREE.Vector3(-2,0,-15);
+			pos.x -= (id % 5)* self.DICE_SIZE;
+			if (id > 4) {
+				pos.y += self.DICE_SIZE;
+			}
+			self._camera.localToWorld(pos);
+
+			var die = self._attackDice[id-1];
+			die.position.x = pos.x;
+			die.position.y = pos.y;
+			die.position.z = pos.z;
+
+			self._camera.worldToLocal(pos);
+			pos.y = 0;
+			self._camera.localToWorld(pos);
+			die.lookAt(pos);
+
+			die.visible = true;
+		},
+
+		_sendDieTo: function(die, dest) {
+			var self = this;
+			var step = 0;
+			var stepCount = 1;
+			var stepX = (dest.x - die.position.x)/stepCount;
+			var stepY = (dest.y - die.position.y)/stepCount;
+			var stepZ = (dest.z - die.position.z)/stepCount;
+
+			var lookAt = dest.clone();
+			self._camera.worldToLocal(lookAt);
+			lookAt.y = 0;
+			self._camera.localToWorld(lookAt);
+
+			return new Promise(function(resolve) {
+				var animateCallback = function() {
+
+					self._renderer.render(self._scene, self._camera);
+					step++;
+					
+					if (step < stepCount) {
+						die.position.x += stepX;
+						die.position.y += stepY;
+						die.position.z += stepZ;
+						requestAnimationFrame(animateCallback);
+					} else {
+						die.position.x = dest.x;
+						die.position.y = dest.y;
+						die.position.z = dest.z;
+
+						die.lookAt(lookAt);
+						self.update();
+						resolve();
+					}
+				}
+				requestAnimationFrame(animateCallback);
+			});
+		}
+		*/
 
 	};
 	
@@ -6111,6 +6162,8 @@ var Renderer2d = {
     			$(canvas).mouseleave(this.mouseLeave.bind(this));
 				
 				this._initialized = true;
+
+                this._setupRollDivs();
 			}			
 		},
 
@@ -6618,7 +6671,8 @@ var Renderer2d = {
 				}
 			}
 		}
-	};;"use strict"
+	};
+;"use strict"
 
 var MAX_RETRIES = 5;
 
