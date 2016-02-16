@@ -75,7 +75,7 @@ module.exports = function(grunt) {
       }
     },
     watch: {
-      files: ['<%= jshint.files %>', 'views/**/*.hbs'],
+      files: ['<%= jshint.files %>', 'views/**/*.hbs', 'public/css/scss/*'],
       tasks: ['sass', 'concat', 'uglify']//['jshint', 'qunit']
     },
     nodemon: {

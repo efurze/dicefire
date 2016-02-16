@@ -1,28 +1,35 @@
-
-<div id="game" style="display: none">
-	<div id="render_mode">
-		<form>
-			Rendering Mode:
-			<input type="radio" id="radio_2d" name="render" value="2d"> 2D
-			<input type="radio" id="radio_3d" name="render" value="3d"> 3D <br>
-		</form>
-	</div>
-	<div id="canvas_div">
-		<canvas id="c" width="980px" height="580px"></canvas>	
-	</div>
-	<div id="canvas3d_div">
-	</div>
-	<div id="roll" class="row roll-row">
-		<div id="leftroll" class="col-sm-6"></div><div id="rightroll" class="col-sm-6 player-roll"></div>
-	</div>
-	<div id="players" class="row players-box"></div>
-	<div id="game_controls" style="margin-left:10px;display:none">
-		<button id="end_turn" style="width:100px;height:30px;">End Turn</button>
-	</div>
-	<div id="history_controls" style="margin-left:10px; margin-top:10px;">
-		<button id="back_btn" style="width:100px;height:30px;">Back</button>
-		<button id="forward_btn" style="width:100px;height:30px;">Forward</button>
-		<div id="history">0 / 0</div>
-	</div>	
-</div>
 <!-- game -->
+<div id="game" style="display: none">
+	<section class="controls">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 text-center">
+					<div id="roll" class="row roll-row">
+						<div id="leftroll" class="col-sm-6"></div><div id="rightroll" class="col-sm-6 player-roll"></div>
+					</div>
+					<div id="players" class="row players-box"></div>
+					<div class="row">
+						<div class="col-md-3">
+							<div id="history_controls" style="margin-left:10px; margin-top:10px;">
+								<button id="back_btn" class="btn btn-default">Back</button>
+								<button id="forward_btn" class="btn-btn-default">Forward</button>
+								<div id="history">0 / 0</div>
+							</div>	
+						</div>
+						<div class="col-md-3">
+							<div id="game_controls" style="margin-left:10px;display:none">
+								<button id="end_turn" class="btn btn-primary">End Turn</button>
+							</div> 	
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section> <!-- /controls -->
+	<div id="canvas_div">
+			<canvas id="c" width="980px" height="580px"></canvas>	
+		</div>
+		<div id="canvas3d_div">
+		</div>
+</div>
+<!-- /game -->

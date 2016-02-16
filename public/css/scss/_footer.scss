@@ -1,0 +1,15 @@
+footer {
+	position: absolute;
+	bottom: -64px;
+	border-bottom: none;
+	.navbar {
+		margin-bottom: 0;
+		.navbar-collapse {
+			text-align: center;
+		}
+		.navbar-nav {
+			display: inline-block;
+			float: none;
+		}
+	}
+}

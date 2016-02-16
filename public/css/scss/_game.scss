@@ -1,4 +1,31 @@
+#intro, #setup {
+  position: relative;
+  top: 0;
+  width: 100%;
+  height: 90%;
+  padding-top: 100px;
+  .button-container {
+    margin-top: 20px;
+  }
+}
+
 #game {
+  background-color: #999;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  min-height: 100%;
+
+  canvas#c {
+    margin-top: 210px;
+  }
+
+  section.controls {
+    position: absolute;
+    top: 0;
+    //background-color: rgba(255,255,255,.2);
+    margin-top: 20px;
+  }
 
   .players-box {
     margin-top:10px; 
@@ -11,7 +38,7 @@
     margin: 10px;
     padding: 10px;
     height: 46px;
-    border: 1px solid;
+    border: 1px solid white;
     min-width: 200px;
   }
 
@@ -47,7 +74,7 @@
   }
 
   .current-player {
-    border: 3px double;
+    border: 3px double white;
   }
 
   .roll-row {
