@@ -3,6 +3,7 @@ public/upload/*
 thunderdome/results/*
 dump.rdb
 *.swp
+.sass-cache/
 
 # OS metadata
 .DS_Store
