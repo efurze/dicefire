@@ -1,4 +1,3 @@
-"use strict"
 	
 	/*
 		Here is what the interface contains:

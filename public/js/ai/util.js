@@ -1,9 +1,9 @@
-"use strict"
+/*jslint browser: true*/
+/*jslint node: true */
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Gamestate = require('../game/gamestate.js');
-	var window = {};
 }
 
 
@@ -63,9 +63,9 @@ Attack.prototype.clear = function() {
 	this._from = -1;
 	this._to = -1;
 };
-Attack.prototype.from = function() {return this._from};
-Attack.prototype.to = function() {return this._to};
-Attack.prototype.isEmpty = function() {return ((this._from < 0) || (this._to < 0))};
+Attack.prototype.from = function() {return this._from;};
+Attack.prototype.to = function() {return this._to;};
+Attack.prototype.isEmpty = function() {return ((this._from < 0) || (this._to < 0));};
 Attack.prototype.toString = function() {
 	if (this.isEmpty()) {
 		return "()";
@@ -107,9 +107,9 @@ Move.prototype.clone = function() {
 		copy.push(this._attacks[i].clone());
 	}
 	return copy;
-}	
+};	
 
-Move.prototype.length = function() {return this._attacks.length;}
+Move.prototype.length = function() {return this._attacks.length;};
 
 // adds to end
 Move.prototype.push = function(next) {
@@ -123,7 +123,7 @@ Move.prototype.push = function(next) {
 	}
 	this._attacks.forEach(function(item) {
 		Globals.ASSERT(item);
-	})
+	});
 };
 // removes first attack and returns it
 Move.prototype.pop = function() {

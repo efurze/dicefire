@@ -42,8 +42,7 @@
 	};
 
 	// Called each time the AI has a turn.
-	AI.Passive.prototype.startTurn = function(interface, depth) {
-		depth = depth || 0;
+	AI.Passive.prototype.startTurn = function(interface) {
 		var self = this;
 		var state = interface.getState();
 
@@ -53,20 +52,20 @@
 			var countryId = countryIds[i];
 			if (state.countryOwner(countryId) == playerId) {
 				var possibleAttacks = [];
-				interface.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
+				var neighbors = interface.adjacentCountries(countryId);
+				for(var n=0; n < neighbors.length; n++) {
+					var adjacentCountryId = neighbors[n];
 					if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
 						state.countryDice(countryId) > state.countryDice(adjacentCountryId)) {
 						possibleAttacks.push(adjacentCountryId);
 					}
-				});
+				}
 
 				if (possibleAttacks.length > 0) {
 					var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
 //					console.log("(aggressive) Attack", playerId, countryId, state.countries[countryId].numDice,
 //						attackCountryId, state.countries[attackCountryId].numDice, depth);
-					interface.attack(countryId, attackCountryId, function(result) {
-						self.startTurn(interface, depth + 1);	// Continue attacking.							
-					});
+					interface.attack(countryId, attackCountryId, self.startTurn.bind(self, interface));
 					return;
 				}
 			}

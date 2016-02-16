@@ -1,38 +1,12 @@
-"use strict"
-
 		
-	
-	/*
-		Here is what the interface contains:
 
-		getState() 
-			Returns the game state:
-				{
-					players
-
-
-					countries
-
-
-					currentPlayerId
-						The id of the player who is playing right now.
-
-				}
-       	
-       	attack(fromCountryId, toCountryId) 
-			Called by the AI when it wants to attack a country.
-			Returns a result
-
-        endTurn()
-			Called by the AI when its turn is over
-	*/
 
 	var AI = AI || {};
 	AI.Plyer =  function (id, ply_depth, lookahead) {
 		
 		this._myId = id;
 		this._MAX_PLIES = ply_depth || 1;
-		this._lookahead = lookahead || 1
+		this._lookahead = lookahead || 1;
 		this._interface = null;
 	};
 		
@@ -115,7 +89,7 @@
 		
 		Object.keys(state.playerIds()).forEach(function(pid) {
 			Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries(pid)).join(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		})
+		});
 
 		Globals.debug("**ENDING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		self.logEval(state);
@@ -168,7 +142,7 @@
 		Globals.ASSERT(moves.length);
 		return self.pickBest(moves, state);
 		
-	},
+	};
 	
 	// @moves: array of Move
 	AI.Plyer.prototype.pickBest = function(moves, state) {
@@ -181,7 +155,7 @@
 		});
 		var maxIndex = Globals.indexOfMax(scores);
 		return moves[maxIndex];
-	},
+	};
 	
 	// return array of Move objects
 	AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
@@ -190,7 +164,7 @@
 		var lookahead = state.currentPlayerId() == self._myId ? self._lookahead : 1;
 		var moves_ary = [];
 		
-		var moves = self.findAllMoves(state, lookahead)
+		var moves = self.findAllMoves(state, lookahead);
 		if (!moves || !moves.length) {
 			moves_ary.push(new Move());
 			return moves_ary;
@@ -222,7 +196,7 @@
 		Globals.ASSERT(state && state instanceof Gamestate);
 		
 		// deep copy state
-		var state = state.clone();
+		state = state.clone();
 		
 		// add 1 die to each country for currentPlayer
 		Object.keys(state.playerCountries(state.currentPlayerId())).forEach(function(id) {
@@ -272,7 +246,7 @@
 	AI.Plyer.prototype.findAllAttacks = function(state, threshold) {
 		Globals.ASSERT(state);
 		//Globals.debug("Find attacks for player " + state.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		var threshold = threshold || 0.44;
+		threshold = threshold || 0.44;
 		var attacks = [];
 		var self = this;
 		
@@ -287,7 +261,7 @@
 			// for each country, loop through all adjacent enemies
 			var ac = self._interface.adjacentCountries(countryId);
 			var neighbors = ac ? (ac.filter(function(neighbor) {
-				return (state.countryOwner(neighbor) != state.currentPlayerId())
+				return (state.countryOwner(neighbor) != state.currentPlayerId());
 			})) : [];
 			Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			neighbors.forEach(function (neighbor) {
@@ -326,7 +300,7 @@
 		
 		var cur = state.currentPlayerId;
 		
-		Globals.ASSERT(this.totalDice(cur, state) == this.totalDice(cur, newState))
+		Globals.ASSERT(this.totalDice(cur, state) == this.totalDice(cur, newState));
 		
 		return newState;
 	};
@@ -337,7 +311,7 @@
 		Globals.ASSERT(attack instanceof Attack);
 		
 		// deep copy state
-		var state = state.clone();
+		state = state.clone();
 		
 		if (attack.isEmpty()) {
 			return state;
