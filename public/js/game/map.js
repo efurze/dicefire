@@ -1,5 +1,5 @@
-"use strict"
-
+/*jslint browser: true*/
+/*jslint node: true*/
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
 	var Dir = require('./dir.js');
@@ -138,14 +138,14 @@ Map.prototype.generateMap = function(players) {
 		this._countryArray[i]._hexIds = [];
 		delete this._countryArray[i];
 	}
-	for (var i=0; i < this._hexArray.length; i++) {
+	for (i=0; i < this._hexArray.length; i++) {
 		delete this._hexArray[i];
 	}
 	this._adjacencyList = {};
 	this._countryArray = [];
 	this._hexArray = [];
 	
-    for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
+    for (i = 0; i < Hex.TOTAL_HEXES; i++) {
         this._hexArray.push(new Hex(i));
     }
     Globals.debug("Created hexes ", JSON.stringify(this._hexArray), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP);
@@ -160,12 +160,12 @@ Map.prototype.generateMap = function(players) {
 	}
 	this.landGrab(startHex, country);
 
-	for (var i = 0; i < Globals.numCountries - 1; i++) {
+	for (i = 0; i < Globals.numCountries - 1; i++) {
 		var countryStart = Math.floor(Math.random() * this._countryArray.length);
 		var adjacentHex;
 
 		for (var j = 0; j < this._countryArray.length; j++) {
-			var country = this._countryArray[(j + countryStart) % this._countryArray.length];
+			country = this._countryArray[(j + countryStart) % this._countryArray.length];
 			if (country.isLake()) {
 				continue;
 			}
@@ -206,7 +206,7 @@ Map.prototype.generateMap = function(players) {
 	
 	this.pruneLakes();
 	//this.validate();
-	Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP)
+	Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP);
 };
 
 
@@ -311,7 +311,7 @@ Map.prototype.oldpruneEdges = function() {
 		RIGHT: 1,
 		BOTTOM: 2,
 		LEFT: 3
-	}
+	};
 
 	var numPruned = 0;
 	while (numPruned < 1200) {
@@ -391,7 +391,7 @@ Map.prototype.validate = function() {
 				console.log("HexId " + hexId + " assigned to country " + self._hexArray[hexId].countryId() + 
 						" should be assigned to " + country.id());
 			}
-		})
+		});
 	});
 };
 
@@ -492,7 +492,7 @@ Map.prototype.countryCenter = function(countryId) {
         var hexCenter = hex.center();
         center[0] += hexCenter[0];
         center[1] += hexCenter[1];            
-    })
+    });
 
     center[0] /= hexIds.length;
     center[1] /= hexIds.length;
@@ -629,7 +629,7 @@ Map.prototype.absorbLake = function(country) {
     var newCountry = null;
     country._hexIds.forEach(function(hexId) {
         self.moveToAdjacentCountry(self.getHex(hexId));
-    })
+    });
     country._hexIds = [];
 };
 

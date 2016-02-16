@@ -1,4 +1,5 @@
-"use strict"
+/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -23,7 +24,7 @@ var Player = function(id, engine) {
 
 Player.rollDie = function() {
 	return Math.floor(Math.random() * 6) + 1;
-}
+};
 
 Player.rollDice = function(num) {
 	var array = [];
@@ -31,12 +32,12 @@ Player.rollDice = function(num) {
 		array.push(Player.rollDie());
 	}
 	return array;
-}
+};
 
 
 
 Player.prototype.id = function() { return this._id; };
-Player.prototype.hasLost = function() { return this._countries.length == 0; };
+Player.prototype.hasLost = function() { return this._countries.length === 0; };
 Player.prototype.storedDice = function() { return this._storedDice; };
 Player.prototype.removeStoredDie = function() { if (this._storedDice) {this._storedDice --;} };
 Player.prototype.countries = function() {return this._countries;};
@@ -50,7 +51,7 @@ Player.prototype.turnEnded = function() {
 };
 Player.prototype.timePerTurn = function() {
 	return this._turnCount ? Math.round(this._totalTime / this._turnCount) : 0;
-}
+};
 
 Player.prototype.setTimeBudget = function(millis) {
 	var self = this;
@@ -128,7 +129,7 @@ Player.prototype.loseCountry = function(country) {
 	Globals.debug("Player " + self._id + " lost country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
 	this._countries = this._countries.filter(function(elem) {
 		return elem != country.id();
-	})
+	});
 };
 
 // Pick all the countries which have some space in them.
