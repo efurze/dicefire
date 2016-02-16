@@ -8535,100 +8535,114 @@ button.close {
     text-transform: uppercase;
     transition: all 0.2s linear; }
 
-.nav-container {
-  margin: 0 50px; }
+#nav .navbar {
+  margin-bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2); }
+#nav .nav-container {
+  margin: 0 50px;
+  /* Small Devices, Tablets */ }
+  #nav .nav-container .navbar-brand {
+    line-height: 32px; }
+  #nav .nav-container .navbar-nav img {
+    width: 30px;
+    height: 30px;
+    margin: -15px 15px -15px; }
+  #nav .nav-container .navbar-nav > li {
+    min-height: 64px; }
+  #nav .nav-container .navbar-nav > li > a {
+    line-height: 32px; }
+  #nav .nav-container .navbar-nav img.profile-image {
+    border-radius: 5px; }
+  #nav .nav-container .navbar-nav .navbar-toggle {
+    margin-top: 14px; }
+  @media only screen and (max-width: 991px) {
+    #nav .nav-container {
+      margin: 0 20px; } }
+#nav div#render-mode form {
+  line-height: 64px;
+  margin-bottom: 0; }
 
-/* Small Devices, Tablets */
-@media only screen and (max-width: 991px) {
-  .nav-container {
-    margin: 0 20px; } }
-.nav-container .navbar-brand {
-  line-height: 32px; }
-.nav-container .navbar-nav img {
-  width: 30px;
-  height: 30px;
-  margin: -15px 15px -15px; }
-.nav-container .navbar-nav > li {
-  min-height: 64px; }
-.nav-container .navbar-nav > li > a {
-  line-height: 32px; }
-.nav-container .navbar-nav img.profile-image {
-  border-radius: 5px; }
-.nav-container .navbar-nav .navbar-toggle {
-  margin-top: 14px; }
-
-#game .players-box {
-  margin-top: 10px;
-  margin-bottom: 10px; }
-#game .player-box {
-  font-family: sans-serif;
-  display: inline-block;
-  margin: 10px;
-  padding: 10px;
-  height: 46px;
-  border: 1px solid;
-  min-width: 200px; }
-#game .color-block {
-  display: inline-block;
-  width: 20px;
-  height: 20px; }
-#game .dice-box {
-  display: inline-block;
-  margin-left: 12px;
-  margin-top: 2px;
-  vertical-align: top;
-  text-align: center; }
-#game .stored-box {
-  display: inline-block;
-  margin-left: 5px;
-  margin-top: 2px;
-  vertical-align: top;
-  text-align: center; }
-#game .name-box {
-  display: inline-block;
-  margin-left: 10px;
-  margin-top: 2px;
-  font-size: 14px;
-  vertical-align: top;
-  text-align: center; }
-#game .current-player {
-  border: 3px double; }
-#game .roll-row {
-  display: block;
-  min-height: 30px;
-  margin-left: 10px;
-  vertical-align: top;
-  margin-top: 15px; }
-#game .roll-die {
-  display: inline-block;
-  width: 23px;
-  height: 23px;
-  border: 1px solid black;
+#game {
+  background-size: cover;
+  background-position: center;
   background-color: red;
-  font-family: sans-serif;
-  color: white;
-  font-size: 14px;
-  text-align: center;
-  padding-bottom: 0px;
-  vertical-align: top;
-  font-weight: bold;
-  margin-left: 5px;
-  margin-top: 1px; }
-#game .roll-total {
-  display: inline-block;
-  vertical-align: top;
-  font-family: sans-serif;
-  font-size: 18px;
-  text-align: center;
-  color: black;
-  margin-left: 20px; }
-#game #leftroll {
-  text-align: right; }
-#game #rightroll {
-  text-align: left; }
+  position: relative;
+  top: -64px;
+  width: 100%; }
+  #game section.controls {
+    background-color: #eee; }
+  #game .players-box {
+    margin-top: 10px;
+    margin-bottom: 10px; }
+  #game .player-box {
+    font-family: sans-serif;
+    display: inline-block;
+    margin: 10px;
+    padding: 10px;
+    height: 46px;
+    border: 1px solid;
+    min-width: 200px; }
+  #game .color-block {
+    display: inline-block;
+    width: 20px;
+    height: 20px; }
+  #game .dice-box {
+    display: inline-block;
+    margin-left: 12px;
+    margin-top: 2px;
+    vertical-align: top;
+    text-align: center; }
+  #game .stored-box {
+    display: inline-block;
+    margin-left: 5px;
+    margin-top: 2px;
+    vertical-align: top;
+    text-align: center; }
+  #game .name-box {
+    display: inline-block;
+    margin-left: 10px;
+    margin-top: 2px;
+    font-size: 14px;
+    vertical-align: top;
+    text-align: center; }
+  #game .current-player {
+    border: 3px double; }
+  #game .roll-row {
+    display: block;
+    min-height: 30px;
+    margin-left: 10px;
+    vertical-align: top;
+    margin-top: 15px; }
+  #game .roll-die {
+    display: inline-block;
+    width: 23px;
+    height: 23px;
+    border: 1px solid black;
+    background-color: red;
+    font-family: sans-serif;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    padding-bottom: 0px;
+    vertical-align: top;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-top: 1px; }
+  #game .roll-total {
+    display: inline-block;
+    vertical-align: top;
+    font-family: sans-serif;
+    font-size: 18px;
+    text-align: center;
+    color: black;
+    margin-left: 20px; }
+  #game #leftroll {
+    text-align: right; }
+  #game #rightroll {
+    text-align: left; }
 
 footer {
-  margin-top: 20px; }
+  margin-top: -64px; }
   footer .navbar {
     margin-bottom: 0; }
     footer .navbar .navbar-collapse {

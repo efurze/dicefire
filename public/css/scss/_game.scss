@@ -1,5 +1,16 @@
 #game {
 
+  background-size: cover;
+  background-position: center;
+  background-color: red;
+  position: relative;
+  top: -64px;
+  width: 100%;
+
+  section.controls {
+    background-color: #eee;
+  }
+
   .players-box {
     margin-top:10px; 
     margin-bottom:10px  

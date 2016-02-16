@@ -113,7 +113,8 @@ var GLrenderer = {
 			if (SHADOW) {
 				this._renderer.shadowMap.enabled = true;
 			}
-			this._renderer.setSize(this.WIDTH, this.HEIGHT);
+			//this._renderer.setSize(this.WIDTH, this.HEIGHT);
+			this._renderer.setSize($(document).width(), $(document).height()*.75);
 			$('#canvas3d_div').append(this._renderer.domElement);
 			$(this._renderer.domElement).on('mousedown', GLrenderer.mouseDown.bind(this));
 			$(this._renderer.domElement).on('mouseup', GLrenderer.mouseUp.bind(this));
