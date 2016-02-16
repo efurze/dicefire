@@ -138,21 +138,21 @@ app.get('/current', function(req, res) {
         return rwClient.getGameInfo(gameId);
     }), function(gameInfo, idx) { // Gameinfo serialized to JSON
             var game = {};
-            game['watch'] = "<a href='/replay?gameId=" + gameIds[idx] + "'>Watch</a>";
-            game['players'] = [];
+            game.watch = "<a href='/replay?gameId=" + gameIds[idx] + "'>Watch</a>";
+            game.players = [];
             var hasOpen = false;
 
             gameInfo.players.forEach(function(player, id) {
                 if (gameServer.isPositionOpen(gameIds[idx], id)) {
                     hasOpen = true;
-                    game['players'].push("[Open]");
+                    game.players.push("[Open]");
                 } else {
-                    game['players'].push(player.id);
+                    game.players.push(player.id);
                 }
             });
 
             if (hasOpen) {
-                game['join'] = "<a href='/play?gameId=" + gameIds[idx] + "'>Join</a>";
+                game.join = "<a href='/play?gameId=" + gameIds[idx] + "'>Join</a>";
             }
 
             data.games.push(game);

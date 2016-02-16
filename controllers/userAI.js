@@ -1,4 +1,4 @@
-"use strict"
+/* jslint node: true */
 
 var Sandbox = require('sandbox');
 var Hashes = require('jshashes');
@@ -40,7 +40,7 @@ function validate() {
 		}
 
 		var name = submittedClass.getName();
-		if (!name || typeof name !== 'string' || name.trim().length == 0) {
+		if (!name || typeof name !== 'string' || name.trim().length === 0) {
 			return "Server Error: getName() function must return a string. This is not a problem with your code.";
 		}
 		
@@ -55,7 +55,7 @@ function validate() {
 	}
 	
 	return true;
-};
+}
 
 // promisifies sandbox.run
 var runInSandbox = function(fnString) {
@@ -74,7 +74,7 @@ var submissionForm = function(req, res) {
 };
 
 var testAI = function(req, res) {
-	var aiHash = req.query['ai'];
+	var aiHash = req.query.ai;
 	logger.log("testAI", aiHash, logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 	var aiPath = '/aitest/'+aiHash;
 
@@ -85,11 +85,11 @@ var testAI = function(req, res) {
 						{ path: aiPath }
 					]
 				}
-		)
+		);
 };
 
 var playAI = function(req, res) {
-	var aiHash = req.query['ai'];
+	var aiHash = req.query.ai;
 	logger.log("playAI", aiHash, logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 	var aiPath = '/aicode/'+aiHash;
 	res.render("ai/play", {
@@ -99,7 +99,7 @@ var playAI = function(req, res) {
 						{ path: aiPath }
 					]
 				}
-		)
+		);
 };
 
 
@@ -179,7 +179,7 @@ var doSubmit = function(req, res, test) {
 
 
 var submit = function(req, res) {
-	var sha = req.params['hash'];
+	var sha = req.params.hash;
 	rwClient.makeAIPermanent(sha)
 		.then(function() {
 			return rwClient.getAI(sha);
@@ -247,7 +247,7 @@ var getAIList = function(req, res) {
 			} else {
 				return 0;
 			}
-		})
+		});
 		res.render("ai/ai_list", {
 			title: "AIs",
 			ais: summaries
@@ -269,7 +269,7 @@ var getAIListJSON = function(req, res) {
 };
 
 var getAIDetail = function(req, res) {
-	var sha = req.params['hash'];
+	var sha = req.params.hash;
 	var dataToRender = {};
 	rwClient.getAI(sha)
 		.then(function(result) {
@@ -336,13 +336,13 @@ var getAIDetail = function(req, res) {
 
 var getTestWorker = function(req, res) {
 	logger.log("getTestWorker", logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
-	req.params['test'] = true;
+	req.params.test = true;
 	return getAIWorker(req, res);
 };
 
 var getAIWorker = function(req, res) {
-	var sha = req.params['hash'];
-	var test = req.params['test'];
+	var sha = req.params.hash;
+	var test = req.params.test;
 	logger.log("getAIWorker", sha, test, logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 	var path = test ? 'aitest/' + sha : 'aicode/' + sha;
 	var replaced = aiWorker.replace(/_replaceThisWithAIHash_/gm, path);
