@@ -38,7 +38,7 @@ module.exports = function(grunt) {
         separator: ';'
       },
       dist: {
-        src: ['public/**/*.js'],
+        src: ['public/**/*.js', '!public/js/test.js', '!public/test/*.js'],
         dest: 'dist/<%= pkg.name %>.js'
       }
     },
@@ -76,7 +76,7 @@ module.exports = function(grunt) {
     },
     watch: {
       files: ['<%= jshint.files %>', 'views/**/*.hbs'],
-      tasks: ['sass']//['jshint', 'qunit']
+      tasks: ['sass', 'concat']//['jshint', 'qunit']
     },
     nodemon: {
         dev: {
@@ -101,7 +101,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-node-inspector');
 
   grunt.registerTask('test', ['jshint', 'qunit']);
-  grunt.registerTask('default', ['sass']); //, 'jshint', 'concat', 'uglify']);
+  grunt.registerTask('default', ['sass', 'concat']); //, 'jshint', 'concat', 'uglify']);
   grunt.registerTask('small', ['concat', 'uglify']);
   grunt.registerTask('server', ['default', 'concurrent']);
 
