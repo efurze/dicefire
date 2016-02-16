@@ -101,8 +101,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-node-inspector');
 
   grunt.registerTask('test', ['jshint', 'qunit']);
-  grunt.registerTask('default', ['jshint', 'concat', 'uglify']);
+  grunt.registerTask('default', ['sass']); //, 'jshint', 'concat', 'uglify']);
   grunt.registerTask('small', ['concat', 'uglify']);
-  grunt.registerTask('server', ['concurrent']);
+  grunt.registerTask('server', ['default', 'concurrent']);
 
 };

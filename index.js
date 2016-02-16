@@ -41,7 +41,7 @@ app.use('/node-uuid', express.static(path.join(__dirname, '/node_modules/node-uu
 app.use('/socket.io-client', express.static(path.join(__dirname, '/node_modules/socket.io-client')));
 app.use('/bootstrap', express.static(path.join(__dirname, '/node_modules/bootstrap/dist')));
 app.use('/bootstrap-social', express.static(path.join(__dirname, '/node_modules/bootstrap-social')));
-app.use('/font-awesome', express.static(path.join(__dirname, '/node_modules/font-awesome')));
+//app.use('/font-awesome', express.static(path.join(__dirname, '/node_modules/font-awesome')));
 app.use('/bluebird', express.static(path.join(__dirname, '/node_modules/bluebird/js/browser')));
 app.use('/three', express.static(path.join(__dirname, '/node_modules/three')));
 
