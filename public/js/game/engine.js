@@ -3,7 +3,7 @@
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
-	var Map = require('./map.js');
+	var GameMap = require('./gamemap.js');
 	var Country = require('./country.js');
 	var Player = require('./player.js');
 	var Gamestate = require('./gamestate.js');
@@ -102,7 +102,7 @@ Engine.prototype.init = function(players, initialMap /*optional*/) {
 	}
 
 
-	self._map = new Map();
+	self._map = new GameMap();
 	if (initialMap) {
 		Globals.debug("Using provided map", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		self._map.deserializeHexes(initialMap);
