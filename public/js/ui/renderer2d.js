@@ -154,6 +154,7 @@ var Renderer2d = {
 
 	        self._isRendering = true;
 
+            self._setupRollDivs();
 			var timeout = callback ? Globals.timeout : 0;
 	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
 	
