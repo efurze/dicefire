@@ -46,6 +46,8 @@ var Renderer2d = {
     			$(canvas).mouseleave(this.mouseLeave.bind(this));
 				
 				this._initialized = true;
+
+                this._setupRollDivs();
 			}			
 		},
 
@@ -154,7 +156,6 @@ var Renderer2d = {
 
 	        self._isRendering = true;
 
-            self._setupRollDivs();
 			var timeout = callback ? Globals.timeout : 0;
 	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
 	
