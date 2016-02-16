@@ -58,6 +58,7 @@ $(function() {
 		},
 		
 		start: function(playerCode) {
+			console.log("playerCode", playerCode);
 			
 			$('#game').css('display', 'block');
 			$('#game_controls').css('display', 'block');

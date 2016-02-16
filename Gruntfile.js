@@ -38,7 +38,7 @@ module.exports = function(grunt) {
         separator: ';'
       },
       dist: {
-        src: ['public/**/*.js'],
+        src: ['public/**/*.js', '!public/js/test.js', '!public/test/*.js'],
         dest: 'dist/<%= pkg.name %>.js'
       }
     },
@@ -67,9 +67,16 @@ module.exports = function(grunt) {
         }
       }
     },
+    sass: {
+      dist: {
+        files: {
+          'public/css/main.css': 'public/css/scss/main.scss',
+        }
+      }
+    },
     watch: {
       files: ['<%= jshint.files %>', 'views/**/*.hbs'],
-      tasks: []//['jshint', 'qunit']
+      tasks: ['sass', 'concat', 'uglify']//['jshint', 'qunit']
     },
     nodemon: {
         dev: {
@@ -88,13 +95,14 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-qunit');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-sass');
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('node-inspector');
   grunt.loadNpmTasks('grunt-node-inspector');
 
   grunt.registerTask('test', ['jshint', 'qunit']);
-  grunt.registerTask('default', ['jshint', 'concat', 'uglify']);
+  grunt.registerTask('default', ['sass', 'concat', 'uglify']); //, 'jshint', 'concat', 'uglify']);
   grunt.registerTask('small', ['concat', 'uglify']);
-  grunt.registerTask('server', ['concurrent']);
+  grunt.registerTask('server', ['default', 'concurrent']);
 
 };
