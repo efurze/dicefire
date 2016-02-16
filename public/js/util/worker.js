@@ -1,6 +1,5 @@
-'use strict'
-
-
+/* jslint browser: true */
+/* global: Globals */
 
 /*
  @data = {
@@ -44,6 +43,7 @@ var compute = function(msg) {
 	if (!Array.isArray(msg.data)) {
 		msg.data = [msg.data];
 	}
+	/* jshint evil: true */
 	var fn = new Function(msg.args, msg.fn); 
 	//console.log(fn);
 	var result = fn.apply(null, msg.data);

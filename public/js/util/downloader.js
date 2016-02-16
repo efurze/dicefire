@@ -1,4 +1,5 @@
-"use strict"
+/* jslint browser: true */
+/* global: Globals */
 
 var MAX_RETRIES = 5;
 

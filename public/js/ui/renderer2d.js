@@ -1,8 +1,5 @@
-"use strict"
-
-
-
-
+/* jslint browser: true */
+/* global: Globals */
 
 var Renderer2d = {
 		
@@ -206,7 +203,7 @@ var Renderer2d = {
 			var self = this;
 			
 			state.countryIds().forEach(function(countryId) {
-				self._renderCountry(countryId, state)
+				self._renderCountry(countryId, state);
 			});
 		},
 		
@@ -280,7 +277,7 @@ var Renderer2d = {
 				return;
 			}
 			
-			var self = this
+			var self = this;
 	
 			// clear previous attack info
 	        $('#leftroll').hide();
@@ -447,7 +444,7 @@ var Renderer2d = {
 
 	        if (Globals.markHexCenters) {
 	            var ctr = hexToPaint.center();
-	            var path = new Path2D();
+	            path = new Path2D();
 	            path.moveTo(ctr[0] - 2, ctr[1] - 2);
 	            path.lineTo(ctr[0] + 2, ctr[1] + 2);
 	            path.closePath();

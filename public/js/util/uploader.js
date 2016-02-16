@@ -1,5 +1,5 @@
-"use strict"
-
+/* jslint browser: true */
+/* global: Globals */
 
 var Uploader = function() {
 	this._array = []; // array of {url: , data:}

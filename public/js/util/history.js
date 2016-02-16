@@ -1,5 +1,5 @@
-'use strict'
-
+/* jslint browser: true */
+/* global: Globals */
 
 var History = function(gameId) {
 	this._states = {};

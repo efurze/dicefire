@@ -1,4 +1,5 @@
-'use strict'
+/* jslint browser: true */
+/* global: Globals */
 
 var MapRequest = function(id, data, callback) {
 	this.id = id;
