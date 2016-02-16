@@ -1,8 +1,9 @@
-"use strict"
+/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals');
-};
+}
 
 
 // @playerInfos = array[{id: , avgTime:, }]
@@ -106,4 +107,4 @@ Gameinfo.fromString = function(str) {
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Gameinfo;
-};
+}

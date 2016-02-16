@@ -123,7 +123,7 @@ AIWrapper.prototype.attackDone = function(success) {
 		this._aiCallback(success);
 	} else {
 		Globals.ASSERT(this._worker);
-		this._worker.postMessage({command: 'attackResult', result: success, state: this._controller.getState().serialize()})
+		this._worker.postMessage({command: 'attackResult', result: success, state: this._controller.getState().serialize()});
 	}
 };
 
@@ -156,7 +156,7 @@ AIWrapper.prototype.attack = function(from, to, callback) {
 		this._aiCallback = callback;
 		this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
 	}
-}
+};
 
 // from BotWorker
 AIWrapper.prototype.callback = function(e) {
