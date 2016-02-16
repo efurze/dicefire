@@ -1,4 +1,4 @@
-"use strict"
+
 
 var Gamecontroller = function (playerId, engine) {
 	this._playerId = playerId;
@@ -10,6 +10,8 @@ var Gamecontroller = function (playerId, engine) {
 
 $(function(){
 
+"use strict";
+
 Gamecontroller.prototype.update = function(state) {
 	if (Globals.suppress_ui) {
 		return;
@@ -19,7 +21,7 @@ Gamecontroller.prototype.update = function(state) {
 
 	if (state) {
 		if (!self.viewingHistory()) {
-			self._historyIndex = state.stateId()
+			self._historyIndex = state.stateId();
 		}
 		self._lastState = state;
 		self._historyLength = self._lastState.stateId() + 1;

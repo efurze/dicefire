@@ -1,4 +1,4 @@
-'use strict'
+/*jslint browser: true*/
 
 //--------------------------------------------------------------------------------------------------------------------
 // BotWorker - this is a WebWorker that runs the standard AI bots (not user-submitted code). It's only able to run
@@ -23,7 +23,7 @@ var initAIs = function() {
 
 var createAIByName = function(name, playerId) {
 	return aiMap[name].create(playerId);
-}
+};
 
 var adjacencyList = null;
 var state = null;
@@ -52,7 +52,7 @@ onmessage = function(e) {
 			break;
 	}
 	
-}
+};
 
 
 var AIInterface = function() {
@@ -69,4 +69,4 @@ var AIInterface = function() {
 	};
 };
 
-};
+}

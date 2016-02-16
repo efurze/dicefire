@@ -1,4 +1,3 @@
-"use strict"
 
 var HistoryController = function (history, playerId) {
 	this._history = history;
@@ -12,6 +11,7 @@ var HistoryController = function (history, playerId) {
 };
 
 $(function(){
+	"use strict";
 
 HistoryController.prototype.updateStateCount = function(stateId) {
 	this._latestStateId = stateId;
@@ -26,7 +26,7 @@ HistoryController.prototype.setViewState = function(stateId) {
 HistoryController.prototype.update = function() {
 	var self = this;
 	
-	$('#back_btn').prop('disabled', self._currentlyViewing == 0);
+	$('#back_btn').prop('disabled', self._currentlyViewing === 0);
 	$('#forward_btn').prop('disabled', self._currentlyViewing == self._latestStateId);
 	$('#history').html((self._currentlyViewing)  + ' / ' + self._latestStateId);
 	

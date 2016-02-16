@@ -41,8 +41,7 @@
 	};
 	
 	// Called each time the AI has a turn.
-	AI.Aggressive.prototype.startTurn = function(interface, depth) {
-		depth = depth || 0;
+	AI.Aggressive.prototype.startTurn = function(interface) {
 		var self = this;
 		var state = interface.getState();
 
@@ -52,20 +51,20 @@
 			var countryId = countryIds[i];
 			if (state.countryOwner(countryId) == playerId) {
 				var possibleAttacks = [];
-				interface.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
+				var neighbors = interface.adjacentCountries(countryId);
+				for(var n=0; n < neighbors.length; n++) {
+					var adjacentCountryId = neighbors[n];
 					if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
 						state.countryDice(countryId) >= state.countryDice(adjacentCountryId)) {
 						possibleAttacks.push(adjacentCountryId);
 					}
-				});
+				}
 
 				if (possibleAttacks.length > 0) {
 					var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
 //					console.log("(aggressive) Attack", playerId, countryId, state.countries[countryId].numDice,
 //						attackCountryId, state.countries[attackCountryId].numDice, depth);
-					interface.attack(countryId, attackCountryId, function(result) {
-						self.startTurn(interface, depth + 1);	// Continue attacking.							
-					});
+					interface.attack(countryId, attackCountryId, self.startTurn.bind(self, interface));
 					return;
 				}
 			}
@@ -131,8 +130,7 @@ if (typeof module !== 'undefined' && module.exports) {
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = AI.DoNothing;
 	}
-;"use strict"
-	
+;	
 	/*
 		Here is what the interface contains:
 
@@ -249,8 +247,7 @@ if (typeof module !== 'undefined' && module.exports) {
 	};
 
 	// Called each time the AI has a turn.
-	AI.Passive.prototype.startTurn = function(interface, depth) {
-		depth = depth || 0;
+	AI.Passive.prototype.startTurn = function(interface) {
 		var self = this;
 		var state = interface.getState();
 
@@ -260,20 +257,20 @@ if (typeof module !== 'undefined' && module.exports) {
 			var countryId = countryIds[i];
 			if (state.countryOwner(countryId) == playerId) {
 				var possibleAttacks = [];
-				interface.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
+				var neighbors = interface.adjacentCountries(countryId);
+				for(var n=0; n < neighbors.length; n++) {
+					var adjacentCountryId = neighbors[n];
 					if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
 						state.countryDice(countryId) > state.countryDice(adjacentCountryId)) {
 						possibleAttacks.push(adjacentCountryId);
 					}
-				});
+				}
 
 				if (possibleAttacks.length > 0) {
 					var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
 //					console.log("(aggressive) Attack", playerId, countryId, state.countries[countryId].numDice,
 //						attackCountryId, state.countries[attackCountryId].numDice, depth);
-					interface.attack(countryId, attackCountryId, function(result) {
-						self.startTurn(interface, depth + 1);	// Continue attacking.							
-					});
+					interface.attack(countryId, attackCountryId, self.startTurn.bind(self, interface));
 					return;
 				}
 			}
@@ -282,41 +279,15 @@ if (typeof module !== 'undefined' && module.exports) {
 		interface.endTurn();
 	};
 
-;"use strict"
+;		
 
-		
-	
-	/*
-		Here is what the interface contains:
-
-		getState() 
-			Returns the game state:
-				{
-					players
-
-
-					countries
-
-
-					currentPlayerId
-						The id of the player who is playing right now.
-
-				}
-       	
-       	attack(fromCountryId, toCountryId) 
-			Called by the AI when it wants to attack a country.
-			Returns a result
-
-        endTurn()
-			Called by the AI when its turn is over
-	*/
 
 	var AI = AI || {};
 	AI.Plyer =  function (id, ply_depth, lookahead) {
 		
 		this._myId = id;
 		this._MAX_PLIES = ply_depth || 1;
-		this._lookahead = lookahead || 1
+		this._lookahead = lookahead || 1;
 		this._interface = null;
 	};
 		
@@ -399,7 +370,7 @@ if (typeof module !== 'undefined' && module.exports) {
 		
 		Object.keys(state.playerIds()).forEach(function(pid) {
 			Globals.debug("Countries for player " + pid + ": " + Object.keys(state.playerCountries(pid)).join(), Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
-		})
+		});
 
 		Globals.debug("**ENDING TURN**", Globals.LEVEL.INFO, Globals.CHANNEL.PLYER);
 		self.logEval(state);
@@ -452,7 +423,7 @@ if (typeof module !== 'undefined' && module.exports) {
 		Globals.ASSERT(moves.length);
 		return self.pickBest(moves, state);
 		
-	},
+	};
 	
 	// @moves: array of Move
 	AI.Plyer.prototype.pickBest = function(moves, state) {
@@ -465,7 +436,7 @@ if (typeof module !== 'undefined' && module.exports) {
 		});
 		var maxIndex = Globals.indexOfMax(scores);
 		return moves[maxIndex];
-	},
+	};
 	
 	// return array of Move objects
 	AI.Plyer.prototype.findAllGreedyMoves = function(state, length) {
@@ -474,7 +445,7 @@ if (typeof module !== 'undefined' && module.exports) {
 		var lookahead = state.currentPlayerId() == self._myId ? self._lookahead : 1;
 		var moves_ary = [];
 		
-		var moves = self.findAllMoves(state, lookahead)
+		var moves = self.findAllMoves(state, lookahead);
 		if (!moves || !moves.length) {
 			moves_ary.push(new Move());
 			return moves_ary;
@@ -506,7 +477,7 @@ if (typeof module !== 'undefined' && module.exports) {
 		Globals.ASSERT(state && state instanceof Gamestate);
 		
 		// deep copy state
-		var state = state.clone();
+		state = state.clone();
 		
 		// add 1 die to each country for currentPlayer
 		Object.keys(state.playerCountries(state.currentPlayerId())).forEach(function(id) {
@@ -556,7 +527,7 @@ if (typeof module !== 'undefined' && module.exports) {
 	AI.Plyer.prototype.findAllAttacks = function(state, threshold) {
 		Globals.ASSERT(state);
 		//Globals.debug("Find attacks for player " + state.currentPlayerId, Globals.LEVEL.DEBUG, Globals.CHANNEL.PLYER);
-		var threshold = threshold || 0.44;
+		threshold = threshold || 0.44;
 		var attacks = [];
 		var self = this;
 		
@@ -571,7 +542,7 @@ if (typeof module !== 'undefined' && module.exports) {
 			// for each country, loop through all adjacent enemies
 			var ac = self._interface.adjacentCountries(countryId);
 			var neighbors = ac ? (ac.filter(function(neighbor) {
-				return (state.countryOwner(neighbor) != state.currentPlayerId())
+				return (state.countryOwner(neighbor) != state.currentPlayerId());
 			})) : [];
 			Globals.debug("country " + countryId + " adjacent to: " + JSON.stringify(neighbors), Globals.LEVEL.TRACE, Globals.CHANNEL.PLYER);
 			neighbors.forEach(function (neighbor) {
@@ -610,7 +581,7 @@ if (typeof module !== 'undefined' && module.exports) {
 		
 		var cur = state.currentPlayerId;
 		
-		Globals.ASSERT(this.totalDice(cur, state) == this.totalDice(cur, newState))
+		Globals.ASSERT(this.totalDice(cur, state) == this.totalDice(cur, newState));
 		
 		return newState;
 	};
@@ -621,7 +592,7 @@ if (typeof module !== 'undefined' && module.exports) {
 		Globals.ASSERT(attack instanceof Attack);
 		
 		// deep copy state
-		var state = state.clone();
+		state = state.clone();
 		
 		if (attack.isEmpty()) {
 			return state;
@@ -781,12 +752,12 @@ if (typeof module !== 'undefined' && module.exports) {
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = AI.Plyer;
 }
-	;"use strict"
+	;/*jslint browser: true*/
+/*jslint node: true */
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Gamestate = require('../game/gamestate.js');
-	var window = {};
 }
 
 
@@ -846,9 +817,9 @@ Attack.prototype.clear = function() {
 	this._from = -1;
 	this._to = -1;
 };
-Attack.prototype.from = function() {return this._from};
-Attack.prototype.to = function() {return this._to};
-Attack.prototype.isEmpty = function() {return ((this._from < 0) || (this._to < 0))};
+Attack.prototype.from = function() {return this._from;};
+Attack.prototype.to = function() {return this._to;};
+Attack.prototype.isEmpty = function() {return ((this._from < 0) || (this._to < 0));};
 Attack.prototype.toString = function() {
 	if (this.isEmpty()) {
 		return "()";
@@ -890,9 +861,9 @@ Move.prototype.clone = function() {
 		copy.push(this._attacks[i].clone());
 	}
 	return copy;
-}	
+};	
 
-Move.prototype.length = function() {return this._attacks.length;}
+Move.prototype.length = function() {return this._attacks.length;};
 
 // adds to end
 Move.prototype.push = function(next) {
@@ -906,7 +877,7 @@ Move.prototype.push = function(next) {
 	}
 	this._attacks.forEach(function(item) {
 		Globals.ASSERT(item);
-	})
+	});
 };
 // removes first attack and returns it
 Move.prototype.pop = function() {
@@ -936,10 +907,10 @@ if (typeof module !== 'undefined' && module.exports) {
 	AI.Util.Move = Move;
 	AI.Util.Attack = Attack;
 	module.exports = AI.Util;
-};"use strict"
-
-
+};
 $(function() {
+
+	"use strict";
 
 	// initialize the AI name-to-class mapping
 	var AIs = [
@@ -1202,9 +1173,9 @@ $(function() {
 
 		// @msg: {name: AI.getName(), playerId: <int>}
 		create_bot: function(sock, msg) {
-			var aiName = msg['name'];
+			var aiName = msg.name;
 			if (AIMap.hasOwnProperty(aiName)) {
-				var id = parseInt(msg['playerId']);
+				var id = parseInt(msg.playerId);
 				Globals.debug("Initializing new bot", aiName, "with playerId:", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				if (Client._players.hasOwnProperty(id)) {
 					Globals.debug("Already have a player", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
@@ -1306,10 +1277,11 @@ $(function() {
 
 });
 
-;"use strict"
-
+;/*jslint browser: true*/
 
 $(function() {
+
+	"use strict";
 
 	window.onerror = function(msg, url, lineNum) {
 		Globals.debug("Uncaught exception", msg, url, lineNum, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT, Game._gameId);
@@ -1360,6 +1332,7 @@ $(function() {
 					}
 					if (name === aiHash) {
 						Game._aiIdx = idx;
+						/*jslint evil: true */
 						return eval(aiClassName);
 					}
 				}));
@@ -1444,210 +1417,210 @@ $(function() {
 	};
 });
 
-;"use strict"
-
-//--------------------------------------------------------------------------------------
-//	GameRunner
-//--------------------------------------------------------------------------------------
-
-
-var GameRunner = function(AIs) {
-	this._engine = new Engine();
-	this._players = AIs.map(function(p){return p;});
-	this._callback = null;
-	
-	if (this._players.length < 2) {
-		debug("Not enough players: " + self.players);
-	}
-};
-
-// @gameOver_cb = function(){}
-GameRunner.prototype.start = function(gameOver_cb) {
-	var self = this;
-	if (this._players.length > 1) {
-		this._callback = gameOver_cb;
-		
-		// create the PlayerWrappers
-		var pws = this._players.map(function(player, idx) {
-			return new AIWrapper(player.hash, self._engine, idx, false, player.name);
-		});
-		
-		this._engine.init(pws);
-		this._engine.setEnforceTime(true);
-		this._engine.registerGameCallback(this.gameDone.bind(this));
-		this._engine.registerStateCallback(this.engineUpdate.bind(this));
-		this._engine.setup();
-		
-		
-		this._gameId = uuid.v1();
-		this._uploader = new Uploader();
-		this._uploader.uploadMap(this._gameId, this._engine.serializeMap());
-	
-		debug("Beginning game " + this._gameId + ": " + pws.map(function(p) {return p.getName();}));
-		this._engine.startTurn(0);
-	} else {
-		debug("Not enough players to play: " + JSON.stringify(this._players));
-		this._callback = null;
-		this._gameId = "";
-		this._engine = null;
-		this._players = null;
-		this._uploader = null;
-		if (gameOver_cb) {
-			gameOver_cb();
-		}
-	}
-};
-
-GameRunner.prototype.stop = function() {
-	if (this._engine) {
-		this._engine.registerStateCallback(null);
-		delete this._engine;
-		this._engine = null;
-	}
-};
-
-GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
-	var self = this;
-	self._uploader.uploadState(self._gameId, stateId, gamestate.toString());
-
-
-	var html = "Move number: " + gamestate.stateId() + "<br><br>Scores:<br>";
-	var count = self._engine.playerCount();
-	for (var i=0; i < count; i++) {
-		var player = self._engine.getPlayer(i);
-		if (player) {
-			html += "Player " + i + ": " + player.countryCount() + ", " + player.timePerTurn() + "ms <br>";
-		}
-	}
-	$('#score').html(html);
-
-	if (gamestate.attack()) {
-		window.setTimeout(function() {
-			self._engine.finishAttack(gamestate.attack());
-		}, 0);
-	}
-};
-
-GameRunner.prototype.makeTable = function (table, data) {
-    $.each(data, function(rowIndex, r) {
-        var row = $("<tr/>");
-        $.each(r, function(colIndex, c) { 
-			if (rowIndex == 0) {
-				row.append($("<th/>").text(c));
-			} else {
-				row.append($("<td id='" + (rowIndex) + (colIndex) + "'/>").text(c));
-			}
-            
-        });
-        table.append(row);
-    });
-	return table;
-};
-
-GameRunner.prototype.gameDone = function(winner, id) {
-	var self = this;
-	console.log("Game finished, winnerId", id);
-
-	var times = [];
-	var count = self._engine.playerCount();
-	for (var i=0; i < count; i++) {
-		var player = self._engine.getPlayer(i);
-		if (player) {
-			times.push(player.timePerTurn());
-		}
-	}
-
-	var results = new Gameinfo(self._players.map(function(p, idx){return {id: p.hash, avgTime: times[idx]};}), id);
-	
-	self._uploader.uploadGameInfo(self._gameId, results.toString(), "ARENA");
-	
-	var cb = this._callback;
-	
-	this._engine = null;
-	this._gameId = "";
-	this._players = null;
-	this._uploader = null;
-	this._callback = null;
-	
-	if (cb) {
-		cb();
-	}
-};
-
-var debug = function(msg) {
-	console.log(msg);
-}
-
-
-//--------------------------------------------------------------------------------------
-//	RandomRunner
-//--------------------------------------------------------------------------------------
-
-// @AI = array of {hash: , name: }
-var RandomRunner = function(AIs, max) {
-	this._count = 0;
-	this._stop = false;
-	this._max = max || -1;
-	this._players = AIs;
-	
-};
-
-RandomRunner.prototype.setMax = function(max) {
-	this._max = max;
-};
-
-RandomRunner.prototype.start = function() {
-	
-	// construct a random list of players
-	var players = [];
-	var numPlayers = 1 + Math.ceil(Math.random() * 7);
-
-	var pool = Globals.shuffleArray(this._players);
-
-	while (pool.length && players.length < numPlayers) {
-		players.push(pool.shift());
-	}
-	
-	this._count++;
-	this._runner = new GameRunner(players);
-	console.log("game " + this._count + " starting");
-	$('#counter').html("Currently playing game " + this._count + " out of " + this._max);
-	$('#status').html("Current Game: " + JSON.stringify(players.map(function(p){return p.name;})));
-	this._runner.start(this.done.bind(this));
-};
-
-RandomRunner.prototype.stop = function() {
-	this._stop = true;
-	if (this._runner) {
-		this._runner.stop();
-		delete this._runner;
-		this._runner = null;
-
-		$('#status').html("Stopped");
-	}
-};
-
-RandomRunner.prototype.done = function() {
-	console.log("game over");
-	this._runner = null;
-	if (this._stop || (this._max > 0 && this._count >= this._max)) {
-		console.log("Exiting Thunderdome");
-		$('#status').html("Done");
-		$('#stop_btn').prop('disabled', true);
-		$('#start_btn').prop('disabled', false);
-		this._count = 0;
-	} else {
-		setTimeout(this.start.bind(this), 0);
-	}
-};
-
-
-//--------------------------------------------------------------------------------------
-//	Thunderdome
-//--------------------------------------------------------------------------------------
-
+;/*jslint browser: true*/
 
 $(function() {
+
+	"use strict";
+
+	//--------------------------------------------------------------------------------------
+	//	GameRunner
+	//--------------------------------------------------------------------------------------
+
+
+	var GameRunner = function(AIs) {
+		this._engine = new Engine();
+		this._players = AIs.map(function(p){return p;});
+		this._callback = null;
+		
+		if (this._players.length < 2) {
+			debug("Not enough players: " + self.players);
+		}
+	};
+
+	// @gameOver_cb = function(){}
+	GameRunner.prototype.start = function(gameOver_cb) {
+		var self = this;
+		if (this._players.length > 1) {
+			this._callback = gameOver_cb;
+			
+			// create the PlayerWrappers
+			var pws = this._players.map(function(player, idx) {
+				return new AIWrapper(player.hash, self._engine, idx, false, player.name);
+			});
+			
+			this._engine.init(pws);
+			this._engine.setEnforceTime(true);
+			this._engine.registerGameCallback(this.gameDone.bind(this));
+			this._engine.registerStateCallback(this.engineUpdate.bind(this));
+			this._engine.setup();
+			
+			
+			this._gameId = uuid.v1();
+			this._uploader = new Uploader();
+			this._uploader.uploadMap(this._gameId, this._engine.serializeMap());
+		
+			debug("Beginning game " + this._gameId + ": " + pws.map(function(p) {return p.getName();}));
+			this._engine.startTurn(0);
+		} else {
+			debug("Not enough players to play: " + JSON.stringify(this._players));
+			this._callback = null;
+			this._gameId = "";
+			this._engine = null;
+			this._players = null;
+			this._uploader = null;
+			if (gameOver_cb) {
+				gameOver_cb();
+			}
+		}
+	};
+
+	GameRunner.prototype.stop = function() {
+		if (this._engine) {
+			this._engine.registerStateCallback(null);
+			delete this._engine;
+			this._engine = null;
+		}
+	};
+
+	GameRunner.prototype.engineUpdate = function(gamestate, stateId) {
+		var self = this;
+		self._uploader.uploadState(self._gameId, stateId, gamestate.toString());
+
+
+		var html = "Move number: " + gamestate.stateId() + "<br><br>Scores:<br>";
+		var count = self._engine.playerCount();
+		for (var i=0; i < count; i++) {
+			var player = self._engine.getPlayer(i);
+			if (player) {
+				html += "Player " + i + ": " + player.countryCount() + ", " + player.timePerTurn() + "ms <br>";
+			}
+		}
+		$('#score').html(html);
+
+		if (gamestate.attack()) {
+			window.setTimeout(function() {
+				self._engine.finishAttack(gamestate.attack());
+			}, 0);
+		}
+	};
+
+	GameRunner.prototype.makeTable = function (table, data) {
+	    $.each(data, function(rowIndex, r) {
+	        var row = $("<tr/>");
+	        $.each(r, function(colIndex, c) { 
+				if (rowIndex === 0) {
+					row.append($("<th/>").text(c));
+				} else {
+					row.append($("<td id='" + (rowIndex) + (colIndex) + "'/>").text(c));
+				}
+	            
+	        });
+	        table.append(row);
+	    });
+		return table;
+	};
+
+	GameRunner.prototype.gameDone = function(winner, id) {
+		var self = this;
+		console.log("Game finished, winnerId", id);
+
+		var times = [];
+		var count = self._engine.playerCount();
+		for (var i=0; i < count; i++) {
+			var player = self._engine.getPlayer(i);
+			if (player) {
+				times.push(player.timePerTurn());
+			}
+		}
+
+		var results = new Gameinfo(self._players.map(function(p, idx){return {id: p.hash, avgTime: times[idx]};}), id);
+		
+		self._uploader.uploadGameInfo(self._gameId, results.toString(), "ARENA");
+		
+		var cb = this._callback;
+		
+		this._engine = null;
+		this._gameId = "";
+		this._players = null;
+		this._uploader = null;
+		this._callback = null;
+		
+		if (cb) {
+			cb();
+		}
+	};
+
+	var debug = function(msg) {
+		console.log(msg);
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	RandomRunner
+	//--------------------------------------------------------------------------------------
+
+	// @AI = array of {hash: , name: }
+	var RandomRunner = function(AIs, max) {
+		this._count = 0;
+		this._stop = false;
+		this._max = max || -1;
+		this._players = AIs;
+		
+	};
+
+	RandomRunner.prototype.setMax = function(max) {
+		this._max = max;
+	};
+
+	RandomRunner.prototype.start = function() {
+		
+		// construct a random list of players
+		var players = [];
+		var numPlayers = 1 + Math.ceil(Math.random() * 7);
+
+		var pool = Globals.shuffleArray(this._players);
+
+		while (pool.length && players.length < numPlayers) {
+			players.push(pool.shift());
+		}
+		
+		this._count++;
+		this._runner = new GameRunner(players);
+		console.log("game " + this._count + " starting");
+		$('#counter').html("Currently playing game " + this._count + " out of " + this._max);
+		$('#status').html("Current Game: " + JSON.stringify(players.map(function(p){return p.name;})));
+		this._runner.start(this.done.bind(this));
+	};
+
+	RandomRunner.prototype.stop = function() {
+		this._stop = true;
+		if (this._runner) {
+			this._runner.stop();
+			delete this._runner;
+			this._runner = null;
+
+			$('#status').html("Stopped");
+		}
+	};
+
+	RandomRunner.prototype.done = function() {
+		console.log("game over");
+		this._runner = null;
+		if (this._stop || (this._max > 0 && this._count >= this._max)) {
+			console.log("Exiting Thunderdome");
+			$('#status').html("Done");
+			$('#stop_btn').prop('disabled', true);
+			$('#start_btn').prop('disabled', false);
+			this._count = 0;
+		} else {
+			setTimeout(this.start.bind(this), 0);
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	//	Thunderdome
+	//--------------------------------------------------------------------------------------
 
 	
 	window.Thunderdome = {
@@ -1700,7 +1673,7 @@ $(function() {
 	};
 });
 
-;"use strict"
+;
 
 var Gamecontroller = function (playerId, engine) {
 	this._playerId = playerId;
@@ -1712,6 +1685,8 @@ var Gamecontroller = function (playerId, engine) {
 
 $(function(){
 
+"use strict";
+
 Gamecontroller.prototype.update = function(state) {
 	if (Globals.suppress_ui) {
 		return;
@@ -1721,7 +1696,7 @@ Gamecontroller.prototype.update = function(state) {
 
 	if (state) {
 		if (!self.viewingHistory()) {
-			self._historyIndex = state.stateId()
+			self._historyIndex = state.stateId();
 		}
 		self._lastState = state;
 		self._historyLength = self._lastState.stateId() + 1;
@@ -1803,8 +1778,7 @@ Gamecontroller.prototype.viewingHistory = function () {
 	}
 };
 
-});;"use strict"
-
+});;
 var HistoryController = function (history, playerId) {
 	this._history = history;
 	this._playerId = playerId;
@@ -1817,6 +1791,7 @@ var HistoryController = function (history, playerId) {
 };
 
 $(function(){
+	"use strict";
 
 HistoryController.prototype.updateStateCount = function(stateId) {
 	this._latestStateId = stateId;
@@ -1831,7 +1806,7 @@ HistoryController.prototype.setViewState = function(stateId) {
 HistoryController.prototype.update = function() {
 	var self = this;
 	
-	$('#back_btn').prop('disabled', self._currentlyViewing == 0);
+	$('#back_btn').prop('disabled', self._currentlyViewing === 0);
 	$('#forward_btn').prop('disabled', self._currentlyViewing == self._latestStateId);
 	$('#history').html((self._currentlyViewing)  + ' / ' + self._latestStateId);
 	
@@ -1877,9 +1852,7 @@ HistoryController.prototype.viewingHistory = function () {
 	return self._viewingHistory;
 };
 
-});;"use strict"
-
-
+});;
 /*
 	@mapControllerInterface = {
 			currentPlayerId(),
@@ -1900,15 +1873,17 @@ var Mapcontroller = function(playerId, map, mapControllerInterface) {
 
   	$('#canvas_div').click(this.click.bind(this));
   	$('#canvas3d_div').click(this.click.bind(this));
-}
+};
 
 Mapcontroller.mapControllerInterface = {
 	currentPlayerId: function(){},
 	attack: function(fromId, toId, callback){},
 	clickable: function(){}
-}
+};
 
 $(function(){
+
+	"use strict";
 
 	Mapcontroller.prototype.setPlayerId = function(id) { 
 		this._playerId = id;
@@ -1939,7 +1914,7 @@ $(function(){
 			if (neighborIds[i] == country2.id()) {
 				return true;
 			}
-		};
+		}
 		return false;
 	};
 
@@ -2047,9 +2022,9 @@ $(function(){
 
 });
 
-;'use strict'
+;/* globals: Globals, Message */
 
-/*========================================================================================================================================*/
+	/*========================================================================================================================================*/
 	// SocketAIController: 	Implements Engine.ControllerInterface so AIWrapper can connect to it.
 	// 						Implelments Engine.PlayerInterface so client can use it
 	/*========================================================================================================================================*/
@@ -2207,7 +2182,7 @@ $(function(){
 			Globals.debug("AI tried to attack when it wasn't our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 		}
 	};
-;'use strict'
+;/*jslint browser: true*/
 
 //--------------------------------------------------------------------------------------------------------------------
 // AIWorker - this is a WebWorker that runs user-submitted code. It is loaded by an AIWrapper. The way it's specialized
@@ -2228,8 +2203,9 @@ importScripts('/_replaceThisWithAIHash_'); /* NEVER EDIT THIS LINE */
 
 
 var createAIByName = function(name, playerId) {
+	/*jslint evil: true */
 	return eval('ai'+name).create(playerId);
-}
+};
 
 var adjacencyList = null;
 var state = null;
@@ -2256,7 +2232,7 @@ onmessage = function(e) {
 			break;
 	}
 	
-}
+};
 
 
 var AIInterface = function() {
@@ -2273,7 +2249,7 @@ var AIInterface = function() {
 	};
 };
 
-};;if (typeof module !== 'undefined' && module.exports) {
+};if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
 	var Gamestate = require('./gamestate.js');
 }
@@ -2398,7 +2374,7 @@ AIWrapper.prototype.attackDone = function(success) {
 		this._aiCallback(success);
 	} else {
 		Globals.ASSERT(this._worker);
-		this._worker.postMessage({command: 'attackResult', result: success, state: this._controller.getState().serialize()})
+		this._worker.postMessage({command: 'attackResult', result: success, state: this._controller.getState().serialize()});
 	}
 };
 
@@ -2431,7 +2407,7 @@ AIWrapper.prototype.attack = function(from, to, callback) {
 		this._aiCallback = callback;
 		this._controller.attack(this._controller.map().getCountry(from), this._controller.map().getCountry(to), this.attackDone.bind(this));
 	}
-}
+};
 
 // from BotWorker
 AIWrapper.prototype.callback = function(e) {
@@ -2453,7 +2429,7 @@ AIWrapper.prototype.callback = function(e) {
 
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = AIWrapper;
-};'use strict'
+};/*jslint browser: true*/
 
 //--------------------------------------------------------------------------------------------------------------------
 // BotWorker - this is a WebWorker that runs the standard AI bots (not user-submitted code). It's only able to run
@@ -2478,7 +2454,7 @@ var initAIs = function() {
 
 var createAIByName = function(name, playerId) {
 	return aiMap[name].create(playerId);
-}
+};
 
 var adjacencyList = null;
 var state = null;
@@ -2507,7 +2483,7 @@ onmessage = function(e) {
 			break;
 	}
 	
-}
+};
 
 
 var AIInterface = function() {
@@ -2524,7 +2500,8 @@ var AIInterface = function() {
 	};
 };
 
-};;"use strict"
+};/*jslint node: true */
+/*jslint browser: true */
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -2596,7 +2573,7 @@ Country.prototype.removeDie = function() {
 	if (this._numDice > 1) {
     	this._numDice--;
 	}
-}
+};
 
 
 
@@ -2709,7 +2686,8 @@ var Dir = {
 
 	if (typeof module !== 'undefined' && module.exports){
 		module.exports = Dir;
-	};"use strict"
+	};/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -2737,7 +2715,7 @@ var Engine = function() {
 	this._map = null;
 	this._enforceTimeLimits = false;
 
-	Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface))
+	Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface));
 };
 
 // This is what must be passed into init(). This interface allows the Engine to control bots
@@ -2908,7 +2886,7 @@ Engine.prototype.addDiceToPlayer = function(player, num) {
 	for (var i = 0; i < num; i++) {
 		// Have to do this again and again because countries may fill up.
  		countriesWithSpace = player.countriesWithSpace(self._map);
- 		if (countriesWithSpace.length == 0) {
+ 		if (countriesWithSpace.length === 0) {
  			player._storedDice += num - i;
  			if (player._storedDice > Globals.maxStoredDice) {
  				player._storedDice = Globals.maxStoredDice;
@@ -2935,7 +2913,7 @@ Engine.prototype.startTurn = function(playerId, callback) {
 			self._players[playerId].setTimeBudget(MOVE_TIME_BUDGET);
 			self._startClock(playerId);
 		}
-		self._AIs[self._currentPlayerId].startTurn(self.getState())
+		self._AIs[self._currentPlayerId].startTurn(self.getState());
 		self._players[self._currentPlayerId].turnStarted();
 	}, 0);
 
@@ -3048,7 +3026,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 			toCountryId: toCountry._id,
 			fromRollArray: fromRollArray,
 			toRollArray: toRollArray
-		}
+		};
 	
 		self.pushHistory(attack);
 	
@@ -3255,11 +3233,12 @@ Engine.prototype._stopClock = function(playerId) {
 
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = Engine;
-};"use strict"
+};/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals');
-};
+}
 
 
 // @playerInfos = array[{id: , avgTime:, }]
@@ -3363,7 +3342,8 @@ Gameinfo.fromString = function(str) {
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Gameinfo;
-};;"use strict"
+};/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -3451,7 +3431,7 @@ Gamestate.prototype.playerCountries = function(playerId) {
 		last = countryId;
 		if (self._countries[countryId].owner == playerId) {
 			ret[countryId] = countryId;
-		};
+		}
 	});
 	return ret;
 };
@@ -3503,7 +3483,7 @@ Gamestate.prototype.setCountryDice = function(countryId, count) {
 Gamestate.prototype.setAttack = function(attack) {
 	Globals.ASSERT(attack.fromCountryId >= 0);
 	this._attack = attack;
-}
+};
 Gamestate.prototype.attack = function() {
 	if (this._attack) {
 		return JSON.parse(JSON.stringify(this._attack));
@@ -3535,7 +3515,8 @@ Gamestate.prototype.countriesHash = function() {
 
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = Gamestate;
-};"use strict"
+};/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
@@ -3618,7 +3599,7 @@ Hex.prototype.center = function() {
     pos[0] += Math.floor(Hex.EDGE_LENGTH / 2);
     pos[1] += Math.floor(Hex.HEIGHT / 2);
     return pos;
-}
+};
 
 
 
@@ -3638,12 +3619,12 @@ Hex.prototype.upperLeft = function() {
     }
 
     return [upperLeftX, upperLeftY];
-}
+};
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Hex;
-};"use strict"
-
+};/*jslint browser: true*/
+/*jslint node: true*/
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
 	var Dir = require('./dir.js');
@@ -3782,14 +3763,14 @@ Map.prototype.generateMap = function(players) {
 		this._countryArray[i]._hexIds = [];
 		delete this._countryArray[i];
 	}
-	for (var i=0; i < this._hexArray.length; i++) {
+	for (i=0; i < this._hexArray.length; i++) {
 		delete this._hexArray[i];
 	}
 	this._adjacencyList = {};
 	this._countryArray = [];
 	this._hexArray = [];
 	
-    for (var i = 0; i < Hex.TOTAL_HEXES; i++) {
+    for (i = 0; i < Hex.TOTAL_HEXES; i++) {
         this._hexArray.push(new Hex(i));
     }
     Globals.debug("Created hexes ", JSON.stringify(this._hexArray), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP);
@@ -3804,12 +3785,12 @@ Map.prototype.generateMap = function(players) {
 	}
 	this.landGrab(startHex, country);
 
-	for (var i = 0; i < Globals.numCountries - 1; i++) {
+	for (i = 0; i < Globals.numCountries - 1; i++) {
 		var countryStart = Math.floor(Math.random() * this._countryArray.length);
 		var adjacentHex;
 
 		for (var j = 0; j < this._countryArray.length; j++) {
-			var country = this._countryArray[(j + countryStart) % this._countryArray.length];
+			country = this._countryArray[(j + countryStart) % this._countryArray.length];
 			if (country.isLake()) {
 				continue;
 			}
@@ -3850,7 +3831,7 @@ Map.prototype.generateMap = function(players) {
 	
 	this.pruneLakes();
 	//this.validate();
-	Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP)
+	Globals.debug("Map adjacency list: " + JSON.stringify(this._adjacencyList), Globals.LEVEL.TRACE, Globals.CHANNEL.MAP);
 };
 
 
@@ -3955,7 +3936,7 @@ Map.prototype.oldpruneEdges = function() {
 		RIGHT: 1,
 		BOTTOM: 2,
 		LEFT: 3
-	}
+	};
 
 	var numPruned = 0;
 	while (numPruned < 1200) {
@@ -4035,7 +4016,7 @@ Map.prototype.validate = function() {
 				console.log("HexId " + hexId + " assigned to country " + self._hexArray[hexId].countryId() + 
 						" should be assigned to " + country.id());
 			}
-		})
+		});
 	});
 };
 
@@ -4136,7 +4117,7 @@ Map.prototype.countryCenter = function(countryId) {
         var hexCenter = hex.center();
         center[0] += hexCenter[0];
         center[1] += hexCenter[1];            
-    })
+    });
 
     center[0] /= hexIds.length;
     center[1] /= hexIds.length;
@@ -4273,7 +4254,7 @@ Map.prototype.absorbLake = function(country) {
     var newCountry = null;
     country._hexIds.forEach(function(hexId) {
         self.moveToAdjacentCountry(self.getHex(hexId));
-    })
+    });
     country._hexIds = [];
 };
 
@@ -4296,7 +4277,8 @@ Map.prototype.setCountryId = function(id, country) {
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Map;
-};"use strict"
+};/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -4321,7 +4303,7 @@ var Player = function(id, engine) {
 
 Player.rollDie = function() {
 	return Math.floor(Math.random() * 6) + 1;
-}
+};
 
 Player.rollDice = function(num) {
 	var array = [];
@@ -4329,12 +4311,12 @@ Player.rollDice = function(num) {
 		array.push(Player.rollDie());
 	}
 	return array;
-}
+};
 
 
 
 Player.prototype.id = function() { return this._id; };
-Player.prototype.hasLost = function() { return this._countries.length == 0; };
+Player.prototype.hasLost = function() { return this._countries.length === 0; };
 Player.prototype.storedDice = function() { return this._storedDice; };
 Player.prototype.removeStoredDie = function() { if (this._storedDice) {this._storedDice --;} };
 Player.prototype.countries = function() {return this._countries;};
@@ -4348,7 +4330,7 @@ Player.prototype.turnEnded = function() {
 };
 Player.prototype.timePerTurn = function() {
 	return this._turnCount ? Math.round(this._totalTime / this._turnCount) : 0;
-}
+};
 
 Player.prototype.setTimeBudget = function(millis) {
 	var self = this;
@@ -4426,7 +4408,7 @@ Player.prototype.loseCountry = function(country) {
 	Globals.debug("Player " + self._id + " lost country " + country.id(), Globals.LEVEL.DEBUG, Globals.CHANNEL.PLAYER);
 	this._countries = this._countries.filter(function(elem) {
 		return elem != country.id();
-	})
+	});
 };
 
 // Pick all the countries which have some space in them.
@@ -4499,8 +4481,7 @@ Player.prototype._cancelTimer = function(id) {
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Player;
-};"use strict"
-
+};
 var logBuffer = [];
 var BUFFER_LENGTH = 100;
 
@@ -4540,16 +4521,16 @@ var Globals = {
 					var channelIdx = gameIdx - 1;
 					var levelIdx = channelIdx - 1;
 		
-					if (levelIdx >= 1 
-						&& (typeof arguments[channelIdx]) == 'number'
-						&& (typeof arguments[levelIdx]) == 'number'
-						&& arguments[channelIdx] < Globals.channelNames.length
+					if (levelIdx >= 1 && 
+						(typeof arguments[channelIdx]) == 'number' && 
+						(typeof arguments[levelIdx]) == 'number' &&
+						arguments[channelIdx] < Globals.channelNames.length
 						) {
 				
 						var channel = arguments[channelIdx];
 						var level = arguments[levelIdx];
 				
-						var msg = ""
+						var msg = "";
 						var args = arguments;
 						Object.keys(arguments).forEach(function(key, idx) {
 							if (idx < levelIdx) {
@@ -4620,7 +4601,7 @@ Globals.LEVEL = {
 	"INFO" 	: 3,
 	"DEBUG" : 4,
 	"TRACE" : 5 
-}
+};
 
 Globals.levelNames = [];
 Object.keys(Globals.LEVEL).forEach(function(name, idx) {
@@ -4759,9 +4740,7 @@ if (typeof module !== 'undefined' && module.exports){
   });
 
 })(jQuery);
-;'use strict'
-
-var Message = {
+;var Message = {
 
 	TYPE: {
 		'PLAYER_STATUS': 'player_status',
@@ -4852,7 +4831,8 @@ var Message = {
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Message;
-};'use strict'
+};/*jslint browser: true*/
+/*jslint node: true*/
 
 var log = null;
 var CHANNEL;
@@ -4879,13 +4859,13 @@ var SocketWrapper = function(socket, gameId) {
 	this._callbacks = {}; // map from event => array of {fn: , context: }
 };
 
-SocketWrapper.prototype.id = function() {return this._id;}
+SocketWrapper.prototype.id = function() {return this._id;};
 
 SocketWrapper.prototype.ip= function() {
 	if (this._socket) {
 		return this._socket.handshake.address;
 	} 
-}
+};
 
 /*
 	this can be called EITHER like this:
@@ -5014,9 +4994,7 @@ SocketWrapper.prototype.sendTurnEnded = function(playerId, stateId) {
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = SocketWrapper;
-};//'use strict'
-
-var ANIMATE = false;
+};var ANIMATE = false;
 var DRAW_DICE = true;
 var SKY = true;
 var SHADOW = false;
@@ -5139,7 +5117,7 @@ var GLrenderer = {
 			$(this._renderer.domElement).on('mouseleave', GLrenderer.mouseLeave.bind(this));
 			$(document).keydown(GLrenderer.keyDown.bind(this));
 
-			var canvas = $(this._renderer.domElement);
+			canvas = $(this._renderer.domElement);
 			this._canvasWidth = canvas.width();
 			this._canvasHeight = canvas.height();
 			
@@ -5158,8 +5136,8 @@ var GLrenderer = {
 											'/public/images/sky.jpg',
 			 								'/public/images/sky.jpg'], function(texture) {
 
-			 		var shader = THREE.ShaderLib['cube'];
-			 		shader.uniforms['tCube'].value = texture;
+			 		var shader = THREE.ShaderLib.cube;
+			 		shader.uniforms.tCube.value = texture;
 
 					var skyBoxMaterial = new THREE.ShaderMaterial( {
 					  fragmentShader: shader.fragmentShader,
@@ -5187,7 +5165,7 @@ var GLrenderer = {
 		setMouseOverCountry: function(id) {
 			if (!this._isRendering) {
 				Globals.debug("setMouseOverCountry", id, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
-				var old = this._highlightedCountry
+				var old = this._highlightedCountry;
 				this._highlightedCountry = id;
 				if (old != -1) {
 					this._drawCountry(old, this._lastRenderedState, false);
@@ -5452,7 +5430,7 @@ var GLrenderer = {
 				cylinder.rotation.y = Math.PI / 6;
 				cylinder.position.x = start[0]/Hex.EDGE_LENGTH;
 				cylinder.position.y = start[1]/Hex.EDGE_LENGTH;
-				cylinder.userData['hexId'] = hex.id();
+				cylinder.userData.hexId = hex.id();
 				if (SHADOW) {
 					cylinder.receiveShadow = true;
 				}
@@ -5507,9 +5485,10 @@ var GLrenderer = {
 					}
 
 					var g = new THREE.Geometry();
+					var vertex;
 
 					if (dir == Dir.obj.NE) {
-						var vertex = cylinder.geometry.vertices[0].clone();
+						vertex = cylinder.geometry.vertices[0].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -5518,7 +5497,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					} 
 					if (dir == Dir.obj.SE) {
-						var vertex = cylinder.geometry.vertices[1].clone();
+						vertex = cylinder.geometry.vertices[1].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -5527,7 +5506,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					} 
 					if (dir == Dir.obj.S) {
-						var vertex = cylinder.geometry.vertices[2].clone();
+						vertex = cylinder.geometry.vertices[2].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -5536,7 +5515,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);
 					}
 					if (dir == Dir.obj.SW) {
-						var vertex = cylinder.geometry.vertices[3].clone();
+						vertex = cylinder.geometry.vertices[3].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -5545,7 +5524,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					}
 					if (dir == Dir.obj.NW) {
-						var vertex = cylinder.geometry.vertices[4].clone();
+						vertex = cylinder.geometry.vertices[4].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -5554,7 +5533,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					}
 					if (dir == Dir.obj.N) {
-						var vertex = cylinder.geometry.vertices[5].clone();
+						vertex = cylinder.geometry.vertices[5].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -5564,7 +5543,7 @@ var GLrenderer = {
 					} 
 					g.vertices.forEach(function(v) {
 						v.z += 0.01;
-					})
+					});
 					var line = new THREE.Line(g, self._lineMaterial);
 					self._scene.add(line);
 				});
@@ -5734,23 +5713,23 @@ var GLrenderer = {
 			switch (event.which) {
 				case 37: // left
 				case 65: // a
-					self._angleZ -= .1;
+					self._angleZ -= 0.1;
 					handled = true;
 					break;
 				case 38: // up
 				case 87: // w
-					self._theta += .1;
+					self._theta += 0.1;
 					self._theta = Math.min(self._theta, Math.PI/2);
 					handled = true;
 					break;
 				case 39: // right
 				case 68: // d
-					self._angleZ += .1;
+					self._angleZ += 0.1;
 					handled = true;
 					break;
 				case 40: // down
 				case 83: // s
-					self._theta -= .1;
+					self._theta -= 0.1;
 					self._theta = Math.max(self._theta, 0);
 					handled = true;
 					break;
@@ -5899,9 +5878,11 @@ var GLrenderer = {
 	};
 	
 
-;'use strict'
+;/*jslint browser: true*/
 
 $(function() {
+
+	'use strict';
 
 	window.PlayerStatus = {
 
@@ -5937,10 +5918,10 @@ $(function() {
 			for (var id=0; id < playerCount; ++id) {
 				
 				$('#players').append(
-		    		"<div id='player" + id + "' class='col-sm-2 player-box'><div id='colorblock" + id + "' class='color-block'></div>"
-					+ ((self._players && self._players[id]) ? ("<div id='name" + id + "' class='name-box'>" + self._players[id] + "</div>") : "")
-		    		+ "<div id='dice" + id + "' class='dice-box'>1</div>"
-		    		+ "<div id='stored" + id + "' class='stored-box'>0</div></div>"
+		    		"<div id='player" + id + "' class='col-sm-2 player-box'><div id='colorblock" + id + "' class='color-block'></div>" +
+					((self._players && self._players[id]) ? ("<div id='name" + id + "' class='name-box'>" + self._players[id] + "</div>") : "") +
+		    		"<div id='dice" + id + "' class='dice-box'>1</div>" +
+		    		"<div id='stored" + id + "' class='stored-box'>0</div></div>"
 		    	);
 
 		    	$('#colorblock' + id).css( 
@@ -6114,11 +6095,8 @@ $(function() {
 
 	};
 
-});;"use strict"
-
-
-
-
+});;/* jslint browser: true */
+/* global: Globals */
 
 var Renderer2d = {
 		
@@ -6322,7 +6300,7 @@ var Renderer2d = {
 			var self = this;
 			
 			state.countryIds().forEach(function(countryId) {
-				self._renderCountry(countryId, state)
+				self._renderCountry(countryId, state);
 			});
 		},
 		
@@ -6396,7 +6374,7 @@ var Renderer2d = {
 				return;
 			}
 			
-			var self = this
+			var self = this;
 	
 			// clear previous attack info
 	        $('#leftroll').hide();
@@ -6563,7 +6541,7 @@ var Renderer2d = {
 
 	        if (Globals.markHexCenters) {
 	            var ctr = hexToPaint.center();
-	            var path = new Path2D();
+	            path = new Path2D();
 	            path.moveTo(ctr[0] - 2, ctr[1] - 2);
 	            path.lineTo(ctr[0] + 2, ctr[1] + 2);
 	            path.closePath();
@@ -6672,7 +6650,8 @@ var Renderer2d = {
 			}
 		}
 	};
-;"use strict"
+;/* jslint browser: true */
+/* global: Globals */
 
 var MAX_RETRIES = 5;
 
@@ -6771,8 +6750,8 @@ Downloader.prototype.ajaxFail = function(err) {
 		self._pending = false;
 		self._doNext();
 	}
-};;'use strict'
-
+};;/* jslint browser: true */
+/* global: Globals */
 
 var History = function(gameId) {
 	this._states = {};
@@ -6848,7 +6827,8 @@ History.prototype.onStateReceived = function(stateId, cb) {
 	}
 };
 
-;'use strict'
+;/* jslint browser: true */
+/* global: Globals */
 
 var MapRequest = function(id, data, callback) {
 	this.id = id;
@@ -6947,8 +6927,8 @@ Mapper.prototype.receiveResult = function(req, msg) {
 			req.cb(req.results);
 		}
 	}
-};;"use strict"
-
+};;/* jslint browser: true */
+/* global: Globals */
 
 var Uploader = function() {
 	this._array = []; // array of {url: , data:}
@@ -7035,9 +7015,8 @@ Uploader.prototype.ajaxFail = function(err) {
 		self._pending = false;
 		self._doNext();
 	}
-};;'use strict'
-
-
+};;/* jslint browser: true */
+/* global: Globals */
 
 /*
  @data = {
@@ -7081,6 +7060,7 @@ var compute = function(msg) {
 	if (!Array.isArray(msg.data)) {
 		msg.data = [msg.data];
 	}
+	/* jshint evil: true */
 	var fn = new Function(msg.args, msg.fn); 
 	//console.log(fn);
 	var result = fn.apply(null, msg.data);

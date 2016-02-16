@@ -1,4 +1,4 @@
-'use strict'
+/*jslint browser: true*/
 
 //--------------------------------------------------------------------------------------------------------------------
 // AIWorker - this is a WebWorker that runs user-submitted code. It is loaded by an AIWrapper. The way it's specialized
@@ -19,8 +19,9 @@ importScripts('/_replaceThisWithAIHash_'); /* NEVER EDIT THIS LINE */
 
 
 var createAIByName = function(name, playerId) {
+	/*jslint evil: true */
 	return eval('ai'+name).create(playerId);
-}
+};
 
 var adjacencyList = null;
 var state = null;
@@ -47,7 +48,7 @@ onmessage = function(e) {
 			break;
 	}
 	
-}
+};
 
 
 var AIInterface = function() {
@@ -64,4 +65,4 @@ var AIInterface = function() {
 	};
 };
 
-};
+}

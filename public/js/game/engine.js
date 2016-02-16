@@ -1,4 +1,5 @@
-"use strict"
+/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -26,7 +27,7 @@ var Engine = function() {
 	this._map = null;
 	this._enforceTimeLimits = false;
 
-	Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface))
+	Globals.ASSERT(Globals.implements(this, Engine.ControllerInterface));
 };
 
 // This is what must be passed into init(). This interface allows the Engine to control bots
@@ -197,7 +198,7 @@ Engine.prototype.addDiceToPlayer = function(player, num) {
 	for (var i = 0; i < num; i++) {
 		// Have to do this again and again because countries may fill up.
  		countriesWithSpace = player.countriesWithSpace(self._map);
- 		if (countriesWithSpace.length == 0) {
+ 		if (countriesWithSpace.length === 0) {
  			player._storedDice += num - i;
  			if (player._storedDice > Globals.maxStoredDice) {
  				player._storedDice = Globals.maxStoredDice;
@@ -224,7 +225,7 @@ Engine.prototype.startTurn = function(playerId, callback) {
 			self._players[playerId].setTimeBudget(MOVE_TIME_BUDGET);
 			self._startClock(playerId);
 		}
-		self._AIs[self._currentPlayerId].startTurn(self.getState())
+		self._AIs[self._currentPlayerId].startTurn(self.getState());
 		self._players[self._currentPlayerId].turnStarted();
 	}, 0);
 
@@ -337,7 +338,7 @@ Engine.prototype.attack = function(fromCountry, toCountry, callback) {
 			toCountryId: toCountry._id,
 			fromRollArray: fromRollArray,
 			toRollArray: toRollArray
-		}
+		};
 	
 		self.pushHistory(attack);
 	

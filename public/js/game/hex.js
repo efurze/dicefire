@@ -1,4 +1,5 @@
-"use strict"
+/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
@@ -81,7 +82,7 @@ Hex.prototype.center = function() {
     pos[0] += Math.floor(Hex.EDGE_LENGTH / 2);
     pos[1] += Math.floor(Hex.HEIGHT / 2);
     return pos;
-}
+};
 
 
 
@@ -101,7 +102,7 @@ Hex.prototype.upperLeft = function() {
     }
 
     return [upperLeftX, upperLeftY];
-}
+};
 
 if (typeof module !== 'undefined' && module.exports){
 	module.exports = Hex;

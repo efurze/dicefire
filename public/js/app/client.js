@@ -1,7 +1,7 @@
-"use strict"
-
 
 $(function() {
+
+	"use strict";
 
 	// initialize the AI name-to-class mapping
 	var AIs = [
@@ -264,9 +264,9 @@ $(function() {
 
 		// @msg: {name: AI.getName(), playerId: <int>}
 		create_bot: function(sock, msg) {
-			var aiName = msg['name'];
+			var aiName = msg.name;
 			if (AIMap.hasOwnProperty(aiName)) {
-				var id = parseInt(msg['playerId']);
+				var id = parseInt(msg.playerId);
 				Globals.debug("Initializing new bot", aiName, "with playerId:", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 				if (Client._players.hasOwnProperty(id)) {
 					Globals.debug("Already have a player", id, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);

@@ -1,5 +1,3 @@
-//'use strict'
-
 var ANIMATE = false;
 var DRAW_DICE = true;
 var SKY = true;
@@ -123,7 +121,7 @@ var GLrenderer = {
 			$(this._renderer.domElement).on('mouseleave', GLrenderer.mouseLeave.bind(this));
 			$(document).keydown(GLrenderer.keyDown.bind(this));
 
-			var canvas = $(this._renderer.domElement);
+			canvas = $(this._renderer.domElement);
 			this._canvasWidth = canvas.width();
 			this._canvasHeight = canvas.height();
 			
@@ -142,8 +140,8 @@ var GLrenderer = {
 											'/public/images/sky.jpg',
 			 								'/public/images/sky.jpg'], function(texture) {
 
-			 		var shader = THREE.ShaderLib['cube'];
-			 		shader.uniforms['tCube'].value = texture;
+			 		var shader = THREE.ShaderLib.cube;
+			 		shader.uniforms.tCube.value = texture;
 
 					var skyBoxMaterial = new THREE.ShaderMaterial( {
 					  fragmentShader: shader.fragmentShader,
@@ -171,7 +169,7 @@ var GLrenderer = {
 		setMouseOverCountry: function(id) {
 			if (!this._isRendering) {
 				Globals.debug("setMouseOverCountry", id, Globals.LEVEL.TRACE, Globals.CHANNEL.RENDERER);
-				var old = this._highlightedCountry
+				var old = this._highlightedCountry;
 				this._highlightedCountry = id;
 				if (old != -1) {
 					this._drawCountry(old, this._lastRenderedState, false);
@@ -436,7 +434,7 @@ var GLrenderer = {
 				cylinder.rotation.y = Math.PI / 6;
 				cylinder.position.x = start[0]/Hex.EDGE_LENGTH;
 				cylinder.position.y = start[1]/Hex.EDGE_LENGTH;
-				cylinder.userData['hexId'] = hex.id();
+				cylinder.userData.hexId = hex.id();
 				if (SHADOW) {
 					cylinder.receiveShadow = true;
 				}
@@ -491,9 +489,10 @@ var GLrenderer = {
 					}
 
 					var g = new THREE.Geometry();
+					var vertex;
 
 					if (dir == Dir.obj.NE) {
-						var vertex = cylinder.geometry.vertices[0].clone();
+						vertex = cylinder.geometry.vertices[0].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -502,7 +501,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					} 
 					if (dir == Dir.obj.SE) {
-						var vertex = cylinder.geometry.vertices[1].clone();
+						vertex = cylinder.geometry.vertices[1].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -511,7 +510,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					} 
 					if (dir == Dir.obj.S) {
-						var vertex = cylinder.geometry.vertices[2].clone();
+						vertex = cylinder.geometry.vertices[2].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -520,7 +519,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);
 					}
 					if (dir == Dir.obj.SW) {
-						var vertex = cylinder.geometry.vertices[3].clone();
+						vertex = cylinder.geometry.vertices[3].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -529,7 +528,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					}
 					if (dir == Dir.obj.NW) {
-						var vertex = cylinder.geometry.vertices[4].clone();
+						vertex = cylinder.geometry.vertices[4].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -538,7 +537,7 @@ var GLrenderer = {
 						g.vertices.push(vertex);	
 					}
 					if (dir == Dir.obj.N) {
-						var vertex = cylinder.geometry.vertices[5].clone();
+						vertex = cylinder.geometry.vertices[5].clone();
 						cylinder.localToWorld(vertex);
 						g.vertices.push(vertex);	
 
@@ -548,7 +547,7 @@ var GLrenderer = {
 					} 
 					g.vertices.forEach(function(v) {
 						v.z += 0.01;
-					})
+					});
 					var line = new THREE.Line(g, self._lineMaterial);
 					self._scene.add(line);
 				});
@@ -718,23 +717,23 @@ var GLrenderer = {
 			switch (event.which) {
 				case 37: // left
 				case 65: // a
-					self._angleZ -= .1;
+					self._angleZ -= 0.1;
 					handled = true;
 					break;
 				case 38: // up
 				case 87: // w
-					self._theta += .1;
+					self._theta += 0.1;
 					self._theta = Math.min(self._theta, Math.PI/2);
 					handled = true;
 					break;
 				case 39: // right
 				case 68: // d
-					self._angleZ += .1;
+					self._angleZ += 0.1;
 					handled = true;
 					break;
 				case 40: // down
 				case 83: // s
-					self._theta -= .1;
+					self._theta -= 0.1;
 					self._theta = Math.max(self._theta, 0);
 					handled = true;
 					break;

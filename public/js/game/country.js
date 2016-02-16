@@ -1,4 +1,5 @@
-"use strict"
+/*jslint node: true */
+/*jslint browser: true */
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -70,7 +71,7 @@ Country.prototype.removeDie = function() {
 	if (this._numDice > 1) {
     	this._numDice--;
 	}
-}
+};
 
 
 

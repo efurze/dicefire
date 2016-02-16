@@ -1,5 +1,3 @@
-"use strict"
-
 
 /*
 	@mapControllerInterface = {
@@ -21,15 +19,17 @@ var Mapcontroller = function(playerId, map, mapControllerInterface) {
 
   	$('#canvas_div').click(this.click.bind(this));
   	$('#canvas3d_div').click(this.click.bind(this));
-}
+};
 
 Mapcontroller.mapControllerInterface = {
 	currentPlayerId: function(){},
 	attack: function(fromId, toId, callback){},
 	clickable: function(){}
-}
+};
 
 $(function(){
+
+	"use strict";
 
 	Mapcontroller.prototype.setPlayerId = function(id) { 
 		this._playerId = id;
@@ -60,7 +60,7 @@ $(function(){
 			if (neighborIds[i] == country2.id()) {
 				return true;
 			}
-		};
+		}
 		return false;
 	};
 

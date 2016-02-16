@@ -1,6 +1,8 @@
-'use strict'
+/*jslint browser: true*/
 
 $(function() {
+
+	'use strict';
 
 	window.PlayerStatus = {
 
@@ -36,10 +38,10 @@ $(function() {
 			for (var id=0; id < playerCount; ++id) {
 				
 				$('#players').append(
-		    		"<div id='player" + id + "' class='col-sm-2 player-box'><div id='colorblock" + id + "' class='color-block'></div>"
-					+ ((self._players && self._players[id]) ? ("<div id='name" + id + "' class='name-box'>" + self._players[id] + "</div>") : "")
-		    		+ "<div id='dice" + id + "' class='dice-box'>1</div>"
-		    		+ "<div id='stored" + id + "' class='stored-box'>0</div></div>"
+		    		"<div id='player" + id + "' class='col-sm-2 player-box'><div id='colorblock" + id + "' class='color-block'></div>" +
+					((self._players && self._players[id]) ? ("<div id='name" + id + "' class='name-box'>" + self._players[id] + "</div>") : "") +
+		    		"<div id='dice" + id + "' class='dice-box'>1</div>" +
+		    		"<div id='stored" + id + "' class='stored-box'>0</div></div>"
 		    	);
 
 		    	$('#colorblock' + id).css( 

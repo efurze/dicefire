@@ -1,4 +1,3 @@
-"use strict"
 
 var logBuffer = [];
 var BUFFER_LENGTH = 100;
@@ -39,16 +38,16 @@ var Globals = {
 					var channelIdx = gameIdx - 1;
 					var levelIdx = channelIdx - 1;
 		
-					if (levelIdx >= 1 
-						&& (typeof arguments[channelIdx]) == 'number'
-						&& (typeof arguments[levelIdx]) == 'number'
-						&& arguments[channelIdx] < Globals.channelNames.length
+					if (levelIdx >= 1 && 
+						(typeof arguments[channelIdx]) == 'number' && 
+						(typeof arguments[levelIdx]) == 'number' &&
+						arguments[channelIdx] < Globals.channelNames.length
 						) {
 				
 						var channel = arguments[channelIdx];
 						var level = arguments[levelIdx];
 				
-						var msg = ""
+						var msg = "";
 						var args = arguments;
 						Object.keys(arguments).forEach(function(key, idx) {
 							if (idx < levelIdx) {
@@ -119,7 +118,7 @@ Globals.LEVEL = {
 	"INFO" 	: 3,
 	"DEBUG" : 4,
 	"TRACE" : 5 
-}
+};
 
 Globals.levelNames = [];
 Object.keys(Globals.LEVEL).forEach(function(name, idx) {

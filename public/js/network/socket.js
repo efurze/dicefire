@@ -1,4 +1,5 @@
-'use strict'
+/*jslint browser: true*/
+/*jslint node: true*/
 
 var log = null;
 var CHANNEL;
@@ -25,13 +26,13 @@ var SocketWrapper = function(socket, gameId) {
 	this._callbacks = {}; // map from event => array of {fn: , context: }
 };
 
-SocketWrapper.prototype.id = function() {return this._id;}
+SocketWrapper.prototype.id = function() {return this._id;};
 
 SocketWrapper.prototype.ip= function() {
 	if (this._socket) {
 		return this._socket.handshake.address;
 	} 
-}
+};
 
 /*
 	this can be called EITHER like this:

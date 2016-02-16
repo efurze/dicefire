@@ -17,7 +17,7 @@ module.exports = {
 
 	
 	uploadErrorReport: function(req, res) {
-		var gameId = req.query['gameId'];
+		var gameId = req.query.gameId;
 		var logData = JSON.stringify(req.body);
 		rwClient.clientErrorReport(logData, gameId);
 		logger.log("Got client error report", logger.LEVEL.DEBUG, logger.CHANNEL.ADMIN, gameId);
@@ -54,8 +54,8 @@ module.exports = {
 	},
 	
 	getErrorReport: function(req, res) {
-		var gameId = req.query['gameId'];
-		var timestamp = req.query['timestamp'];
+		var gameId = req.query.gameId;
+		var timestamp = req.query.timestamp;
 		rwClient.getClientErrorReport (timestamp, gameId)
 			.then(function(log) { // log is a string
 				console.log("Client Log:", log);
@@ -71,13 +71,13 @@ module.exports = {
 
 	getAIForTest: function(req, res) {	
 		logger.log("getAIForTest", logger.LEVEL.DEBUG, logger.CHANNEL.ADMIN);
-		req.params['test'] = true;
+		req.params.test = true;
 		return module.exports.getAICode(req, res);
 	},
 
 	getAICode: function(req, res) {
-		var sha = req.params['hash'];
-		var test = req.params['test'];
+		var sha = req.params.hash;
+		var test = req.params.test;
 		logger.log("getAICode", sha, test, logger.LEVEL.DEBUG, logger.CHANNEL.ADMIN);
 		rwClient.getAI(sha, test)
 			.then(function(result) {
@@ -90,7 +90,7 @@ module.exports = {
 	},
 	
 	resetAI: function(req, res) {
-		var hash = req.params['hash'];
+		var hash = req.params.hash;
 
 		return rwClient.delAIGames(hash)
 			.then(function(){

@@ -1,4 +1,5 @@
-"use strict"
+/*jslint browser: true*/
+/*jslint node: true*/
 
 if (typeof module !== 'undefined' && module.exports) {
 	var Globals = require('../globals.js');
@@ -86,7 +87,7 @@ Gamestate.prototype.playerCountries = function(playerId) {
 		last = countryId;
 		if (self._countries[countryId].owner == playerId) {
 			ret[countryId] = countryId;
-		};
+		}
 	});
 	return ret;
 };
@@ -138,7 +139,7 @@ Gamestate.prototype.setCountryDice = function(countryId, count) {
 Gamestate.prototype.setAttack = function(attack) {
 	Globals.ASSERT(attack.fromCountryId >= 0);
 	this._attack = attack;
-}
+};
 Gamestate.prototype.attack = function() {
 	if (this._attack) {
 		return JSON.parse(JSON.stringify(this._attack));

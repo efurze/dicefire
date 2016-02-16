@@ -50,12 +50,12 @@ module.exports = {
 	},
 	
 	setupSolo: function(req, res) {
-		req.params['type'] = 'solo';
+		req.params.type = 'solo';
 		module.exports.setup(req, res);
 	},
 
 	setup: function(req, res) {
-		var type = req.params['type'];
+		var type = req.params.type;
 
 		var defaults = [
 			Human.getName(),
@@ -77,9 +77,9 @@ module.exports = {
 		var listHTML = "";
 		var numberOfPlayers = 8;
 		for (var id=0; id < numberOfPlayers; id++) {
-			listHTML += "<select class='player_selector' value='" + defaults [id] + "' name='player_" + id + "'>"
-				+				makePlayerList(names, defaults[id])
-				+		"</select>";
+			listHTML += "<select class='player_selector' value='" + defaults [id] + "' name='player_" + id + "'>" +
+								makePlayerList(names, defaults[id]) +
+						"</select>";
 		}
 
 		var gameId = uuid.v1();
@@ -92,12 +92,12 @@ module.exports = {
 			title: "Dicefice - New Game",
 			list: listHTML,
 			url: startUrl
-		})
+		});
 	},
 
 	
 	client: function(req, res) { 
-		var gameId = req.query['gameId'];
+		var gameId = req.query.gameId;
 		res.render("client", {
 			title: "Dicefire Client", 
 			gameId: gameId,
@@ -116,7 +116,7 @@ module.exports = {
 
 
 	replay: function(req, res) { 
-		var gameId = req.query['gameId'];
+		var gameId = req.query.gameId;
 		res.render("client", {
 			title: "Dicefire Game Viewer", 
 			gameId: gameId,
@@ -134,7 +134,7 @@ module.exports = {
 	},
 	
 	uploadMap: function(req, res) { 
-		var gameId = req.query['gameId'];
+		var gameId = req.query.gameId;
 		var mapData = JSON.stringify(req.body);
 		logger.log("UploadMap", logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 
@@ -147,8 +147,8 @@ module.exports = {
 	},
 
 	uploadGameInfo: function(req, res) { 
-		var gameId = req.query['gameId'];
-		var ratingCode = req.query['ratingCode'];
+		var gameId = req.query.gameId;
+		var ratingCode = req.query.ratingCode;
 		var results = req.body;
 		logger.log("UploadGameInfo", "ratingCode:", ratingCode, logger.LEVEL.DEBUG, logger.CHANNEL.GAME, gameId);
 		
@@ -166,7 +166,7 @@ module.exports = {
 	},
 
 	getGameInfo: function(req, res) {
-		var gameId = req.query['gameId'];
+		var gameId = req.query.gameId;
 
 		rwClient.getGameInfo(gameId)
 			.then(function(reply) {
@@ -182,8 +182,8 @@ module.exports = {
 	},
 
 	uploadState: function(req, res) { 
-		var moveId = req.query['moveId'];
-		var gameId = req.query['gameId'];
+		var moveId = req.query.moveId;
+		var gameId = req.query.gameId;
 		var stateData = JSON.stringify(req.body);
 		
 		rwClient.saveState(gameId, moveId, stateData)
@@ -196,7 +196,7 @@ module.exports = {
 	},
 
 	getMap: function(req, res) {
-		var gameId = req.query['gameId'];
+		var gameId = req.query.gameId;
 		
 		rwClient.getMap(gameId)
 			.then(function(data) {
@@ -212,8 +212,8 @@ module.exports = {
 	},
 
 	getState: function(req, res) {
-		var gameId = req.query['gameId'];
-		var moveId = req.query['moveId'];
+		var gameId = req.query.gameId;
+		var moveId = req.query.moveId;
 		
 		rwClient.getState(gameId, moveId)
 			.then(function(data) {
@@ -229,7 +229,7 @@ module.exports = {
 	},
 	
 	getStateCount: function(req, res) {
-		var gameId = req.query['gameId'];
+		var gameId = req.query.gameId;
 
 		rwClient.getStateCount(gameId)
 			.then(function(count) {
