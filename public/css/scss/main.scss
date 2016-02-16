@@ -1,31 +1,46 @@
 .nav-container {
-  margin: 0 50px; }
-
-/* Small Devices, Tablets */
+  margin: 0 50px;
+}
+/* Small Devices, Tablets */ 
 @media only screen and (max-width: 991px) {
   .nav-container {
-    margin: 0 20px; } }
-.nav-container .navbar-brand {
-  line-height: 32px; }
-.nav-container .navbar-nav img {
-  width: 30px;
-  height: 30px;
-  margin: -15px 15px -15px; }
-.nav-container .navbar-nav > li {
-  min-height: 64px; }
-.nav-container .navbar-nav > li > a {
-  line-height: 32px; }
-.nav-container .navbar-nav img.profile-image {
-  border-radius: 5px; }
-.nav-container .navbar-nav .navbar-toggle {
-  margin-top: 14px; }
+    margin: 0 20px; 
+  }
+}
+
+.nav-container {
+  .navbar-brand {
+    line-height: 32px; 
+  }
+  .navbar-nav {
+    img {
+      width: 30px;
+      height: 30px;
+      margin: -15px 15px -15px; 
+    }
+    & > li {
+      min-height: 64px; 
+    }
+    & > li > a {
+      line-height: 32px; 
+    }
+    img.profile-image {
+      border-radius: 5px; 
+    }
+    .navbar-toggle {
+      margin-top: 14px; 
+    }
+  }
+}
 
 .container {
-  margin-top: 70px; }
+  margin-top: 70px;
+}
 
 .players-box {
-  margin-top: 10px;
-  margin-bottom: 10px; }
+  margin-top:10px; 
+  margin-bottom:10px  
+}
 
 .player-box {
   font-family: sans-serif;
@@ -34,26 +49,30 @@
   padding: 10px;
   height: 46px;
   border: 1px solid;
-  min-width: 200px; }
+  min-width: 200px;
+}
 
 .color-block {
   display: inline-block;
   width: 20px;
-  height: 20px; }
+  height: 20px;
+}
 
 .dice-box {
   display: inline-block;
   margin-left: 12px;
   margin-top: 2px;
   vertical-align: top;
-  text-align: center; }
+  text-align: center;
+}
 
 .stored-box {
   display: inline-block;
   margin-left: 5px;
   margin-top: 2px;
   vertical-align: top;
-  text-align: center; }
+  text-align: center;
+}
 
 .name-box {
   display: inline-block;
@@ -61,17 +80,21 @@
   margin-top: 2px;
   font-size: 14px;
   vertical-align: top;
-  text-align: center; }
+  text-align: center;
+}
 
 .current-player {
-  border: 3px double; }
+  border: 3px double;
+}
 
 .roll-row {
-  display: block;
-  min-height: 30px;
+  display: block; 
+  min-height: 30px; 
   margin-left: 10px;
   vertical-align: top;
-  margin-top: 15px; }
+  margin-top: 15px;  
+}
+
 
 .roll-die {
   display: inline-block;
@@ -87,7 +110,8 @@
   vertical-align: top;
   font-weight: bold;
   margin-left: 5px;
-  margin-top: 1px; }
+  margin-top: 1px;
+}
 
 .roll-total {
   display: inline-block;
@@ -96,12 +120,14 @@
   font-size: 18px;
   text-align: center;
   color: black;
-  margin-left: 20px; }
+  margin-left: 20px;
+}
 
 #leftroll {
-  text-align: right; }
+  text-align: right;
+}
 
 #rightroll {
-  text-align: left; }
+  text-align: left;  
+}
 
-/*# sourceMappingURL=main.css.map */

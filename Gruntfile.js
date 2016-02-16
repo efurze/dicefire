@@ -67,9 +67,16 @@ module.exports = function(grunt) {
         }
       }
     },
+    sass: {
+      dist: {
+        files: {
+          'public/css/main.css': 'public/css/scss/main.scss',
+        }
+      }
+    },
     watch: {
       files: ['<%= jshint.files %>', 'views/**/*.hbs'],
-      tasks: []//['jshint', 'qunit']
+      tasks: ['sass']//['jshint', 'qunit']
     },
     nodemon: {
         dev: {
@@ -88,6 +95,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-qunit');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-sass');
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('node-inspector');
   grunt.loadNpmTasks('grunt-node-inspector');
