@@ -1,0 +1,13 @@
+footer {
+	margin-top: 20px;
+	.navbar {
+		margin-bottom: 0;
+		.navbar-collapse {
+			text-align: center;
+		}
+		.navbar-nav {
+			display: inline-block;
+			float: none;
+		}
+	}
+}
