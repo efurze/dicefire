@@ -8573,10 +8573,11 @@ button.close {
 
 #game {
   background-color: #999;
-  position: absolute;
-  top: 0;
+  position: relative;
+  top: -64px;
   width: 100%;
-  min-height: 100%; }
+  min-height: 100%;
+  margin-bottom: -64px; }
   #game canvas#c {
     margin-top: 210px; }
   #game section.controls {
@@ -8654,9 +8655,7 @@ button.close {
     text-align: left; }
 
 footer {
-  position: absolute;
-  bottom: -64px;
-  border-bottom: none; }
+  border: none; }
   footer .navbar {
     margin-bottom: 0; }
     footer .navbar .navbar-collapse {

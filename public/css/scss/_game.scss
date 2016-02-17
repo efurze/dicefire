@@ -11,10 +11,11 @@
 
 #game {
   background-color: #999;
-  position: absolute;
-  top: 0;
+  position: relative;
+  top: -64px;
   width: 100%;
   min-height: 100%;
+  margin-bottom: -64px;
 
   canvas#c {
     margin-top: 210px;
