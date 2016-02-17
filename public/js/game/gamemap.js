@@ -7,14 +7,14 @@ if (typeof module !== 'undefined' && module.exports){
 	var Country = require('./country.js');
 }
 
-var Map = function() {
+var GameMap = function() {
 	this._hexArray = [];
 	this._countryArray = [];
 	this._adjacencyList = {}; // countryId: [neighborId, ...]
 };
 
-Map.prototype.clone = function() {
-	var newCopy = new Map();
+GameMap.prototype.clone = function() {
+	var newCopy = new GameMap();
 	newCopy._hexArray = this._hexArray.map(function(h){return h.clone();});
 	newCopy._countryArray = this._hexArray.map(function(c){return c.clone();});
 	newCopy._adjacencyList = JSON.parse(JSON.stringify(this._adjacencyList));
@@ -22,7 +22,7 @@ Map.prototype.clone = function() {
 };
 
 
-Map.prototype.getHex = function(id) {
+GameMap.prototype.getHex = function(id) {
 	if (id < 0 || id >= this._hexArray.length) {
 		return null;
 	}
@@ -34,7 +34,7 @@ Map.prototype.getHex = function(id) {
 	return this._hexArray[id];
 };
 
-Map.prototype.countryHexes = function(countryId) {
+GameMap.prototype.countryHexes = function(countryId) {
 	var country = this.getCountry(countryId);
 	if (country) {
 		return country.hexes();
@@ -43,7 +43,7 @@ Map.prototype.countryHexes = function(countryId) {
 	}
 };
 
-Map.prototype.getCountry = function(id) {
+GameMap.prototype.getCountry = function(id) {
 	if (id < 0 || id >= this._countryArray.length) {
 		return null;
 	}
@@ -55,26 +55,26 @@ Map.prototype.getCountry = function(id) {
 	return this._countryArray[id];
 };
 
-Map.prototype.countryCount = function() {
+GameMap.prototype.countryCount = function() {
 	return this._countryArray.length;
 };
 
-Map.prototype.adjacentCountries = function(countryId) {
+GameMap.prototype.adjacentCountries = function(countryId) {
 	return this._adjacencyList[countryId];
 };
 
-Map.prototype.adjacencyList = function() {
+GameMap.prototype.adjacencyList = function() {
 	return this._adjacencyList;
 };
 
-Map.prototype.serializeHexes = function() {
+GameMap.prototype.serializeHexes = function() {
 	// only save hexes which are assigned to countries
 	return JSON.stringify(this._hexArray.filter(function(hex){
 		return (hex.countryId() >= 0);
 	}));
 };
 
-Map.prototype.deserializeHexes = function(json) {
+GameMap.prototype.deserializeHexes = function(json) {
 	var self = this;
 	
 	self._countryArray = [];
@@ -117,7 +117,7 @@ Map.prototype.deserializeHexes = function(json) {
 	});
 };
 
-Map.prototype.getState = function() {
+GameMap.prototype.getState = function() {
 	var state = [];
 	this._countryArray.forEach(function(country) {
 		state.push(country.getState());
@@ -125,14 +125,14 @@ Map.prototype.getState = function() {
 	return state;
 };
 
-Map.prototype.setState = function(gamestate) {
+GameMap.prototype.setState = function(gamestate) {
 	var self = this;
 	gamestate.countryIds().forEach(function(countryId) {
 		self._countryArray[countryId].setState(gamestate, countryId);
 	});
 };
 	
-Map.prototype.generateMap = function(players) {
+GameMap.prototype.generateMap = function(players) {
 	var self = this;
 	for (var i=0; i < this._countryArray.length; i++) {
 		this._countryArray[i]._hexIds = [];
@@ -213,7 +213,7 @@ Map.prototype.generateMap = function(players) {
 
 // this is designed to make the map more interesting. The idea is to prune out big chunks of real estate
 // before putting the countries down.
-Map.prototype.pruneEdges = function() {
+GameMap.prototype.pruneEdges = function() {
 	var width = Hex.NUM_WIDE, height = Hex.NUM_HIGH;
 	// top row
 	this.makeBlob(Math.floor(width/4 + (Math.random() * width/2)), 0, 100 + Math.floor(Math.random() * 200));
@@ -228,7 +228,7 @@ Map.prototype.pruneEdges = function() {
 	this.makeBlob(width-1, Math.floor(Math.random() * height), 100 + Math.floor(Math.random() * 200));
 };
 
-Map.prototype.findAdjacentUnpruned = function(hexes) {
+GameMap.prototype.findAdjacentUnpruned = function(hexes) {
 	var self = this;
 	var startIdx = Math.floor(Math.random() * hexes.length); 
     for (var i = 0; i < hexes.length; i++) {
@@ -250,7 +250,7 @@ Map.prototype.findAdjacentUnpruned = function(hexes) {
 
 };
 
-Map.prototype.makeBlob = function(startX, startY, size) {
+GameMap.prototype.makeBlob = function(startX, startY, size) {
 	var self = this;
 	var hexes = [];
 	var boundaryX = Hex.NUM_WIDE/2;
@@ -297,7 +297,7 @@ Map.prototype.makeBlob = function(startX, startY, size) {
 
 };
 
-Map.prototype.oldpruneEdges = function() {
+GameMap.prototype.oldpruneEdges = function() {
 	var self = this;
 
 	// map borders are:
@@ -379,7 +379,7 @@ Map.prototype.oldpruneEdges = function() {
 };
 
 // makes sure that the countries and hexes agree about who owns what
-Map.prototype.validate = function() {
+GameMap.prototype.validate = function() {
 	var self = this;
 	self._countryArray.forEach(function(country, idx) {
 		Globals.ASSERT(country.id() == idx);
@@ -395,7 +395,7 @@ Map.prototype.validate = function() {
 	});
 };
 
-Map.prototype.isConnected = function(countryId1, countryId2) {
+GameMap.prototype.isConnected = function(countryId1, countryId2) {
     for (var i = 0; i < this._adjacencyList[countryId1].length; i++) {
         if (this._adjacencyList[countryId1][i] == countryId2) {
             return true;
@@ -405,7 +405,7 @@ Map.prototype.isConnected = function(countryId1, countryId2) {
 };
 
 // Removes lakes from the country list to simplify things.
-Map.prototype.pruneLakes = function() {
+GameMap.prototype.pruneLakes = function() {
 	var self = this;
     this._countryArray = this._countryArray.filter(function(country) {
         if (!country.isLake()) {
@@ -426,7 +426,7 @@ Map.prototype.pruneLakes = function() {
     });
 };
 
-Map.prototype.assignCountries = function(players) {
+GameMap.prototype.assignCountries = function(players) {
 	// Use a shuffled countries list to randomize who gets what.
 	var self = this;
 	var shuffledCountries = Globals.shuffleArray(this._countryArray);
@@ -444,7 +444,7 @@ Map.prototype.assignCountries = function(players) {
 // Once the map is setup, this function puts together the adjacency information the country
 // needs, both to paint itself and to know what is next door.
 // Marks hexes as internal or external. Also identifies which edges need border stroking for the hex.
-Map.prototype.setupCountryEdges = function(country) {
+GameMap.prototype.setupCountryEdges = function(country) {
 	var self = this;
     var adjacentCountryHexes = {};  // Holds the first hex of adjacent countries, to avoid double-insertion.
 	self._adjacencyList[country.id()] = [];
@@ -468,7 +468,7 @@ Map.prototype.setupCountryEdges = function(country) {
     });
 };
 
-Map.prototype.moveToAdjacentCountry = function(hex) {
+GameMap.prototype.moveToAdjacentCountry = function(hex) {
 	var self = this;
     for (var i = 0; i < Dir.array.length; i++) {
         var newHex = Dir.nextHex(hex, i, self);
@@ -483,7 +483,7 @@ Map.prototype.moveToAdjacentCountry = function(hex) {
     Globals.debug("Can't find an adjacent country", Globals.LEVEL.ERROR, Globals.CHANNEL.MAP);
 };
 
-Map.prototype.countryCenter = function(countryId) {
+GameMap.prototype.countryCenter = function(countryId) {
 	var self = this;
     var center = [0, 0];
 	var hexIds = this.countryHexes(countryId);
@@ -500,7 +500,7 @@ Map.prototype.countryCenter = function(countryId) {
     return center;
 };
 
-Map.prototype.fromMousePos = function(x, y) {
+GameMap.prototype.fromMousePos = function(x, y) {
 	var self = this;
     var oldX = x; var oldY = y;
     y -= Hex.TOP_LEFT_Y;
@@ -554,7 +554,7 @@ Map.prototype.fromMousePos = function(x, y) {
 
 // Find a hex that is adjacent to this country but is not occupied by this country.
 // This can be used to grow this country or to find a new place to start a country.
-Map.prototype.findAdjacentHex = function(country) {
+GameMap.prototype.findAdjacentHex = function(country) {
 	var self = this;
     // Pick a starting hex randomly. Then iterate through until one is hopefully found.
     // var startingHexPos = Math.floor(Math.random() * this._hexIds.length);
@@ -577,7 +577,7 @@ Map.prototype.findAdjacentHex = function(country) {
 
 };
 
-Map.prototype.growCountry = function(country) {
+GameMap.prototype.growCountry = function(country) {
 	var self = this;
     if (country._hexIds.length >= country._numHexes) {
         return;
@@ -601,7 +601,7 @@ Map.prototype.growCountry = function(country) {
 
 };
 
-Map.prototype.landGrab = function(starthex, country) {
+GameMap.prototype.landGrab = function(starthex, country) {
 	var self = this;
 	country._hexIds = [starthex.id()];
     starthex.setCountry(country);
@@ -624,7 +624,7 @@ Map.prototype.landGrab = function(starthex, country) {
 
 
 // Absorbs a lake into an adjacent country.
-Map.prototype.absorbLake = function(country) {
+GameMap.prototype.absorbLake = function(country) {
 	var self = this;
     var newCountry = null;
     country._hexIds.forEach(function(hexId) {
@@ -633,7 +633,7 @@ Map.prototype.absorbLake = function(country) {
     country._hexIds = [];
 };
 
-Map.prototype.setCountryId = function(id, country) {
+GameMap.prototype.setCountryId = function(id, country) {
 	Globals.debug("Changine country id from "+ country._id + " to " + id, country, Globals.LEVEL.TRACE, Globals.CHANNEL.COUNTRY);
 	var self = this;
 	country._id = id;

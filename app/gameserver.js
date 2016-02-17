@@ -6,7 +6,6 @@ var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var Globals = require('../public/js/globals.js');
 var Message = require('../public/js/network/message.js');
-var Map = require('../public/js/game/map.js');
 var Gamestate = require('../public/js/game/gamestate.js');
 var Gameinfo = require('../public/js/game/gameinfo.js');
 var SocketWrapper = require('../public/js/network/socket.js');
