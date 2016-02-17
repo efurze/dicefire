@@ -185,6 +185,7 @@ var submit = function(req, res) {
 			return rwClient.getAI(sha);
 		})
 		.then(function(result) {
+			result = JSON.parse(result);
 			return rwClient.pushAI(sha, result.name);
 		})
 		.then(function() {
