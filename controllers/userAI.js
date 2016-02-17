@@ -2,7 +2,7 @@
 
 var Sandbox = require('sandbox');
 var Hashes = require('jshashes');
-var Promise = require('bluebird');
+var bluebirdPromise = require('bluebird');
 var SHA1 = new Hashes.SHA1();
 var fs = require('fs');
 var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
@@ -60,7 +60,7 @@ function validate() {
 // promisifies sandbox.run
 var runInSandbox = function(fnString) {
 	var s = new Sandbox();
-	return new Promise(function (resolve, reject) {
+	return new bluebirdPromise(function (resolve, reject) {
 		s.run(fnString, function(result) {
 			resolve(result);
 		});
@@ -137,7 +137,7 @@ var doSubmit = function(req, res, test) {
 	rwClient.getAI(codeHash)
 		.then(function (result) {
 			if (result) {
-				return Promise.reject("Code duplicate");
+				return bluebirdPromise.reject("Code duplicate");
 			} else {
 
 				var fnString = validate.toString();
@@ -164,12 +164,12 @@ var doSubmit = function(req, res, test) {
 						});
 				} else if (result.startsWith("Server Error")) {
 					logger.log("Server vaidate error", result, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
-					return Promise.reject(result);
+					return bluebirdPromise.reject(result);
 				} else if (result === "TimeoutError") {
 					logger.log("validate timeout", logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
-					return Promise.reject("Your code took too long to run. Do you have an infinite loop somewhere?");
+					return bluebirdPromise.reject("Your code took too long to run. Do you have an infinite loop somewhere?");
 				} else {
-					return Promise.reject(result);
+					return bluebirdPromise.reject(result);
 				}
 		})
 		.catch(function(err) {
@@ -218,7 +218,7 @@ var getAIList = function(req, res) {
 	rwClient.getAIList().then(function(results) {
 		var parsedResults = results.map(function(result){return JSON.parse(result);});
 
-		return Promise.all(parsedResults.map(function(ai, idx) {
+		return bluebirdPromise.all(parsedResults.map(function(ai, idx) {
 			return rwClient.getAI(ai.hash)
 					.then(function(aiDetail) {
 						aiDetail = JSON.parse(aiDetail);
@@ -286,13 +286,13 @@ var getAIDetail = function(req, res) {
 			return rwClient.getAIGames(sha);
 		}).then(function(games) { // result = [<gameId>]
 
-			return Promise.all(games.map(function(game) {
+			return bluebirdPromise.all(games.map(function(game) {
 				return rwClient.getGameInfo(game);
 			}));
 
 		}).then(function(gamesInfo) { // gamesInfo = array of Gameinfos
 
-			return Promise.all(gamesInfo.map(function(gameInfo) {
+			return bluebirdPromise.all(gamesInfo.map(function(gameInfo) {
 
 				if (!gameInfo) {
 					return;
@@ -302,7 +302,7 @@ var getAIDetail = function(req, res) {
 
 				// for each gameInfo, we want the names of all the opponents
 
-				return Promise.all(otherPlayers.map(function(pid) {
+				return bluebirdPromise.all(otherPlayers.map(function(pid) {
 						return rwClient.getAI(pid);
 					})).then(function(aiDetails) {
 					//console.log(aiDetails);

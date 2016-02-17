@@ -1,5 +1,4 @@
 var fs = require('fs');
-var Promise = require('bluebird');
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var uuid = require('node-uuid');

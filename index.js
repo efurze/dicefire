@@ -3,7 +3,7 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 var passport = require('passport');
-var Promise = require('bluebird');
+var bluebirdPromise = require('bluebird');
 var passportConf = require('./config/passport');
 var path = require('path');
 var secrets = require('./config/secrets');
@@ -134,7 +134,7 @@ app.get('/current', function(req, res) {
     var gameIds = gameServer.activeGames();
     var data = {games: []};
 
-    Promise.each(gameIds.map(function(gameId) {
+    bluebirdPromise.each(gameIds.map(function(gameId) {
         return rwClient.getGameInfo(gameId);
     }), function(gameInfo, idx) { // Gameinfo serialized to JSON
             var game = {};
