@@ -76,11 +76,8 @@ module.exports = {
 		var playerList = [];
 		var numberOfPlayers = 8;
 		for (var id=0; id < numberOfPlayers; id++) {
-			/*listHTML += "<select class='player_selector' value='" + defaults [id] + "' name='player_" + id + "'>" +
-								makePlayerList(names, defaults[id]) +
-						"</select>";*/
 			var playerItem = {	inputName: 'player_' + id,
-								selectHTML: "<select class='player_selector' value='" + defaults[id] + "' name='player_" + id + "'>" +
+								selectHTML: "<select class='player_selector form-control' value='" + defaults[id] + "' name='player_" + id + "'>" +
 												makePlayerList(names, defaults[id]) + "</select>"
 									};
 			playerList.push(playerItem);

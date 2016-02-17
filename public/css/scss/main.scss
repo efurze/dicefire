@@ -7,6 +7,10 @@
 @import "game";
 @import "footer";
 
+.nopadding {
+	padding: 0;
+}
+
 #intro, #setup {
   position: relative;
   top: 0;
@@ -17,6 +21,9 @@
     input {
     	width: 50%;
     }
+  }
+  label, .hint {
+  	line-height: 30px;
   }
 
   .ai-cta-container {

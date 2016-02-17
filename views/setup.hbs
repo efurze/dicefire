@@ -13,9 +13,17 @@
 					<form action="{{url}}" method="post">
 						{{#each playerList}}
 						<fieldset class="form-group">
-    						<label for="{{this.inputName}}">Player {{@index}}</label>
-							{{{this.selectHTML}}}
-							{{#if @first}} <span style="position:absolute">&nbsp;<--leave this as 'Human' if you want to play</span> {{/if}}				
+							<div class="col-xs-2">
+	    						<label for="{{this.inputName}}">Player {{@index}}</label>
+	    					</div>
+	    					<div class="col-xs-4">
+								{{{this.selectHTML}}}
+							</div>
+							{{#if @first}} 
+								<div class="col-xs-6 nopadding">
+									<span class="hint text-muted">&lt;-- set to 'human' if YOU want to play</span>
+								</div>
+							{{/if}}
 					  	</fieldset>
 						{{/each}}
 						<div class="button-container">
