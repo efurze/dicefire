@@ -1,0 +1,7 @@
+{
+	"globals": {
+		"$": false
+	},
+	"proto": true,
+	"debug": true
+}
