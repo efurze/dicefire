@@ -1,10 +1,18 @@
-<div>
+<section id="ai-form">
+<div class="container">
+
 	<form action="submission" method="post">
-		Name:<br>
-		<input type="text" name="name" value="MyAI's display name">
-		<br>
-		Code:<br>
-		<textarea rows="50" cols="100" name="code">
+		<div class="row">
+			<strong>Name:</strong>
+			<input type="text" name="name" value="MyAI's display name">
+		</div>
+		<div class="row">
+			<strong>Code:</strong>
+		</div>
+
+		<div class="row text-center">
+
+		<textarea rows="50" name="code">
 		
 var MyAI = function (id) {
 
@@ -71,7 +79,9 @@ var create = function(playerId) {
 		
 		</textarea>
 		<br>
-		<input type="submit" formaction="testsubmission" value="Submit for Test">
-	</form>
+		<input type="submit" formaction="testsubmission" class="btn btn-large btn-primary" value="Submit for Test">
+		</form>
+	</div> <!-- /row -->
 	
-</div>
+</div> <!-- /container -->
+</section>
