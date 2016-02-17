@@ -265,6 +265,11 @@ var GLrenderer = {
 				var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; }, 0);
 		    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; }, 0);
 				
+				DiceRolls.resetRollDivs(state,
+					fromCountry, 
+					toCountry, 
+					state.attack().fromRollArray, 
+					state.attack().toRollArray);
 		
 				// roll attacker
 				Globals.debug("render attacker", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
@@ -280,6 +285,7 @@ var GLrenderer = {
 		
 				function renderAttackRoll(state) {
 					Globals.debug("render defender", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+					DiceRolls.showAttack(fromRoll);
 					self._drawCountry(toCountry, state, true);
 					self.update();
 					window.setTimeout(function(){renderDefendRoll(state);}, timeout);
@@ -308,6 +314,7 @@ var GLrenderer = {
 				
 				function renderDefendRoll(state) {
 					Globals.debug("render defense roll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
+					DiceRolls.showDefense(toRoll);
 		            window.setTimeout(function(){renderVerdict(state);}, timeout);
 				}
 				

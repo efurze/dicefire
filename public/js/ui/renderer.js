@@ -48,6 +48,7 @@ $(function(){
     		}
 
     		PlayerStatus.init(playerNames);
+    		DiceRolls.init();
 		},
 
 		setPlayerName: function(id, name) {

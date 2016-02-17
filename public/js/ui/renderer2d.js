@@ -43,8 +43,6 @@ var Renderer2d = {
     			$(canvas).mouseleave(this.mouseLeave.bind(this));
 				
 				this._initialized = true;
-
-                this._setupRollDivs();
 			}			
 		},
 
@@ -137,7 +135,7 @@ var Renderer2d = {
 			var fromRoll = state.attack().fromRollArray.reduce(function(total, die) { return total + die; }, 0);
 	    	var toRoll = state.attack().toRollArray.reduce(function(total, die) { return total + die; }, 0);
 			
-			self._resetRollDivs(state,
+			DiceRolls.resetRollDivs(state,
 				fromCountry, 
 				toCountry, 
 				state.attack().fromRollArray, 
@@ -157,17 +155,14 @@ var Renderer2d = {
 	        window.setTimeout(function(){renderAttackRoll(state);}, timeout);
 	
 			function renderAttackRoll(state) {
-				$('#lefttotal').html(fromRoll);
-	            $('#leftroll').show();
-
+	            DiceRolls.showAttack(fromRoll);
 				self._renderCountry(toCountry, state, true);
 	            window.setTimeout(function(){renderDefendRoll(state);}, timeout);
 			}
 			
 			function renderDefendRoll(state) {
 				Globals.debug("render defender", Globals.LEVEL.DEBUG, Globals.CHANNEL.RENDERER);
-				$('#righttotal').html(toRoll);
-	            $('#rightroll').show();
+				DiceRolls.showDefense(toRoll);
 	            window.setTimeout(function(){renderVerdict(state);}, timeout);
 			}
 			
@@ -268,56 +263,6 @@ var Renderer2d = {
 			});
 		},
 		
-		
-		
-		
-		_resetRollDivs: function(state, fromCountry, toCountry, fromRollArray, toRollArray) {
-			
-			if (Globals.suppress_ui || !this._initialized) {
-				return;
-			}
-			
-			var self = this;
-	
-			// clear previous attack info
-	        $('#leftroll').hide();
-	        $('#rightroll').hide();
-
-			if (!fromCountry || !toCountry || !fromRollArray || !toRollArray) {
-				return;
-			}
-	
-			var fromNumDice = fromRollArray.length;
-			var toNumDice = toRollArray.length;
-			
-			var fromRoll = fromRollArray.reduce(function(total, die) { return total + die; });
-	    	var toRoll = toRollArray.reduce(function(total, die) { return total + die; });
-	
-			// style a div for each die both countries have
-			for (var i = 0; i < Globals.maxDice; i++) {
-				$('#leftdie' + i).css({
-					'background-color': self._playerColors[state.countryOwner(fromCountry)]
-				});
-
-				if (i < fromNumDice) {
-					$('#leftdie' + i).html(fromRollArray[i]);
-					$('#leftdie' + i).show();
-				} else {
-					$('#leftdie' + i).hide();
-				}
-
-				$('#rightdie' + i).css({
-					'background-color': self._playerColors[state.countryOwner(toCountry)]
-				});
-
-				if (i < toNumDice) {
-					$('#rightdie' + i).html(toRollArray[i]);
-					$('#rightdie' + i).show();
-				} else {
-					$('#rightdie' + i).hide();
-				}
-	    	}
-		},
 		
 		
 		_renderNumberBox: function (countryId, state) {
@@ -483,37 +428,6 @@ var Renderer2d = {
 		    }
 		},
 		
-		_setupRollDivs: function() {
-	        $('#leftroll').hide();
-	        $('#rightroll').hide();
-
-            var diceDivIds = [];
-            for (var i = 0; i < Globals.maxDice; i++) {
-                $('#leftroll').append(
-                    "<div id='leftdie" + i + "' class='roll-die'>5</div>"
-                );
-
-                diceDivIds.push('#leftdie' + i);
-
-                $('#rightroll').append(
-                    "<div id='rightdie" + i + "' class='roll-die'>5</div>"
-                );
-
-                diceDivIds.push('#rightdie' + i);
-            }
-
-
-
-            $('#leftroll').append(
-                "<div id='lefttotal' class='roll-total'>35</div>"                    
-            );
-
-
-            $('#rightroll').append(
-                "<div id='righttotal' class='roll-total'>35</div>"                    
-            );
-
-        },
 
         stateHash: {
 	
