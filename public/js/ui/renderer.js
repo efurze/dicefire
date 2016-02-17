@@ -41,10 +41,10 @@ $(function(){
 			this._map = map;
 			this._playerNames = playerNames;
 
-			if($('#radio_3d').attr("checked")){
-				Renderer._init3d();
+			if($('#radio_2d').attr("checked")){
+				Renderer._init2d();
     		} else {
-    			Renderer._init2d();
+    			Renderer._init3d();
     		}
 
     		PlayerStatus.init(playerNames);
