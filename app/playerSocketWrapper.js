@@ -73,7 +73,11 @@ PlayerWrapper.prototype.startTurn = function(state) {
 	}
 };
 PlayerWrapper.prototype.attackDone = function(success) {};
-PlayerWrapper.prototype.turnEnded = function() {};
+PlayerWrapper.prototype.turnEnded = function() {
+	if (this._started && this._socket) {
+		this._socket.sendTurnEnded(this._id, state.stateId());
+	}
+};
 PlayerWrapper.prototype.loses = function() {};
 
 
