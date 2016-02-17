@@ -73,12 +73,17 @@ module.exports = {
 		});
 		names.push("none");
 		
-		var listHTML = "";
+		var playerList = [];
 		var numberOfPlayers = 8;
 		for (var id=0; id < numberOfPlayers; id++) {
-			listHTML += "<select class='player_selector' value='" + defaults [id] + "' name='player_" + id + "'>" +
+			/*listHTML += "<select class='player_selector' value='" + defaults [id] + "' name='player_" + id + "'>" +
 								makePlayerList(names, defaults[id]) +
-						"</select>";
+						"</select>";*/
+			var playerItem = {	inputName: 'player_' + id,
+								selectHTML: "<select class='player_selector' value='" + defaults[id] + "' name='player_" + id + "'>" +
+												makePlayerList(names, defaults[id]) + "</select>"
+									};
+			playerList.push(playerItem);
 		}
 
 		var gameId = uuid.v1();
@@ -89,7 +94,7 @@ module.exports = {
 
 		res.render("setup", {
 			title: "Dicefice - New Game",
-			list: listHTML,
+			playerList: playerList,
 			url: startUrl
 		});
 	},
