@@ -83,7 +83,9 @@ app.use(function(req, res, next) {
 // Routes
 
 // User routes
-app.get('/', gameController.index);                             // Front Page
+//app.get('/', gameController.index);                             // Front Page
+app.get('/', gameController.setupSolo);
+// ^ Let's default to a solo game
 app.get('/setupsolo', gameController.setupSolo);                // Ladder Game
 app.post('/solo', gameController.solo);                         // Individual Game
 app.get('/setup', gameController.setup);                        // Ladder Game
