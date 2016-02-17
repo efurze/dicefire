@@ -75,22 +75,58 @@
     margin-top: 15px;  
   }
 
-
-  .roll-die {
+  .die1-img {
+    background-image: url('/public/images/dice1.png');
+    background-size: contain;
     display: inline-block;
     width: 23px;
     height: 23px;
-    border: 1px solid black;
-    background-color: red;
-    font-family: sans-serif;
-    color: white;
-    font-size: 14px;
-    text-align: center;
-    padding-bottom: 0px;
     vertical-align: top;
-    font-weight: bold;
-    margin-left: 5px;
-    margin-top: 1px;
+  }
+
+  .die2-img {
+    background-image: url('/public/images/dice2.png');
+    background-size: contain;
+    display: inline-block;
+    width: 23px;
+    height: 23px;
+    vertical-align: top;
+  }
+
+  .die3-img {
+    background-image: url('/public/images/dice3.png');
+    background-size: contain;
+    display: inline-block;
+    width: 23px;
+    height: 23px;
+    vertical-align: top;
+  }
+
+  .die4-img {
+    background-image: url('/public/images/dice4.png');
+    background-size: contain;
+    display: inline-block;
+    width: 23px;
+    height: 23px;
+    vertical-align: top;
+  }
+
+  .die5-img {
+    background-image: url('/public/images/dice5.png');
+    background-size: contain;
+    display: inline-block;
+    width: 23px;
+    height: 23px;
+    vertical-align: top;
+  }
+
+  .die6-img {
+    background-image: url('/public/images/dice6.png');
+    background-size: contain;
+    display: inline-block;
+    width: 23px;
+    height: 23px;
+    vertical-align: top;
   }
 
   .roll-total {

@@ -27,16 +27,18 @@ $(function() {
 	        $('#leftroll').hide();
 	        $('#rightroll').hide();
 
+
             var diceDivIds = [];
             for (var i = 0; i < Globals.maxDice; i++) {
+
                 $('#leftroll').append(
-                    "<div id='leftdie" + i + "' class='roll-die'>5</div>"
+                    "<div id='leftdie" + i + "' class='die1-img'></div>"
                 );
 
                 diceDivIds.push('#leftdie' + i);
 
                 $('#rightroll').append(
-                    "<div id='rightdie" + i + "' class='roll-die'>5</div>"
+                    "<div id='rightdie" + i + "' class='die1-img'></div>"
                 );
 
                 diceDivIds.push('#rightdie' + i);
@@ -85,26 +87,21 @@ $(function() {
 	
 			// style a div for each die both countries have
 			for (var i = 0; i < Globals.maxDice; i++) {
-				$('#leftdie' + i).css({
-					'background-color': self._playerColors[state.countryOwner(fromCountry)]
-				});
+				
+				$('#leftdie' + i).hide();
+				$('#leftdie' + i).removeClass();
 
 				if (i < fromNumDice) {
-					$('#leftdie' + i).html(fromRollArray[i]);
+					$('#leftdie' + i).addClass("die" + fromRollArray[i] + "-img");	
 					$('#leftdie' + i).show();
-				} else {
-					$('#leftdie' + i).hide();
 				}
 
-				$('#rightdie' + i).css({
-					'background-color': self._playerColors[state.countryOwner(toCountry)]
-				});
+				$('#rightdie' + i).hide();
+				$('#rightdie' + i).removeClass();
 
 				if (i < toNumDice) {
-					$('#rightdie' + i).html(toRollArray[i]);
+					$('#rightdie' + i).addClass("die" + toRollArray[i] + "-img");	
 					$('#rightdie' + i).show();
-				} else {
-					$('#rightdie' + i).hide();
 				}
 	    	}
 		},
