@@ -4,6 +4,8 @@ thunderdome/results/*
 dump.rdb
 *.swp
 .sass-cache/
+dist/*
+public/css/main.css
 
 # OS metadata
 .DS_Store
