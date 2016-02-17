@@ -1,11 +1,13 @@
 <section id="setup">
 	<div class="container">
+		<div class="row text-center">
+			<h1>Welcome to Dicefire</h1>
+			<p>If you haven't played this game before, here's a good primer:</p>
+			<hr/>
+		</div>
 		<div class="row">
-			<div class="col-md-12 text-center">
+			<div class="col-md-7 text-left">
 				<div id="player_select" style="margin-left:10px; margin-top:10px; margin-bottom: 20px;">
-					<h1>Welcome to Dicefire</h1>
-					<p>If you haven't played this game before, here's a good primer:</p>
-					<hr/>
 					<h3>Now, who will compete in this game?</h3>
 					<p>Choose the player profiles for this game:</p>
 					<form action="{{url}}" method="post">
@@ -17,12 +19,25 @@
 					  	</fieldset>
 						{{/each}}
 						<div class="button-container">
-							<input type="submit" value="Let's go!" class="btn btn-primary btn-large">
+							<input type="submit" value="Start game" class="btn btn-primary btn-large">
 						</div>
 					</form>
-				</div>
+				</div> <!-- /#player_select -->
+			</div> <!-- /col -->
+			<div class="col-md-5">
 
-			</div>
-		</div>
-	</div>
+				<div class="ai-cta-container">
+					<p>-- also --</p> 
+					<h4>Create your own [artificially intelligent] player!</h4>
+					<p>Seriously, we made it really easy for you to create your own:</p>
+					<a href="/submit" target="_blank">
+						<button class="btn btn-default">
+							Help me create a robo-player
+						</button>
+					</a>
+				</div>
+			</div> <!-- /col -->
+
+		</div> <!-- /row -->
+	</div> <!-- /container -->
 </section>
