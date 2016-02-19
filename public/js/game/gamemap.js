@@ -651,5 +651,5 @@ GameMap.prototype.setCountryId = function(id, country) {
 
 
 if (typeof module !== 'undefined' && module.exports){
-	module.exports = Map;
+	module.exports = GameMap;
 }

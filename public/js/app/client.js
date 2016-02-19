@@ -325,7 +325,7 @@ $(function() {
 			if (success) {
 				if (!Client._map) {
 					Globals.debug("Got map from server", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
-					Client._map = new Map();
+					Client._map = new GameMap();
 					Client._map.deserializeHexes(data);
 
 					// start all the AI's
