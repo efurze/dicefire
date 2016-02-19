@@ -16,6 +16,8 @@
 			<div class="row">
 				<div id="code-editor" class="form-control" name="code"> {{>ai_sample_code}} </div>
 			</div>
+
+			<textarea name="code" style="display: none;"></textarea>
 	
 			<input type="submit" formaction="testsubmission" class="btn btn-large btn-primary" value="Submit for Test">
 		</form>
@@ -30,4 +32,10 @@
     var editor = ace.edit("code-editor");
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/javascript");
+
+    var textarea = $('textarea[name="code"]').hide();
+    textarea.val(editor.getSession().getValue());
+    editor.getSession().on('change', function(){
+  		textarea.val(editor.getSession().getValue());
+	});
 </script>
