@@ -1,87 +1,33 @@
+
 <section id="ai-form">
-<div class="container">
+	<div class="container">
 
-	<form action="submission" method="post">
-		<div class="row">
-			<strong>Name:</strong>
-			<input type="text" name="name" class="form-control" value="MyAI's display name">
-		</div>
-		<div class="row">
-			<strong>Code:</strong>
-		</div>
-
-		<div class="row text-center">
-
-		<textarea rows="50" name="code" class="form-control">
-		
-var MyAI = function (id) {
-
-};
-
-
-/* startTurn - this gets called every time your AI begins its turn. 
-
-  @interface = {
-
-  		// call this with a countryId (an int) and it will return an array of the countryIds of that country's neighbors
-  		adjacentCountries: function(countryId)
-
-  		// returns the current state of the game as a Gamestate object.
-		getState: function() 
-
-		// issue an attack. Your callback will be called with the result of the attack.
-		// Result will be true if attack succeeded, false otherwise
-		attack: function(fromCountryId, toCountryId, callback = function(result){}) 
-
-		// Call this to end your turn.
-		endTurn: function()
-  }
-
-*/
-MyAI.prototype.startTurn = function(interface) {
-	this.findAttacks(interface, 0);
-};
-
-MyAI.prototype.findAttacks = function(interface) {
-	var self = this;
-	var state = interface.getState();
-
-	var playerId = state.currentPlayerId();
-	var countryIds = state.countryIds();
-	for (var i = 0; i < countryIds.length; i++) {
-		var countryId = countryIds[i];
-		if (state.countryOwner(countryId) == playerId) {
-			var possibleAttacks = [];
-			interface.adjacentCountries(countryId).forEach(function(adjacentCountryId) {
-				if (state.countryOwner(adjacentCountryId) != playerId && state.countryDice(countryId) > 1 && 
-					state.countryDice(countryId) >= state.countryDice(adjacentCountryId)) {
-					possibleAttacks.push(adjacentCountryId);
-				}
-			});
-
-			if (possibleAttacks.length > 0) {
-				var attackCountryId = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
-				interface.attack(countryId, attackCountryId, function(result) {
-					self.findAttacks(interface);
-				});
-				return;
-			}
-		}
-	}
-
-	interface.endTurn();
-};
-
-
-var create = function(playerId) {
-	return new MyAI(playerId);
-};
-		
-		</textarea>
-		<br>
-		<input type="submit" formaction="testsubmission" class="btn btn-large btn-primary" value="Submit for Test">
-		</form>
-	</div> <!-- /row -->
+		<form action="submission" method="post">
+			<div class="row">
+				<strong>Name:</strong>
+				<input type="text" name="name" class="form-control" value="MyAI's display name">
+			</div>
+			<div class="row">
+				<strong>Code:</strong>
+			</div>
 	
-</div> <!-- /container -->
+			<br>
+
+			<div class="row">
+				<div id="code-editor" class="form-control" name="code"> {{>ai_sample_code}} </div>
+			</div>
+	
+			<input type="submit" formaction="testsubmission" class="btn btn-large btn-primary" value="Submit for Test">
+		</form>
+
+	</div>
 </section>
+
+		
+
+
+<script>
+    var editor = ace.edit("code-editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/javascript");
+</script>
