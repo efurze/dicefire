@@ -31,7 +31,7 @@ var GLrenderer = {
 		_mapCenterY: 0,
 		_angleY: 0,
 		_angleX: 0,
-		_angleZ: Math.PI/2,
+		_angleZ: -Math.PI/2,
 		_theta: Math.PI/4,
 		_elevation: 35,
 		_radius: 75,
@@ -288,7 +288,7 @@ var GLrenderer = {
 					DiceRolls.showAttack(fromRoll);
 					self._drawCountry(toCountry, state, true);
 					self.update();
-					window.setTimeout(function(){renderDefendRoll(state);}, timeout);
+					window.setTimeout(function(){renderDefendRoll(state);}, 3*timeout);
 					/*
 					if (DRAW_DICE) {
 						var ary = [];
@@ -300,7 +300,7 @@ var GLrenderer = {
 			        */
 				}
 
-
+/*
 				function animateAttackDice(countryId) {
 					self._camera.updateMatrix();
 					self._camera.updateMatrixWorld();
@@ -311,11 +311,11 @@ var GLrenderer = {
 						self._rollAttackDie(diceId, 5);
 					}
 				}
-				
+*/				
 				function renderDefendRoll(state) {
 					Globals.debug("render defense roll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 					DiceRolls.showDefense(toRoll);
-		            window.setTimeout(function(){renderVerdict(state);}, timeout);
+		            window.setTimeout(function(){renderVerdict(state);}, 3*timeout);
 				}
 				
 				function renderVerdict(state) {

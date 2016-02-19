@@ -3,11 +3,11 @@ var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
 var uuid = require('node-uuid');
 
-var Gameinfo = require('../public/js/game/gameinfo');
-var Plyer = require('../public/js/ai/plyer.js');
-var Greedy = require('../public/js/ai/greedy.js');
-var Aggressive = require('../public/js/ai/aggressive.js');
-var Human = require('../public/js/ai/human.js');
+var Gameinfo = require('../public/js/app/game/gameinfo');
+var Plyer = require('../public/js/app/ai/plyer.js');
+var Greedy = require('../public/js/app/ai/greedy.js');
+var Aggressive = require('../public/js/app/ai/aggressive.js');
+var Human = require('../public/js/app/ai/human.js');
 
 var AIs = [Human, Plyer, Greedy, Aggressive];
 

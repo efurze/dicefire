@@ -6,7 +6,7 @@ var CHANNEL;
 
 if (typeof module !== 'undefined' && module.exports){
 	var Globals = require('../globals.js');
-	var logger = require('../../../lib/logger.js');
+	var logger = require('../../../../lib/logger.js');
 	var Message = require('./message');
 	log = logger.log;
 	CHANNEL = logger.CHANNEL.SERVER_SOCKET;

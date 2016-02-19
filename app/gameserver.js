@@ -4,11 +4,11 @@ var GAME_LINGER_TIMEOUT = 20000; // milliseconds
 
 var rwClient = require('../lib/redisWrapper.js');
 var logger = require('../lib/logger.js');
-var Globals = require('../public/js/globals.js');
-var Message = require('../public/js/network/message.js');
-var Gamestate = require('../public/js/game/gamestate.js');
-var Gameinfo = require('../public/js/game/gameinfo.js');
-var SocketWrapper = require('../public/js/network/socket.js');
+var Globals = require('../public/js/app/globals.js');
+var Message = require('../public/js/app/network/message.js');
+var Gamestate = require('../public/js/app/game/gamestate.js');
+var Gameinfo = require('../public/js/app/game/gameinfo.js');
+var SocketWrapper = require('../public/js/app/network/socket.js');
 var AISocketWrapper = require('./aiSocketWrapper');
 var PlayerWrapper = require('./playerSocketWrapper');
 
@@ -146,10 +146,10 @@ var GameManager = function() {
 // This class constructs an Engine for each game and manages the client socket connections to it. Also manages all 'watcher' connections.
 /*========================================================================================================================================*/
 
-var Engine = require('../public/js/game/engine.js');
-var Plyer = require('../public/js/ai/plyer.js');
-var Greedy = require('../public/js/ai/greedy.js');
-var Aggressive = require('../public/js/ai/aggressive.js');
+var Engine = require('../public/js/app/game/engine.js');
+var Plyer = require('../public/js/app/ai/plyer.js');
+var Greedy = require('../public/js/app/ai/greedy.js');
+var Aggressive = require('../public/js/app/ai/aggressive.js');
 
 
 var GameServer = function(gameId, namespace, watchNamespace, restoreState  /*optional*/, map /*optional*/) {

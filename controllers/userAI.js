@@ -5,9 +5,9 @@ var Hashes = require('jshashes');
 var bluebirdPromise = require('bluebird');
 var SHA1 = new Hashes.SHA1();
 var fs = require('fs');
-var aiWorker = fs.readFileSync(__dirname + "/../public/js/game/aiworker.js", 'utf8');
+var aiWorker = fs.readFileSync(__dirname + "/../public/js/app/game/aiworker.js", 'utf8');
 var rwClient = require('../lib/redisWrapper.js');
-var Gameinfo = require('../public/js/game/gameinfo');
+var Gameinfo = require('../public/js/app/game/gameinfo');
 var logger = require('../lib/logger.js');
 
 /*

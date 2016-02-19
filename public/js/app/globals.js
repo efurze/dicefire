@@ -104,7 +104,7 @@ var Globals = {
 		maxStoredDice: 64,
 		startingDice: 10,
 		numCountries: 32,
-		timeout: 150,
+		timeout: 0,
 		play_sounds: 0,
 		suppress_ui: 0,
 		uploadGame: false,
@@ -165,13 +165,13 @@ Globals.channels[Globals.CHANNEL.HEX] 				= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.COUNTRY] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.PLAYER] 			= Globals.LEVEL.WARN;
 Globals.channels[Globals.CHANNEL.PLYER] 			= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.RENDERER] 			= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.RENDERER] 			= Globals.LEVEL.INFO;
 Globals.channels[Globals.CHANNEL.GREEDY] 			= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.INFO;
-Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.INFO;
-Globals.channels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.INFO;
+Globals.channels[Globals.CHANNEL.CLIENT] 			= Globals.LEVEL.DEBUG;
+Globals.channels[Globals.CHANNEL.CLIENT_SOCKET] 	= Globals.LEVEL.DEBUG;
+Globals.channels[Globals.CHANNEL.AI_WRAPPER] 		= Globals.LEVEL.DEBUG;
 Globals.channels[Globals.CHANNEL.MAP_CONTROLLER] 	= Globals.LEVEL.WARN;
-Globals.channels[Globals.CHANNEL.DOWNLOADER] 		= Globals.LEVEL.WARN;
+Globals.channels[Globals.CHANNEL.DOWNLOADER] 		= Globals.LEVEL.DEBUG;
 
 // Error report Loglevel for each channel. Determines the detail of error reports
 Globals.errorReportLevels = [];
