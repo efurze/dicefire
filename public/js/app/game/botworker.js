@@ -8,12 +8,12 @@
 
 if( 'function' === typeof importScripts) {
 
-importScripts('/js/globals.js');
-importScripts('/js/game/gamestate.js');
-importScripts('/js/ai/util.js');
-importScripts('/js/ai/plyer.js');
-importScripts('/js/ai/greedy.js');
-importScripts('/js/ai/aggressive.js');
+importScripts('/js/app/globals.js');
+importScripts('/js/app/game/gamestate.js');
+importScripts('/js/app/ai/util.js');
+importScripts('/js/app/ai/plyer.js');
+importScripts('/js/app/ai/greedy.js');
+importScripts('/js/app/ai/aggressive.js');
 
 var initAIs = function() {
 	aiMap[AI.Plyer.getName()] = AI.Plyer;

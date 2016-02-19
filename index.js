@@ -34,6 +34,7 @@ app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
 app.use('/public/images', express.static(__dirname + '/public/images'));
+app.use('/public/js/third_party', express.static(__dirname + '/public/js/third_party/'));
 app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use('/jquery', express.static(path.join(__dirname, '/node_modules/jquery/dist')));
 app.use('/jshashes', express.static(path.join(__dirname, '/node_modules/jshashes')));

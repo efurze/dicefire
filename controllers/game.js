@@ -104,13 +104,13 @@ module.exports = {
 			gameId: gameId,
 			replay: false,
 			scripts: [
-				{ path: "/js/controllers/historyController.js" },
-				{ path: "/js/util/downloader.js" },
-				{ path: "/js/util/history.js" },
-				{ path: "/js/network/message.js" },
-				{ path: "/js/network/socket.js" },
-				{ path: "/js/controllers/socketAIController.js" },
-				{ path: "/js/app/client.js" }
+				{ path: "/js/app/controllers/historyController.js" },
+				{ path: "/js/app/util/downloader.js" },
+				{ path: "/js/app/util/history.js" },
+				{ path: "/js/app/network/message.js" },
+				{ path: "/js/app/network/socket.js" },
+				{ path: "/js/app/controllers/socketAIController.js" },
+				{ path: "/js/app/app/client.js" }
 			]
 		});
 	},
@@ -123,13 +123,13 @@ module.exports = {
 			gameId: gameId,
 			replay: true,
 			scripts: [
-				{ path: "/js/controllers/historyController.js" },
-				{ path: "/js/util/downloader.js" },
-				{ path: "/js/util/history.js" },
-				{ path: "/js/network/message.js" },
-				{ path: "/js/network/socket.js" },
-				{ path: "/js/controllers/socketAIController.js" },
-				{ path: "/js/app/client.js" }
+				{ path: "/js/app/controllers/historyController.js" },
+				{ path: "/js/app/util/downloader.js" },
+				{ path: "/js/app/util/history.js" },
+				{ path: "/js/app/network/message.js" },
+				{ path: "/js/app/network/socket.js" },
+				{ path: "/js/app/controllers/socketAIController.js" },
+				{ path: "/js/app/app/client.js" }
 			]
 		});
 	},
