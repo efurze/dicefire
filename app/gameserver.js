@@ -50,8 +50,8 @@ var GameManager = function() {
 							logger.log("State count", count, logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 							return rwClient.getState(gameId, count-1);
 						}).then(function(state) {
-							logger.log("Got state", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
-							gamestate = state;
+							gamestate = Gamestate.deserialize(JSON.parse(state));
+							logger.log("Got state", gamestate.stateId(), logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
 							return rwClient.getMap(gameId);
 						}).then(function(mapData) {
 							logger.log("Got map", logger.LEVEL.DEBUG, logger.CHANNEL.SERVER, gameId);
@@ -347,6 +347,9 @@ GameServer.prototype.player_init = function(sock, msg) {
 			// push the latest gamestate to them
 			newGuy.setInitialized(true);
 			newGuy.socket().sendState(self._engine.currentStateId(), self._gameId);
+			if (self._started && self._engine.currentPlayerId() == playerId) {
+				newGuy.startTurn(self._engine.getState());
+			}
 			
 			self._players.forEach(function(player) {
 				if(player.isHuman() && player != newGuy) {
@@ -390,7 +393,6 @@ GameServer.prototype.reconnect = function(socketWrapper) {
 
 					self._players[playerId].start();
 					
-					self._currentHumans ++; 
 					humanAssignedTo = playerId;
 				} else { 
 					self.assignBot(self._players[playerId], socketWrapper);

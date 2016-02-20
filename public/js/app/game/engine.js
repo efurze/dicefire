@@ -140,7 +140,8 @@ Engine.prototype.setup = function(initialState /*optional*/) {
 	
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
-		self.deserialize(JSON.parse(initialState));
+		self.setState(initialState);
+		self.pushHistory();
 	} else {
 
 		// send out a pre-dice state
