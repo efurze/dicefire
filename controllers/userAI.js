@@ -47,11 +47,11 @@ function validate() {
 		var ai = submittedClass.create();
 		
 		if (!ai.__proto__.hasOwnProperty('startTurn') || typeof ai.__proto__.startTurn !== 'function') {
-			return "Submitted AI has no startTurn() method";
+			return "Server Error: submitted AI has no startTurn() method";
 		}
 		
 	} catch (e) {
-		return ("Your code threw an exception: " + e);
+		return ("Server Error: Your code threw an exception: " + e);
 	}
 	
 	return true;
@@ -162,18 +162,20 @@ var doSubmit = function(req, res, test) {
 						}).catch(function(err) {
 							res.status(500).send('Error Saving Submission ' + err.toString());
 						});
-				} else if (result.startsWith("Server Error")) {
-					logger.log("Server vaidate error", result, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
+				} else if (result.indexOf("Server Error") >= 0) {
+					logger.log("Server validate error", result, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 					return bluebirdPromise.reject(result);
 				} else if (result === "TimeoutError") {
 					logger.log("validate timeout", logger.LEVEL.DEBUG, logger.CHANNEL.USER_AI);
 					return bluebirdPromise.reject("Your code took too long to run. Do you have an infinite loop somewhere?");
 				} else {
+					logger.log("Unknown AI validation error", result, logger.LEVEL.ERROR, logger.CHANNEL.USER_AI);
 					return bluebirdPromise.reject(result);
 				}
 		})
 		.catch(function(err) {
-				res.send("Submission error: " + err + "<br><br>Invalid Sumbission");
+			console.log(err);
+			res.send("Submission error: " + err + "<br><br>Invalid Sumbission");
 		});
 };
 
