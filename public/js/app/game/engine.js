@@ -8,6 +8,9 @@ if (typeof module !== 'undefined' && module.exports) {
 	var Player = require('./player.js');
 	var Gamestate = require('./gamestate.js');
 	var AIWrapper = require('./aiwrapper.js');
+	var bluebird = require('bluebird');
+} else {
+	var bluebird = Promise;
 }
 
 var MOVE_TIME_BUDGET = 2000; // each player gets 2 seconds per turn
@@ -467,12 +470,17 @@ Engine.prototype.historyLength = function() {
 	return this._history.length;
 };
 
+// returns a promise that resolves to a state
 Engine.prototype.getHistory = function(index) {
+	var state;
 	if (index >= 0 && index < this._history.length) {
-		return this._history[index];
+		state = this._history[index];
 	} else {
-		return new Gamestate();
+		state = new Gamestate();
 	}
+	return new Promise(function(resolve) {
+		resolve(state);
+	});
 };
 	
 Engine.prototype.getState = function() {

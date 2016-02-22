@@ -10,7 +10,7 @@ var History = function(gameId) {
 };
 	
 // returns a promise that resolves to a gamestate object
-History.prototype.getState = function(id) {
+History.prototype.getHistory = function(id) {
 	Globals.ASSERT(typeof id == 'number');
 	var self = this;
 	if (self._states[id]) {

@@ -90,16 +90,20 @@ $(function() {
 			});
 			
 			
-			Game._controller = new Gamecontroller(0, Game._engine);
+			Game._controller = new HistoryController(Game._engine, 0);
 			Game._mapController = new Mapcontroller(0, Game._engine.map(), Game.mapConInterface);
 			Renderer.init(Game._canvas, Game._engine.map(), playerNames, Game);
 			Game._engine.setup();
 			
-			$('#end_turn').click(Game._controller.endTurn.bind(Game._controller));
-			$('#back_btn').click(Game._controller.historyBack.bind(Game._controller));
-			$('#forward_btn').click(Game._controller.historyForward.bind(Game._controller));
+			$('#end_turn').click(Game.endTurnClicked.bind(Game));
 			
 			Game._engine.startTurn(0);
+		},
+
+		endTurnClicked: function() {
+			if (!Game._controller.viewingHistory() && Game._engine.currentPlayerId() === 0) {
+				Game._engine.endTurn();
+			}
 		},
 		
 		gameOver: function(winningAI, winningID) {
@@ -107,8 +111,10 @@ $(function() {
 		
 		// from renderer
 		stateRendered: function(gamestate, stateId) {
+			Game._controller.updateStateCount(Game._engine.historyLength()-1);
 			if (!Game._controller.viewingHistory()) {
 				Game._currentState = gamestate;
+				Game._controller.setViewState(stateId);
 				if (Game._controller) {
 					Game._controller.update(gamestate);
 				}

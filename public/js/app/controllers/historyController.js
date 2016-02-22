@@ -1,4 +1,8 @@
 
+
+// @history: {getHistory: function(stateId){
+//	return Promise; - resolves to a gamestate
+//}}
 var HistoryController = function (history, playerId) {
 	this._history = history;
 	this._playerId = playerId;
@@ -39,7 +43,7 @@ HistoryController.prototype.historyBack = function (event) {
 		self._currentlyViewing --;
 		self._viewingHistory = true;
 
-		self._history.getState(self._currentlyViewing)
+		self._history.getHistory(self._currentlyViewing)
 			.then(self.renderHistory.bind(self));
 		// TODO: FIXME: have a UI for 'loading state'
 		self.update();
@@ -57,7 +61,7 @@ HistoryController.prototype.historyForward = function (event) {
 			self._viewingHistory = false;
 		}
 					
-		self._history.getState(self._currentlyViewing)
+		self._history.getHistory(self._currentlyViewing)
 			.then(self.renderHistory.bind(self));
 		// TODO: FIXME: have a UI for 'loading state'
 		self.update();

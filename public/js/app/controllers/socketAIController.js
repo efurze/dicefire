@@ -49,7 +49,7 @@
 	SocketAIController.prototype.attack_result = function(sock, msg) {
 		var self = this;
 		if (msg.playerId == self._id && self._attackPending) {
-			self._history.getState(msg.stateId)
+			self._history.getHistory(msg.stateId)
 					.then( function(state) {
 						self.attackDone(msg.success, msg.stateId);
 					});
@@ -89,7 +89,7 @@
 		// to deal with that
 		var self = this;
 		if (self._started) {
-			self._history.getState(state_id)
+			self._history.getHistory(state_id)
 					.then( function(state) {
 						if (self._isMyTurn) {
 							Globals.debug("Got startTurn when it was already our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);

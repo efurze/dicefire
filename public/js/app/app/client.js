@@ -127,7 +127,7 @@ $(function() {
 					} else {
 						nextState = Client._currentViewState + 1;
 					}
-					Client._history.getState(nextState)
+					Client._history.getHistory(nextState)
 						.then(function(state) {
 							if (Client._map) {
 								Client._map.setState(state);
@@ -258,7 +258,7 @@ $(function() {
 		// @msg: {stateId:, gameId:}
 		state: function(sock, msg) {
 			Client._historyController.updateStateCount(msg.stateId);
-			Client._history.getState(msg.stateId)
+			Client._history.getHistory(msg.stateId)
 					.then(function(state) {
 						Client.processNextState();
 					});
@@ -310,7 +310,7 @@ $(function() {
 		// @msg: {playerId:, stateId:}
 		start_turn: function(sock, msg) {
 			if (msg.playerId == Client._playerId) {
-				Client._history.getState(msg.stateId)
+				Client._history.getHistory(msg.stateId)
 					.then(function(state) {
 						Client._isMyTurn = true;
 					});
