@@ -315,6 +315,7 @@ var GLrenderer = {
 				function renderDefendRoll(state) {
 					Globals.debug("render defense roll", Globals.LEVEL.INFO, Globals.CHANNEL.RENDERER);
 					DiceRolls.showDefense(toRoll);
+					self.update();
 		            window.setTimeout(function(){renderVerdict(state);}, 3*timeout);
 				}
 				

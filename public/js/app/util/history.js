@@ -6,25 +6,20 @@ var History = function(gameId) {
 	this._gameId = gameId;
 	this._downloader = new Downloader();
 	this._mostRecentStateId = -1;
-	this._stateCallbacks = {}; // stateId to array of callbacks
+	this._stateCallbacks = {}; // stateId to array of promises
 };
 	
-// @callback: function(gamestate){}
-History.prototype.getState = function(id, callback /*optional*/) {
+// returns a promise that resolves to a gamestate object
+History.prototype.getState = function(id) {
 	Globals.ASSERT(typeof id == 'number');
 	var self = this;
 	if (self._states[id]) {
-		if (callback) {
-			callback(self._states[id]);
-		}
-		return self._states[id];
+		return new Promise(function(resolve) {
+			resolve(self._states[id]);
+		});
 	} else {
-		if (callback) {
-			self.onStateReceived(id, callback);
-		}
 		self._downloader.getState(self._gameId, id, self._stateDownload.bind(self));
-
-		return null;
+		return self.onStateReceived(id);
 	}
 };
 
@@ -63,15 +58,19 @@ History.prototype._stateDownload = function(success, data) {
 	}
 };
 
-History.prototype.onStateReceived = function(stateId, cb) {	
+// returns promise
+History.prototype.onStateReceived = function(stateId) {	
 	var self = this;
 	if (self._states.hasOwnProperty(stateId)) {
-		cb(self._states[stateId]);
+		return self._states[stateId];
 	} else {
+		var resolver = null;
+		var p = new Promise(function(resolve){resolver = resolve;});
 		if (!self._stateCallbacks.hasOwnProperty(stateId)) {
 			self._stateCallbacks[stateId] = [];
 		}
-		self._stateCallbacks[stateId].push(cb);
+		self._stateCallbacks[stateId].push(resolver);
+		return p;
 	}
 };
 

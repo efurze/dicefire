@@ -49,9 +49,10 @@
 	SocketAIController.prototype.attack_result = function(sock, msg) {
 		var self = this;
 		if (msg.playerId == self._id && self._attackPending) {
-			self._history.getState(msg.stateId, function(state) {
-				self.attackDone(msg.success, msg.stateId);
-			});
+			self._history.getState(msg.stateId)
+					.then( function(state) {
+						self.attackDone(msg.success, msg.stateId);
+					});
 		}
 	};
 
@@ -88,21 +89,22 @@
 		// to deal with that
 		var self = this;
 		if (self._started) {
-			self._history.getState(state_id, function(state) {
-				if (self._isMyTurn) {
-					Globals.debug("Got startTurn when it was already our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
-				}
-				self._isMyTurn = true;
-				try {
-					self._aiWrapper.startTurn(state);
-				} catch (err) {
-					// try to re-initialize AI
-					Globals.debug("AIWrapper.startTurn exception. Attempting to re-initialize", err, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
-					self.initAI();
-					self._aiWrapper.start();
-					self._aiWrapper.startTurn(state);
-				}
-			});
+			self._history.getState(state_id)
+					.then( function(state) {
+						if (self._isMyTurn) {
+							Globals.debug("Got startTurn when it was already our turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
+						}
+						self._isMyTurn = true;
+						try {
+							self._aiWrapper.startTurn(state);
+						} catch (err) {
+							// try to re-initialize AI
+							Globals.debug("AIWrapper.startTurn exception. Attempting to re-initialize", err, Globals.LEVEL.ERROR, Globals.CHANNEL.CLIENT);
+							self.initAI();
+							self._aiWrapper.start();
+							self._aiWrapper.startTurn(state);
+						}
+					});
 		} else {
 			self._startTurnPending = true;
 			self._startTurnPendingStateId = state_id;

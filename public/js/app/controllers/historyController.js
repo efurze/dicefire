@@ -39,7 +39,8 @@ HistoryController.prototype.historyBack = function (event) {
 		self._currentlyViewing --;
 		self._viewingHistory = true;
 
-		self._history.getState(self._currentlyViewing, self.renderHistory.bind(self));
+		self._history.getState(self._currentlyViewing)
+			.then(self.renderHistory.bind(self));
 		// TODO: FIXME: have a UI for 'loading state'
 		self.update();
 	}
@@ -56,7 +57,8 @@ HistoryController.prototype.historyForward = function (event) {
 			self._viewingHistory = false;
 		}
 					
-		self._history.getState(self._currentlyViewing, self.renderHistory.bind(self));
+		self._history.getState(self._currentlyViewing)
+			.then(self.renderHistory.bind(self));
 		// TODO: FIXME: have a UI for 'loading state'
 		self.update();
 	}

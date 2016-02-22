@@ -127,12 +127,13 @@ $(function() {
 					} else {
 						nextState = Client._currentViewState + 1;
 					}
-					Client._history.getState(nextState, function(state) {
-						if (Client._map) {
-							Client._map.setState(state);
-						}
-						Client.render(state);
-					});
+					Client._history.getState(nextState)
+						.then(function(state) {
+							if (Client._map) {
+								Client._map.setState(state);
+							}
+							Client.render(state);
+						});
 				}
 			}
 		},  
@@ -193,7 +194,7 @@ $(function() {
 		
 		MapControllerInterface: {
 
-			currentPlayerId: function() { return Client._history.getState(Client._currentViewState).currentPlayerId();},
+			currentPlayerId: function() { return Client._history.getLatest().currentPlayerId();},
 
 			
 			attack: function(from, to, callback){
@@ -257,9 +258,10 @@ $(function() {
 		// @msg: {stateId:, gameId:}
 		state: function(sock, msg) {
 			Client._historyController.updateStateCount(msg.stateId);
-			Client._history.getState(msg.stateId, function(state) {
-				Client.processNextState();
-			});
+			Client._history.getState(msg.stateId)
+					.then(function(state) {
+						Client.processNextState();
+					});
 		},
 
 		// @msg: {name: AI.getName(), playerId: <int>}
@@ -308,9 +310,10 @@ $(function() {
 		// @msg: {playerId:, stateId:}
 		start_turn: function(sock, msg) {
 			if (msg.playerId == Client._playerId) {
-				Client._history.getState(msg.stateId, function(state) {
-					Client._isMyTurn = true;
-				});
+				Client._history.getState(msg.stateId)
+					.then(function(state) {
+						Client._isMyTurn = true;
+					});
 			}
 		},
 
