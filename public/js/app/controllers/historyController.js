@@ -39,7 +39,7 @@ HistoryController.prototype.update = function() {
 
 HistoryController.prototype.historyBack = function (event) {
 	var self = this;
-	if (self._currentlyViewing > 0) {
+	if (self._currentlyViewing > 0 && !Renderer._rendering) {
 		self._currentlyViewing --;
 		self._viewingHistory = true;
 
@@ -52,7 +52,7 @@ HistoryController.prototype.historyBack = function (event) {
 
 HistoryController.prototype.historyForward = function (event) {
 	var self = this;
-	if (self.viewingHistory()) {
+	if (self.viewingHistory() && !Renderer._rendering) {
 		if (self._currentlyViewing < self._latestStateId) {
 			self._currentlyViewing ++;
 		} 
