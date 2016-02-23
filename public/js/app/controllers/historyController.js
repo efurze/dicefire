@@ -12,6 +12,7 @@ var HistoryController = function (history, playerId) {
 
 	$('#back_btn').click(this.historyBack.bind(this));
 	$('#forward_btn').click(this.historyForward.bind(this));
+	$('#ff_btn').click(this.historyFastForward.bind(this));
 };
 
 $(function(){
@@ -32,6 +33,7 @@ HistoryController.prototype.update = function() {
 	
 	$('#back_btn').prop('disabled', self._currentlyViewing === 0);
 	$('#forward_btn').prop('disabled', self._currentlyViewing == self._latestStateId);
+	$('#ff_btn').prop('disabled', self._currentlyViewing == self._latestStateId);
 	$('#history').html((self._currentlyViewing)  + ' / ' + self._latestStateId);
 	
 };
@@ -60,6 +62,19 @@ HistoryController.prototype.historyForward = function (event) {
 		if (self._currentlyViewing == self._latestStateId) {
 			self._viewingHistory = false;
 		}
+					
+		self._history.getHistory(self._currentlyViewing)
+			.then(self.renderHistory.bind(self));
+		// TODO: FIXME: have a UI for 'loading state'
+		self.update();
+	}
+};
+
+HistoryController.prototype.historyFastForward = function (event) {
+	var self = this;
+	if (self.viewingHistory() && !Renderer._rendering) {
+		self._currentlyViewing = self._latestStateId;
+		self._viewingHistory = false;
 					
 		self._history.getHistory(self._currentlyViewing)
 			.then(self.renderHistory.bind(self));

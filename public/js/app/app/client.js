@@ -158,7 +158,10 @@ $(function() {
 			Client._rendering = false;
 			Client._currentViewState = state.stateId();
 
-			if (!Client._historyController.viewingHistory()) {
+			if (Client._historyController.viewingHistory()) {
+				$('#end_turn').prop('disabled', true);
+			} else {
+				$('#end_turn').prop('disabled', false);
 				Client._historyController.setViewState(Client._currentViewState);
 				if (!Client.upToDate()) {
 					Client.processNextState();

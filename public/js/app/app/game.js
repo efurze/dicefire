@@ -112,7 +112,10 @@ $(function() {
 		// from renderer
 		stateRendered: function(gamestate, stateId) {
 			Game._controller.updateStateCount(Game._engine.historyLength()-1);
-			if (!Game._controller.viewingHistory()) {
+			if (Game._controller.viewingHistory()) {
+				$('#end_turn').prop('disabled', true);
+			} else {
+				$('#end_turn').prop('disabled', false);
 				Game._currentState = gamestate;
 				Game._controller.setViewState(stateId);
 				if (Game._controller) {
