@@ -144,7 +144,6 @@ Engine.prototype.setup = function(initialState /*optional*/) {
 	if (initialState) {
 		Globals.debug("Using provided initial state", Globals.LEVEL.INFO, Globals.CHANNEL.ENGINE);
 		self.setState(initialState);
-		self.pushHistory();
 	} else {
 
 		// send out a pre-dice state
