@@ -27,6 +27,7 @@ $(function() {
 		_history: null,
 		_gameId: null,	
 		_initialized: false,
+		_firstRender: false,
 		_watch: false,
 
 		_map: null,
@@ -47,6 +48,8 @@ $(function() {
 			Client._gameId = gameId;
 			Client._watch = watch;
 			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+
+			Client.setStatus("Loading...");
 
 			var uploader = new Uploader();
 			Globals.initLogger(gameId, uploader.uploadLogDump.bind(uploader));
@@ -151,10 +154,24 @@ $(function() {
 			}
 		},
 
+		clearStatus: function() {
+			$('#status-overlay').css('display', 'none');
+		},
+
+		setStatus: function(msg) {
+			$('#status-msg').html(msg);
+			$('#status-overlay').css('display', 'block');
+		},
+
 		// from renderer
 		stateRendered: function(state, id) {
 			// render done
 			Globals.debug("state", id, "rendered", Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
+			if (!Client._firstRender) {
+				Client._firstRender = true;
+				Client.clearStatus();
+			}
+
 			Client._rendering = false;
 			Client._currentViewState = state.stateId();
 

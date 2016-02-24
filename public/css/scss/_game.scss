@@ -1,3 +1,32 @@
+
+#game-container {
+  position: relative;
+  width:100%;
+  height: 1000px;
+}
+
+#status-overlay {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background-color: rgba(255,255,255,0.3);
+  position: absolute;
+  text-align: center;
+  top: 0;
+  left: 0;
+}
+
+#status-msg {
+  margin-top: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 10px;
+  background-color: white;
+  border: 1px solid blue;
+  height: 80px;
+  width: 30%;
+}
+
 #game {
   background-color: #999;
   position: relative;
@@ -9,6 +38,7 @@
   canvas#c {
     margin-top: 210px;
   }
+
 
   section.controls {
     position: absolute;

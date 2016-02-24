@@ -3,10 +3,20 @@
 	<br>
 	<a href="/play?gameId={{gameId}}" target="_blank">send this link to others to have them join</a>
 </div>
+
 <div id="view_link" style="display: none">
 	<a href="/replay?gameId={{gameId}}" target="_blank">click here to watch this game</a>
 </div>
+
+<div id="game-container">
+	<div id="status-overlay" style="display: none">
+		<div id="status-msg">
+		</div>
+	</div>
+
 {{>game}}
+
+</div>
 
 <script>
 	$(function() {

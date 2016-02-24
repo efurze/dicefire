@@ -25,6 +25,9 @@ HistoryController.prototype.updateStateCount = function(stateId) {
 
 HistoryController.prototype.setViewState = function(stateId) {
 	this._currentlyViewing = stateId;
+	if (stateId > this._latestStateId) {
+		this._latestStateId = stateId;
+	}
 	this.update();
 };
 
