@@ -26,6 +26,7 @@ $(function() {
 			if (this._players[id]) {
 				this._players[id] = name;
 			}
+			this._setupPlayerDivs(this._players.length);
 		},
 
 		_setupPlayerDivs: function(playerCount) {

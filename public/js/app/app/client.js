@@ -49,8 +49,6 @@ $(function() {
 			Client._watch = watch;
 			Globals.debug("gameId:", gameId, Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 
-			Client.setStatus("Loading...");
-
 			var uploader = new Uploader();
 			Globals.initLogger(gameId, uploader.uploadLogDump.bind(uploader));
 
@@ -83,6 +81,8 @@ $(function() {
 				Client._socket.on(Message.TYPE.CREATE_HUMAN, Client.create_human);
 				Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
 			}
+
+			Status.setStatus("Loading...");
 		},
 
 
@@ -154,14 +154,7 @@ $(function() {
 			}
 		},
 
-		clearStatus: function() {
-			$('#status-overlay').css('display', 'none');
-		},
-
-		setStatus: function(msg) {
-			$('#status-msg').html(msg);
-			$('#status-overlay').css('display', 'block');
-		},
+		
 
 		// from renderer
 		stateRendered: function(state, id) {
@@ -169,7 +162,7 @@ $(function() {
 			Globals.debug("state", id, "rendered", Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
 			if (!Client._firstRender) {
 				Client._firstRender = true;
-				Client.clearStatus();
+				Status.clear();
 			}
 
 			Client._rendering = false;
@@ -244,6 +237,8 @@ $(function() {
 		disconnect: function(sock) {
 			Globals.debug("=> Socket DISCONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
 
+			Status.setStatus("Lost Connection to Server. Reconnecting...");
+
 			// tell all the AI's to chill
 			Object.keys(Client._players).forEach(function(id) {
 				if (Client._players[id]) {
@@ -256,6 +251,7 @@ $(function() {
 
 		connect: function(sock) {
 			Globals.debug("=> Socket CONNECT", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT_SOCKET);
+			Status.clear();
 			if (Client._initialized && !Client._watch) {
 				// tell the server we're initialized
 				Client._socket.sendPlayerInitialized(Client._playerId);
