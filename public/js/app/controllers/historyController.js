@@ -3,9 +3,8 @@
 // @history: {getHistory: function(stateId){
 //	return Promise; - resolves to a gamestate
 //}}
-var HistoryController = function (history, playerId) {
+var HistoryController = function (history) {
 	this._history = history;
-	this._playerId = playerId;
 	this._viewingHistory = false;
 	this._currentlyViewing = 0;
 	this._latestStateId = 0;

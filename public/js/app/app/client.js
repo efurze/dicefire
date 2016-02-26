@@ -25,20 +25,14 @@ $(function() {
 		_socket: null,
 		_downloader: null,
 		_history: null,
+		_viewer: null,
 		_gameId: null,	
 		_initialized: false,
-		_firstRender: false,
 		_watch: false,
 
 		_map: null,
 		_gameInfo: null,
 		_players: {}, // playerId => Engine::PlayerInterface
-		_playerStatus: {}, // playerId => true iff player is connected
-
-		_rendererInitialized: false,
-		_currentViewState: -1,
-		_rendering: false,
-		_historyController: null,
 
 		_playerId: -1,
 		_isMyTurn: false,
@@ -54,7 +48,6 @@ $(function() {
 
 			// initialize the history controller
 			Client._history = new History(gameId);
-			Client._historyController = new HistoryController(Client._history, gameId);
 
 			// get game info for rendering purposes
 			Client._downloader = new Downloader();
@@ -73,8 +66,7 @@ $(function() {
 			Client._socket.on('error', Client.socket_error);
 			Client._socket.on('disconnect', Client.disconnect);
 			Client._socket.on('connect', Client.connect);
-			Client._socket.on(Message.TYPE.STATE, Client.state);
-			Client._socket.on(Message.TYPE.PLAYER_STATUS, Client.player_status);
+			
 
 			if (!watch) {
 				Client._socket.on(Message.TYPE.CREATE_BOT, Client.create_bot);
@@ -82,102 +74,35 @@ $(function() {
 				Client._socket.on(Message.TYPE.START_TURN, Client.start_turn);
 			}
 
+			Client._viewer = new Viewer(Client._history, Client._socket);
+
 			Status.setStatus("Loading...");
 		},
 
 
 		setInitialized: function() {
 			// initialize renderer
-			if (!Client._rendererInitialized) {
-				Globals.debug("Initializing renderer", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
+			if (!Client._initialized) {
+
+				Client._initialized = true;
+				
 				if (!Client._watch) {
-					// don't needs a map controller if we're only watching
+					// don't need a map controller if we're only watching
 					Globals.ASSERT(Client._mapController);
 				}
-				$('#game').css('display', 'block');
-				Client._rendererInitialized = true;
-				Renderer.init(Client._canvas,
-							Client._map,
-							Client._gameInfo.getPlayers(),
-							Client);
 
-				// render the disconnected players properly
-				Object.keys(Client._playerStatus).forEach(function(id) {
-					if (!Client._playerStatus[id]) {
-						Renderer.setPlayerName(id, "Disconnected");
-					}
-				});
+				// initialize viewer
+				Client._viewer.init(Client._canvas, Client._map, Client._gameInfo);
 
-				Client.processNextState();
-			}
-			if (!Client._initialized && !Client._watch) {
-				Client._initialized = true;
-				// tell the server we're initialized
-				Client._socket.sendPlayerInitialized(Client._playerId);
-			}
-		},
 
-		upToDate: function() {
-			return (Client._currentViewState == Client._history.latestId());
-		}, 
-
-		processNextState: function() {
-			if (Client._rendererInitialized && !Client._rendering && !Client._historyController.viewingHistory()) {
-				if (!Client.upToDate()) {
-					var nextState = 0;
-					if (Client._currentViewState < 0) {
-						nextState = Client._history.latestId();
-					} else {
-						nextState = Client._currentViewState + 1;
-					}
-					Client._history.getHistory(nextState)
-						.then(function(state) {
-							if (Client._map) {
-								Client._map.setState(state);
-							}
-							Client.render(state);
-						});
+				if (!Client._watch) {
+					// tell the server we're initialized
+					Client._socket.sendPlayerInitialized(Client._playerId);
 				}
-			}
-		},  
-
-		render: function(state) {
-			if (!Client._rendererInitialized || !state || Client._historyController.viewingHistory()) {
-				return;
-			}
-
-			if (!Client._rendering) {
-				Client._rendering = true;
-
-				Globals.debug("render state", state.stateId(), Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
-				Renderer.stateUpdate(state, state.stateId()); // will call back to stateRendered()
 			}
 		},
 
 		
-
-		// from renderer
-		stateRendered: function(state, id) {
-			// render done
-			Globals.debug("state", id, "rendered", Globals.LEVEL.TRACE, Globals.CHANNEL.CLIENT);
-			if (!Client._firstRender) {
-				Client._firstRender = true;
-				Status.clear();
-			}
-
-			Client._rendering = false;
-			Client._currentViewState = state.stateId();
-
-			if (Client._historyController.viewingHistory()) {
-				$('#end_turn').prop('disabled', true);
-			} else {
-				$('#end_turn').prop('disabled', false);
-				Client._historyController.setViewState(Client._currentViewState);
-				if (!Client.upToDate()) {
-					Client.processNextState();
-				}
-			}
-		},
 
 		// from renderer
 		mouseOverCountry: function(id) {
@@ -190,12 +115,12 @@ $(function() {
 		endTurnClicked: function() {
 			Globals.debug("End Turn clicked", Globals.LEVEL.INFO, Globals.CHANNEL.CLIENT);
 
-			if (Client._isMyTurn && Client.upToDate()) {
+			if (Client._isMyTurn && Client._viewer.upToDate()) {
 				Client._isMyTurn = false;
 				Client._socket.sendEndTurn(Client._playerId);
 			} else if (!Client._isMyTurn) {
 				Globals.debug("End Turn clicked when it's not my turn", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);				
-			} else if (!Client.upToDate()) {
+			} else if (!Client._viewer.upToDate()) {
 				Globals.debug("End Turn clicked when client isn't up to date", Globals.LEVEL.WARN, Globals.CHANNEL.CLIENT);
 			}
 		},
@@ -218,7 +143,7 @@ $(function() {
 			},
 			
 			clickable: function() {
-				if (Client._rendering || !Client._isMyTurn || Client._historyController.viewingHistory()) {
+				if (Renderer._rendering || !Client._isMyTurn || Client._viewer.viewingHistory()) {
 					return false;
 				}
 
@@ -258,27 +183,6 @@ $(function() {
 			}
 		},
 
-		// @msg: {playerId: ,connected: ,playerName:}
-		player_status: function(sock, msg) {
-			
-			Client._playerStatus[msg.playerId] = msg.connected;
-
-			if (msg.connected) {
-				Renderer.setPlayerName(msg.playerId, msg.playerName);
-			} else {
-				Renderer.setPlayerName(msg.playerId, "Disconnected");
-			}
-		},
-
-
-		// @msg: {stateId:, gameId:}
-		state: function(sock, msg) {
-			Client._historyController.updateStateCount(msg.stateId);
-			Client._history.getHistory(msg.stateId)
-					.then(function(state) {
-						Client.processNextState();
-					});
-		},
 
 		// @msg: {name: AI.getName(), playerId: <int>}
 		create_bot: function(sock, msg) {
